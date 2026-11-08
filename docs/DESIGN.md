@@ -1,7 +1,7 @@
 # FLUTCH Design System
 
 > 상태: **초안**. 토큰 값은 기반 단계에서 시안(`docs/design-refs/`)에서 추출해 확정하고, `frontend/` Tailwind 설정과 1:1로 맞춘다.
-> 시안 참고: `home.webp`(홈), `super-clutch-card.png`(클러치 카드), `chamfer-corner.png`(모서리), `mascot-play-on-flutch.png`(마스코트), `background.webp`(배경), `clutch-time-logo.webp`(로고타입).
+> 시안 참고: `home.webp`(홈), `super-clutch-card.png`(클러치 카드), `chamfer-corner.png`(모서리), `mascot-play-on-flutch.png`(마스코트), `background.webp`(배경), `logo-flutch.png`(로고), `logo-clutch-time.png`(CLUTCH TIME 로고타입), `mascot-concept-sheet.webp`(마스코트 표정·소품).
 
 ## 1. 무드
 어두운 무대 위의 네온. 게임 방송의 속도감(사선, 스피드 라인)과 "심장이 뛰는 순간"(심박 라인, 게이지)을 표현한다.
