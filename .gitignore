@@ -1,0 +1,22 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# rust
+target/
+
+# node
+node_modules/
+dist/
+*.log
+
+# editors / os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# local tooling
+.omc/
+.claude/settings.local.json
