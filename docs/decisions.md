@@ -46,7 +46,7 @@
 - REST 표현: `POST /api/v1/broadcasts/{id}/live`(송출 시작), `DELETE /api/v1/broadcasts/{id}/live`(종료).
 
 ### 송출 화면
-- PC: 화면 공유 + 마이크 + 음소거 + 화면 소스 변경 + 마이크/화면 소리 볼륨 슬라이더. 탭/시스템 소리는 `getDisplayMedia` 오디오. **PC 웹캠 모드 지원**, 화면+웹캠 동시(PIP)는 backlog.
+- PC: 화면 공유 + 마이크 + 음소거 + 화면 소스 변경 + 마이크/화면 소리 볼륨 슬라이더. 탭/시스템 소리는 `getDisplayMedia` 오디오. **PC 웹캠 모드 지원**. **화면+웹캠 동시(PIP)는 트랙을 따로 보내고 시청자 화면에서 겹치는 방식**(브라우저 캔버스 합성 금지 — 백그라운드 탭에서 멈춤), 필수 완료 후 T09b.
 - 모바일: 전/후면 카메라 전환, 음소거, Wake Lock.
 - 공통: 송출 전 미리보기 + 마이크 레벨 표시.
 - 지원 환경: 시스템 소리는 Windows Chrome/Edge, 탭 소리는 데스크톱 Chrome/Edge, 모바일은 Android Chrome·iOS Safari(HTTPS).
