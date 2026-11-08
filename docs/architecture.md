@@ -2,6 +2,13 @@
 
 > 백엔드 1대 + 관리형 미디어 서버(LiveKit Cloud) 구조. 단일 인스턴스를 전제로 단순하게 만들고, 여러 대로 늘릴 때 바꿔야 할 지점은 `shortcut:` 주석과 이 문서 §8에 남긴다.
 
+## 0. 구조 스타일: 모듈형 모놀리스 + 수직 분할
+- **모놀리스**: 백엔드 프로그램은 하나. 마이크로서비스로 쪼개지 않는다.
+- **모듈형**: 도메인별 폴더(auth, broadcast, live, chat, moderation, wallet, clutch, recording, follow). 다른 도메인의 테이블을 직접 고치지 않고, 그 도메인이 공개한 함수로 호출한다(예: `wallet::debit`).
+- **수직 분할**: 기능 하나의 라우트·권한 확인·SQL이 그 도메인 폴더 안에 있다. 계층은 `handlers → db` 두 단계뿐(Service·Repository 계층 없음).
+- **외부 연동만 trait로 분리**: `LiveKitApi`, `TossApi` 두 개. 운영은 실제 HTTP 구현, 시나리오 테스트는 가짜 구현(fake)을 넣어 네트워크·키 없이 웹훅 반복, 금액 불일치, 방 종료 호출 등을 재현한다. 그 외(DB 등)는 추상화하지 않는다.
+- 채택 이유: 서버 1대·10일 일정에 계층형·클린·헥사고날은 보일러플레이트가 과하고, MSA는 운영 부담만 크다. 도메인 폴더 단위라 서브에이전트에게 task를 나누기 쉽다.
+
 ## 1. 전체 구성
 
 ```mermaid
@@ -75,14 +82,14 @@ backend/src/
   extract.rs         CurrentUser / OptionalUser 추출기(세션 쿠키)
   realtime.rs        방송별 이벤트 허브(tokio::broadcast) + WebSocket 핸들러
   scheduler.rs       주기 작업(아래 §5)
-  livekit.rs         토큰·방·Egress 클라이언트, 웹훅 검증
-  toss.rs            승인·조회 API, 웹훅 검증
+  livekit.rs         trait LiveKitApi + HTTP 구현(토큰·방·Egress), 웹훅 검증
+  toss.rs            trait TossApi + HTTP 구현(승인·조회), 웹훅 검증
   routes/mod.rs      /api/v1 라우터 조립 (메인 개발 세션만 수정)
   auth/  broadcast/  live/  chat/  moderation/  wallet/  clutch/  recording/  follow/
       mod.rs         라우트
       handlers.rs    요청 처리·권한 확인
       db.rs          SQL (sqlx::query! 컴파일 검증)
-backend/tests/scenarios/   시나리오 테스트 (#[sqlx::test])
+backend/tests/scenarios/   시나리오 테스트 (#[sqlx::test], LiveKit·토스는 fake)
 backend/migrations/        SQLx 마이그레이션
 backend/data/              금지어·욕설·흔한 비밀번호 목록
 ```
