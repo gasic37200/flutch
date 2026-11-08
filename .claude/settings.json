@@ -1,0 +1,16 @@
+{
+  "enabledPlugins": {
+    "ponytail@ponytail": true
+  },
+  "extraKnownMarketplaces": {
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
+    }
+  },
+  "env": {
+    "OMC_SKIP_HOOKS": "post-tool-use,pre-tool-use,keyword-detector,persistent-mode"
+  }
+}
