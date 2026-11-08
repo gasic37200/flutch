@@ -15,6 +15,7 @@
 | `docs/DESIGN.md` | 디자인 토큰·컴포넌트 규칙 | UI 작업 전 필독 |
 | `docs/api.md` | REST/WebSocket 명세 | 엔드포인트 변경 시 같은 PR에서 갱신 |
 | `docs/design-refs/` | Stitch 시안 이미지 | 참고용 |
+| `docs/troubleshooting/` | 작업 중 겪은 문제와 해결 기록 | 같은 영역 작업 전 확인, 서브에이전트가 기록 |
 
 ## 2. 스택
 - `backend/` Rust · Axum · SQLx · PostgreSQL · livekit-api
@@ -123,31 +124,77 @@ feat(broadcast): 송출 시작·종료 API 추가
 **PR**
 - 기능 1개 = PR 1개. 제목은 커밋 제목과 같은 형식 (Squash 시 그대로 커밋이 됨).
 - `.github/pull_request_template.md` 채우기: 요약 / 처리 사항 / 테스트 / 충족 스펙 항목.
-- **CI 통과 시 Squash merge 후 브랜치 삭제.** 별도 리뷰 없음.
+- **CI 통과 + 메인 세션의 보고서·docs 변경 판단(§9-2) 후 Squash merge, 브랜치 삭제.** 코드 리뷰는 별도로 하지 않음.
 - 예외: `auth` `donation` `wallet` 범위 PR은 머지 전 `/ponytail-review branch` 1회.
 
 **도구 설정 (`.claude/settings.json`, 이 프로젝트에만 적용)**
 - Ponytail 플러그인 활성화.
 - oh-my-claudecode의 매 도구 호출마다 붙는 "테스트하라/계속하라" 훅과 키워드 자동 모드 전환은 `OMC_SKIP_HOOKS`로 끈다(§7 테스트 규칙과 충돌하기 때문).
 
-## 9. 세션·병렬 작업 규칙
-구조: **상주 채팅 세션**(사용자와 대화) → **메인 개발 세션**(이 문서와 roadmap에 따라 작업 분해·머지) → **작업 세션**(작업 1개만 수행 후 PR).
+## 9. 세션 운영 규칙
 
-- 작업 세션 1개 = 작업 1개 = 브랜치 1개 = **git worktree 1개**. 같은 폴더에서 두 세션이 쓰지 않는다.
-- **동시 작업 세션은 최대 3개** (Rust 빌드 캐시가 worktree마다 수 GB, CPU 경쟁).
-- 11/9~10 기반 작업(골격·스키마·인증·레이아웃·배포)은 **직렬**로 한다. 병렬은 그 이후.
-- 병렬로 나눌 때는 **파일이 겹치지 않는 단위**로 나눈다 (예: 백엔드 chat 모듈 / 프론트 시청 화면).
-- 프론트·백엔드가 같은 기능을 나눠 맡으면 **`docs/api.md` 계약을 먼저 머지**하고 시작한다.
-- 충돌 위험 파일은 **메인 개발 세션만** 고친다: `docs/roadmap.md`, 라우터 등록부(`backend/src/routes/mod.rs`), `Cargo.toml`/`package.json` 의존성 추가는 PR에 명시.
-- 마이그레이션: 동시에 두 작업이 마이그레이션을 추가하지 않는다. 필요하면 메인 세션이 순서를 정한다.
-- 포트는 worktree마다 `.env`의 `BACKEND_PORT`·`VITE_PORT`로 분리한다. 로컬 dev DB 이름도 worktree별로 나눈다.
-- PR 전 `main`으로 rebase. 머지는 메인 개발 세션이 의존 순서대로 한다.
-- 작업 세션은 컨텍스트 40% 전후에서 정리하거나 작업을 끝낸다. 한 세션에 작업을 이어 붙이지 않는다.
+### 9-1. 역할
+| 세션 | 하는 일 | 하지 않는 일 |
+|---|---|---|
+| **상주 채팅 세션** | 사용자와 대화, 결정을 `docs/`에 반영(docs PR), 메인 세션에 사용자 결정 전달 | 기능 구현 |
+| **메인 개발 세션** | `docs/` 전체를 읽고 숙지한 상태로 roadmap task를 서브에이전트에게 할당, 결과 판단·후속 할당·머지·roadmap 갱신 | 큰 기능 직접 구현(작은 수정·충돌 해결만) |
+| **서브에이전트** | task 1개 구현 → 트러블슈팅 기록 → PR → 요약 보고 | 다른 task 손대기, 머지, roadmap 수정 |
+
+### 9-2. 메인 개발 세션 루프
+1. **시작 시 숙지**: `docs/spec.md` → `decisions.md` → `architecture.md` → `features/` → `DESIGN.md` → `api.md` → `roadmap.md` → `troubleshooting/README.md`.
+2. **할당**: roadmap에서 선행이 모두 ✅인 task를 고른다. 서브에이전트는 **Agent 도구 + `isolation: "worktree"`**로 띄운다. 지시서는 §9-4 양식.
+3. **보고 판단** (§9-5 보고서 기준):
+   - "위험·건너뛴 것"이 있으면 → 판단해서 **후속 서브에이전트에게 다시 할당**(같은 PR 브랜치에 이어서, 또는 새 task). 사용자 결정이 필요한 것만 §9-6으로.
+   - PR의 **docs 변경분만 따로 검토**: decisions·features·architecture·api와 모순이 없고 사실이면 승인하고 **변경된 문서를 다시 읽어 숙지**한다. 틀리면 서브에이전트에게 수정 요청.
+   - `auth` `donation` `wallet` 범위면 `/ponytail-review branch` 1회.
+4. **머지**: CI 통과 + 위 판단 통과 → Squash merge → roadmap 상태 갱신(메인 세션이 직접 docs 커밋 PR).
+5. **배포 확인**: 머지 후 자동 배포가 끝나면 `GET /api/v1/health` 확인. 실패하면 **즉시 revert PR을 올려 머지**하고 원인 task를 다시 할당.
+6. **컨텍스트 관리**: task를 머지할 때마다 roadmap에 상태가 남아 있으므로, 컨텍스트가 길어지면 `/compact` 후 1번(숙지)부터 다시.
+
+### 9-3. 병렬 규칙
+- 서브에이전트 1개 = task 1개 = 브랜치 1개 = worktree 1개. **동시 최대 3개**(Rust 빌드 캐시가 worktree마다 수 GB, CPU 경쟁).
+- 기반 단계(T01~T07)는 **직렬**. 병렬은 그 이후, roadmap에 "(병렬)" 표시된 task끼리만.
+- 파일이 겹치지 않는 단위로만 병렬. 프론트·백엔드가 같은 기능을 나누면 `docs/api.md` 계약을 먼저 머지.
+- 충돌 위험 파일은 **메인 세션만** 수정: `docs/roadmap.md`, `backend/src/routes/mod.rs`. 의존성 추가(`Cargo.toml`·`package.json`)는 보고서에 명시.
+- 마이그레이션은 동시에 한 task만 추가. 포트는 worktree마다 `.env`의 `BACKEND_PORT`·`VITE_PORT`로 분리.
+- PR 전 `main`으로 rebase. 머지는 메인 세션이 의존 순서대로.
+
+### 9-4. 작업 지시서 양식 (메인 → 서브에이전트)
+```
+[Txx] <task 이름>
+- 읽을 문서: AGENTS.md, docs/features/<nn>.md, docs/architecture.md §<n>, (해당 시) docs/api.md·DESIGN.md
+- 건드릴 범위: <폴더/파일>
+- 건드리지 말 것: docs/roadmap.md, routes/mod.rs(필요하면 보고서에 요청), 다른 task 영역
+- 완료 기준: <features 문서의 시나리오 테스트 이름 / 화면 확인 항목>
+- 브랜치: <type>/<이름>
+- 이전 시도·후속 할당이면: <이전 보고서의 위험·건너뛴 것>
+```
+
+### 9-5. 서브에이전트 마무리 순서
+1. 구현 + 해당 시나리오 테스트 (§7).
+2. **트러블슈팅 기록**: 작업 중 막혔던 것·예상과 달랐던 것·시행착오가 있었으면 `docs/troubleshooting/`에 기록(양식은 그 폴더 README). 없으면 보고서에 "트러블슈팅 없음".
+3. **docs 갱신이 필요하면 같은 PR에 포함**: api.md 변경, features 정책의 구현상 보정, architecture 변경 등. 확정 결정(decisions)을 바꿔야 하면 바꾸지 말고 보고서에 "결정 변경 필요"로 올린다.
+4. §10 완료 기준 확인 → PR 생성.
+5. **요약 보고**(최종 응답, 메인 세션에게):
+```
+[Txx] 완료 | PR: <링크>
+- 처리 사항: <3~5줄>
+- 테스트: <돌린 것 / 추가한 시나리오>
+- docs 변경: <파일과 한 줄 이유, 없으면 없음>
+- 트러블슈팅: <파일 경로 또는 없음>
+- 의존성 추가: <없음 또는 목록>
+- 위험·건너뛴 것: <없음 또는 목록>
+- 결정 변경 필요: <없음 또는 내용>
+```
+
+### 9-6. 사용자에게 올리는 경우
+서브에이전트 → 메인 → 사용자. §11 승인 항목이거나 "결정 변경 필요"면 메인 세션은 **해당 task를 멈추고** 사용자에게 한 번에 묻는다(다른 독립 task는 계속 진행). 사용자 답은 상주 채팅 세션이 `docs/`에 반영한다.
 
 ## 10. 완료 기준 (PR 올리기 전)
 - [ ] 백엔드·프론트 검사 명령 통과, 전체 테스트 1회 통과
 - [ ] 위험 영역이면 시나리오 테스트 추가
 - [ ] `docs/api.md`, README 기능 확인 절차 갱신 (해당 시)
+- [ ] 시행착오가 있었으면 `docs/troubleshooting/` 기록
 - [ ] 비밀값·`.env` 미포함
 
 ## 11. 사용자 승인이 필요한 일 (그 외에는 자율 진행)
