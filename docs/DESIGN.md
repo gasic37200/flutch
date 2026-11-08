@@ -19,6 +19,16 @@
 | `beat` | 골드: **비트·돈 관련만** (SUPER BURST, 후원, 잔액) | |
 | `text` / `text-muted` / `text-dim` | 본문 / 보조 / 비활성 | |
 
+## 2-1. 클러치 로고타입 3단계
+게이지가 오를수록 라임(평소) → 뜨거운 그라데이션(폭발)으로 넘어가는 흐름을 로고로 보여준다. "CLUTCH" 단어의 붓글씨 스타일은 세 로고 공통.
+| 단계 | 파일 | 색 | 쓰는 곳 |
+|---|---|---|---|
+| 충전 중 (0~79%) | `logo-clutch-time.png` | CLUTCH 흰색 + TIME 라임 | 히어로 CLUTCH TIME 패널 기본, 시청 화면 게이지 라벨 |
+| 임박 (80~99%) | `logo-clutch-time-hot.webp` | CLUTCH 그라데이션 + TIME 흰색 | 히어로 패널 임박 상태 |
+| 발동 | `logo-super-clutch.webp` | SUPER 그라데이션 + CLUTCH 흰색 | SUPER CLUTCH 3초 연출, 히어로 SUPER CLUTCH 카드 |
+- 원본 오른쪽 아래의 생성 도구 워터마크(✦)는 잘라내고 쓴다. 검은 배경은 투명 처리하거나 `mix-blend-mode: screen`으로 합성한다.
+- AI 생성 이미지임을 README 출처에 표기한다.
+
 ## 3. 글꼴
 | 역할 | 글꼴 |
 |---|---|
