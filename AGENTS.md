@@ -8,6 +8,8 @@
 |---|---|---|
 | `docs/spec.md` | 공모전 원문 요구사항 | 모든 판단에 우선. 수정 금지 |
 | `docs/decisions.md` | 확정 정책·기술 결정과 이유 | 바꾸려면 사용자 승인 후 이 문서부터 수정 |
+| `docs/features/` | 서비스별 세부 정책·시나리오 테스트 이름 | **해당 기능 작업 전 필독**. decisions와 다르면 이쪽 우선 |
+| `docs/backlog.md` | 범위 밖 부가 기능 | roadmap 완료 전 착수 금지 |
 | `docs/roadmap.md` | 단계·일정·진행 상태 | **메인 개발 세션만** 갱신 |
 | `docs/DESIGN.md` | 디자인 토큰·컴포넌트 규칙 | UI 작업 전 필독 |
 | `docs/api.md` | REST/WebSocket 명세 | 엔드포인트 변경 시 같은 PR에서 갱신 |
