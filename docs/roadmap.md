@@ -12,13 +12,19 @@
 | LiveKit Cloud 가입, API key/secret | 11/11 | ⬜ |
 | 토스페이먼츠 개발자센터 가입, 테스트 키 | 11/14 | ⬜ |
 
+## 사용자 확인 대기
+> 문서에 없어 가정하고 진행한 결정(AGENTS §9-6). 사용자가 다르게 답하면 수정 task를 만든다. 메인 개발 세션만 갱신.
+
+| 날짜 | task | 가정한 내용 | 이유 | 바꾸면 영향 | 상태 |
+|---|---|---|---|---|---|
+
 ## Task
 > task 1개 = 작업 세션 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "병렬" 표시된 task끼리는 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
 
 ### 0. 기반 — 11/9~10 (직렬)
 | ID | task | 정책 | 선행 | 상태 |
 |---|---|---|---|---|
-| T01 | 저장소 골격: backend(Axum health), frontend(Vite+Tailwind), compose.dev, `.env.example`, CI(fmt·clippy·test·lint·typecheck·build, `sqlx prepare --check`) | — | — | ⬜ |
+| T01 | 저장소 골격: backend(Axum health), frontend(Vite+Tailwind), compose.dev, `.env.example`, CI(fmt·clippy·test·lint·typecheck·build, `sqlx prepare --check`, rust-cache), 로컬 sccache 설정 | — | — | ⬜ |
 | T02 | DB 스키마 v1: users, sessions, broadcasts, chats, bans(+이력), follows, ledger·wallets, payment_orders, recordings, clutch 테이블 | 전체 | T01 | ⬜ |
 | T03 | 인증 백엔드: 가입·로그인·로그아웃·내 정보·닉네임/비밀번호 변경·탈퇴·테스트 로그인·시드·요청 제한·CSRF + 시나리오 | 01, 10 | T02 | ⬜ |
 | T04 | 방송 CRUD·상태 전이·제한·목록/검색 API + 시나리오 | 02 | T03 | ⬜ |
