@@ -25,6 +25,7 @@
 - 스트리밍 LiveKit Cloud / 결제 토스페이먼츠 테스트 모드
 
 ## 3. 명령어
+> **개발·빌드·테스트는 WSL2 Ubuntu(`~/flutch`)에서 한다.** Windows는 스마트 앱 컨트롤이 빌드한 실행 파일을 막아 `cargo run`이 안 된다. 앱 세션은 SSH `localhost:2222`(사용자 `dbsrh`)로 연다. 운영 서버 SSH 키는 `/mnt/c/Users/dbsrh/.ssh/flutch_oci`.
 ```bash
 docker compose -f deploy/compose.dev.yml up -d   # 로컬 Postgres
 cd backend && cargo run                           # 백엔드
@@ -168,7 +169,7 @@ feat(broadcast): 송출 시작·종료 API 추가
 [Txx] <task 이름>
 - 읽을 문서: AGENTS.md, docs/features/<nn>.md, docs/architecture.md §<n>, (해당 시) docs/api.md·DESIGN.md
 - 건드릴 범위: <폴더/파일>
-- 건드리지 말 것: docs/roadmap.md, routes/mod.rs(필요하면 보고서에 요청), 다른 task 영역
+- 건드리지 말 것: docs/roadmap.md·worklog.md, 공용 파일의 다른 도메인 부분(골격 밖 수정은 보고서에 요청), 다른 task 영역
 - 완료 기준: <features 문서의 시나리오 테스트 이름 / 화면 확인 항목>
 - 브랜치: <type>/<이름> (push는 이 브랜치만, main 직접 push 금지)
 - 포트·DB: BACKEND_PORT=<…>, VITE_PORT=<…>, DATABASE_URL=…/flutch_<task>
