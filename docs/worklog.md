@@ -7,3 +7,5 @@
 | 2026-11-09 | T01 | 완료 | 2026-11-09 17:39 → 18:15 | 35분 | 207,062 | 85 | [#25](https://github.com/gasic37200/flutch/pull/25) | Opus·high. CI 첫 실행 5분 35초, 캐시 41초 |
 | 2026-11-09 | T05 | 완료 | 2026-11-09 18:16 → 18:34 | 18분 | 175,811 | 61 | [#28](https://github.com/gasic37200/flutch/pull/28) | Sonnet·medium |
 | 2026-11-09 | T02 | 완료 | 2026-11-09 18:16 → 18:34 | 18분 | 171,022 | 34 | [#27](https://github.com/gasic37200/flutch/pull/27) | Opus·high. 메인이 build.rs(마이그레이션 재컴파일) 추가 후 머지 |
+| 2026-11-09 | T07 | 부분 | 2026-11-09 18:16 → 18:47 | 30분 | 146,750 | 45 | [#29](https://github.com/gasic37200/flutch/pull/29) | Sonnet·medium. arm64 빌드·GHCR 푸시 확인. 인증서(kro.kr LE 한도)·Secrets 없어 실배포 미확인. 메인이 main 충돌 merge 해결 |
+| 2026-11-09 | T02b | 완료 | 2026-11-09 18:40 → 18:52 | 12분 | 197,638 | 15 | [#31](https://github.com/gasic37200/flutch/pull/31) | Opus·medium. 에러 코드 51개, WS 이벤트 15종 |
