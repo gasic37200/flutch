@@ -8,6 +8,8 @@ RUN mkdir src && echo "fn main() {}" > src/main.rs && touch src/lib.rs \
     && cargo build --release && rm -rf src target/release/deps/flutch* target/release/flutch*
 COPY .sqlx .sqlx
 COPY migrations migrations
+# 금지어·욕설·흔한 비밀번호 목록은 include_str!로 바이너리에 들어간다.
+COPY data data
 COPY src src
 # COPY가 원본 mtime을 유지하므로 touch로 더미 빌드 산출물을 확실히 무효화한다.
 RUN touch src/main.rs src/lib.rs && cargo build --release --bin flutch

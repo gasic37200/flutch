@@ -1,6 +1,6 @@
 import type { ErrorBody } from './generated/ErrorBody'
 
-/** 백엔드 에러 응답 `{error:{code,message,request_id}}`를 담는다. 화면에는 `message`와 `requestId`를 보여 준다. */
+/** 백엔드 에러 응답 `{error:{code,message,requestId}}`를 담는다. 화면에는 `message`와 `requestId`를 보여 준다. */
 export class ApiRequestError extends Error {
   readonly status: number
   readonly code: string
@@ -13,9 +13,9 @@ export class ApiRequestError extends Error {
     this.name = 'ApiRequestError'
     this.status = status
     this.code = body.code
-    this.requestId = body.request_id
+    this.requestId = body.requestId
     this.fields = body.fields
-    this.retryAfterSec = body.retry_after_sec
+    this.retryAfterSec = body.retryAfterSec
   }
 }
 
@@ -44,6 +44,6 @@ async function errorBody(res: Response): Promise<ErrorBody> {
   return {
     code: 'INTERNAL',
     message: '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
-    request_id: res.headers.get('x-request-id') ?? '',
+    requestId: res.headers.get('x-request-id') ?? '',
   }
 }

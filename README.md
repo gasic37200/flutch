@@ -90,4 +90,6 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | Pretendard (본문 글꼴) | [orioncactus/pretendard](https://github.com/orioncactus/pretendard), SIL OFL 1.1, jsDelivr CDN |
 | Chakra Petch (영문 제목 글꼴) | [Google Fonts](https://fonts.google.com/specimen/Chakra+Petch), SIL OFL 1.1 |
 | JetBrains Mono (숫자 글꼴) | [Google Fonts](https://fonts.google.com/specimen/JetBrains+Mono), SIL OFL 1.1 |
+| 욕설 목록 (`backend/data/profanity_ko.txt`) | [LDNOOBW List of Dirty, Naughty, Obscene, and Otherwise Bad Words](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words) `ko`, CC BY 4.0 — 오탐 항목 제거·일부 추가 |
+| 흔한 비밀번호 상위 100 (`backend/data/common_passwords.txt`) | [SecLists](https://github.com/danielmiessler/SecLists) `xato-net-10-million-passwords-100.txt`, MIT |
 | 로고·마스코트·배너·배경 텍스처 (`frontend/public/brand/`) | **AI 생성 이미지**를 가공해 사용 (원본·가공본은 `docs/design-refs/`) |

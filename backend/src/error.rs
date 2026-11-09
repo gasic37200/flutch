@@ -1,4 +1,4 @@
-//! 공통 에러 → `{error:{code,message,request_id}}` (docs/api.md 규칙).
+//! 공통 에러 → `{error:{code,message,requestId}}` (docs/api.md 규칙).
 //!
 //! 도메인 에러는 도메인 폴더에 `thiserror` enum으로 만들고 `From<도메인Error> for AppError`에서
 //! `AppError::Domain`으로 변환한다. 핸들러는 `?` 한 번으로 올린다. 예시는 아래 `tests` 모듈.
@@ -28,12 +28,13 @@ pub enum AppError {
     RateLimited { retry_after_sec: i64 },
     #[error("conflict")]
     Conflict,
-    /// 도메인 코드(`<도메인>_<이유>`)와 한국어 문구.
+    /// 도메인 코드(`<도메인>_<이유>`)와 한국어 문구. `retry_after_sec`는 `with_retry_after`로 싣는다.
     #[error("{code}")]
     Domain {
         status: StatusCode,
         code: &'static str,
         message: String,
+        retry_after_sec: Option<i64>,
     },
     #[error("database: {0}")]
     Database(#[from] sqlx::Error),
@@ -47,7 +48,19 @@ impl AppError {
             status,
             code,
             message: message.into(),
+            retry_after_sec: None,
         }
+    }
+
+    /// 도메인 에러에 `retryAfterSec`·`Retry-After`를 싣는다(예: `AUTH_LOCKED`, `MODERATION_TIMED_OUT`).
+    pub fn with_retry_after(mut self, sec: i64) -> Self {
+        if let Self::Domain {
+            retry_after_sec, ..
+        } = &mut self
+        {
+            *retry_after_sec = Some(sec);
+        }
+        self
     }
 }
 
@@ -58,6 +71,7 @@ pub struct ApiError {
 }
 
 #[derive(Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct ErrorBody {
     pub code: String,
@@ -108,6 +122,7 @@ impl IntoResponse for AppError {
                 status,
                 code,
                 message,
+                ..
             } => (*status, *code, message.clone()),
             Self::Database(_) | Self::Internal(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -121,7 +136,11 @@ impl IntoResponse for AppError {
 
         let (fields, retry_after_sec) = match self {
             Self::Validation(fields) => (Some(fields), None),
-            Self::RateLimited { retry_after_sec } => (None, Some(retry_after_sec)),
+            Self::RateLimited { retry_after_sec }
+            | Self::Domain {
+                retry_after_sec: Some(retry_after_sec),
+                ..
+            } => (None, Some(retry_after_sec)),
             _ => (None, None),
         };
         let body = ApiError {
@@ -194,6 +213,13 @@ mod tests {
 
         let (status, json) = body_json(AppError::RateLimited { retry_after_sec: 3 }).await;
         assert_eq!(status, StatusCode::TOO_MANY_REQUESTS);
-        assert_eq!(json["error"]["retry_after_sec"], 3);
+        assert_eq!(json["error"]["retryAfterSec"], 3);
+
+        let err = AppError::domain(StatusCode::FORBIDDEN, "EXAMPLE_WAIT", "기다려 주세요.")
+            .with_retry_after(5);
+        let (status, json) = body_json(err).await;
+        assert_eq!(status, StatusCode::FORBIDDEN);
+        assert_eq!(json["error"]["retryAfterSec"], 5);
+        assert!(json["error"]["requestId"].is_string());
     }
 }

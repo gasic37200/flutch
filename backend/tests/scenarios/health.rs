@@ -53,7 +53,7 @@ async fn unknown_api_path_returns_not_found_error_format(db: PgPool) {
     assert_eq!(res.status, StatusCode::NOT_FOUND);
     assert_eq!(res.json["error"]["code"], "NOT_FOUND");
     assert_eq!(
-        res.json["error"]["request_id"],
+        res.json["error"]["requestId"],
         res.headers["x-request-id"].to_str().unwrap()
     );
 }

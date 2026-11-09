@@ -12,6 +12,28 @@ pub struct Config {
     /// 변경 요청·WebSocket `Origin` 허용 목록 (쉼표 구분).
     pub allowed_origins: Vec<String>,
     pub livekit: LiveKitConfig,
+    pub auth: AuthConfig,
+}
+
+pub struct AuthConfig {
+    /// `SEED_PASSWORD`: 테스트 계정 3개의 비밀번호. 비우면 테스트 로그인 버튼으로만 들어간다.
+    pub seed_password: Option<String>,
+}
+
+impl AuthConfig {
+    pub fn from_env() -> Self {
+        Self {
+            seed_password: required("SEED_PASSWORD").ok(),
+        }
+    }
+}
+
+impl fmt::Debug for AuthConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AuthConfig")
+            .field("seed_password", &self.seed_password.as_ref().map(|_| "***"))
+            .finish()
+    }
 }
 
 #[derive(Clone)]
@@ -34,6 +56,7 @@ impl Config {
             database_url: required("DATABASE_URL")?,
             allowed_origins: parse_list(&required("ALLOWED_ORIGINS")?),
             livekit: LiveKitConfig::from_env()?,
+            auth: AuthConfig::from_env(),
         })
     }
 }
@@ -69,6 +92,7 @@ impl fmt::Debug for Config {
             .field("database_url", &"***")
             .field("allowed_origins", &self.allowed_origins)
             .field("livekit", &self.livekit)
+            .field("auth", &self.auth)
             .finish()
     }
 }
