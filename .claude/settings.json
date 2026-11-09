@@ -12,5 +12,33 @@
   },
   "env": {
     "OMC_SKIP_HOOKS": "post-tool-use,pre-tool-use,keyword-detector,persistent-mode"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(cargo:*)",
+      "Bash(rustup:*)",
+      "Bash(sqlx:*)",
+      "Bash(sccache:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(git:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh run:*)",
+      "Bash(gh repo view:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker logs:*)",
+      "PowerShell(cargo:*)",
+      "PowerShell(npm:*)",
+      "PowerShell(git:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push origin main:*)",
+      "Bash(gh repo edit:*)",
+      "Bash(gh repo delete:*)"
+    ]
   }
 }
