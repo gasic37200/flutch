@@ -16,6 +16,7 @@ use crate::AppState;
 use crate::auth::{contains_banned_word, contains_profanity};
 use crate::error::AppError;
 use crate::extract::{CurrentUser, JsonBody, OptionalUser};
+use crate::realtime::{Event, WsEvent};
 
 const DEFAULT_LIMIT: i64 = 20;
 const MAX_LIMIT: i64 = 50;
@@ -301,8 +302,10 @@ pub async fn update(
     if !db::update_fields(&state.db, id, status, &patch).await? {
         return Err(BroadcastError::InvalidTransition.into());
     }
-    // shortcut: `broadcast.updated` 발행은 WebSocket 허브(T08c)가 생기면 여기서 호출한다.
-    Ok(Json(detail(load(&state, id).await?, Some(&user))?))
+    let d = detail(load(&state, id).await?, Some(&user))?;
+    let event = WsEvent::BroadcastUpdated(d.broadcast.clone());
+    state.realtime.publish(id, Event::public(event));
+    Ok(Json(d))
 }
 
 pub async fn delete(

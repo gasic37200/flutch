@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use axum::extract::{MatchedPath, OriginalUri, Request, State};
-use axum::http::{HeaderValue, Method, header};
+use axum::http::{HeaderMap, HeaderValue, Method, header};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use tracing::Instrument;
@@ -73,16 +73,20 @@ pub async fn check_origin(
         .extensions()
         .get::<OriginalUri>()
         .map_or(req.uri().path(), |u| u.path());
-    if mutating && !ORIGIN_EXEMPT.contains(&path) {
-        let allowed = req
-            .headers()
-            .get(header::ORIGIN)
-            .and_then(|o| o.to_str().ok())
-            .is_some_and(|o| state.config.allowed_origins.iter().any(|a| a == o));
-        if !allowed {
-            tracing::warn!(path, "origin rejected");
-            return AppError::Forbidden.into_response();
-        }
+    if mutating
+        && !ORIGIN_EXEMPT.contains(&path)
+        && !origin_allowed(req.headers(), &state.config.allowed_origins)
+    {
+        tracing::warn!(path, "origin rejected");
+        return AppError::Forbidden.into_response();
     }
     next.run(req).await
+}
+
+/// `Origin` 헤더가 허용 목록에 있는지. 없으면 false. WebSocket 업그레이드(GET)도 이걸로 검사한다.
+pub fn origin_allowed(headers: &HeaderMap, allowed: &[String]) -> bool {
+    headers
+        .get(header::ORIGIN)
+        .and_then(|o| o.to_str().ok())
+        .is_some_and(|o| allowed.iter().any(|a| a == o))
 }

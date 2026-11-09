@@ -23,6 +23,7 @@ pub fn api() -> Router<Arc<AppState>> {
         .merge(crate::clutch::routes())
         .merge(crate::recording::routes())
         .merge(crate::follow::routes())
+        .merge(crate::realtime::routes())
 }
 
 #[derive(Serialize, TS)]
