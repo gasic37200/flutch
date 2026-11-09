@@ -1,5 +1,5 @@
 # reqwest 최신(0.13)은 rustls 기본 백엔드가 aws-lc라 ring을 쓰려면 0.12로 고정
-- task: T01 · PR: (생성 후 기입) · 날짜: 2026-11-09
+- task: T01 · PR: #25 · 날짜: 2026-11-09
 - 영역: backend/Cargo.toml
 
 ## 증상

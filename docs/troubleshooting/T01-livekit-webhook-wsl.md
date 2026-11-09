@@ -1,5 +1,5 @@
 # 로컬 LiveKit 웹훅이 WSL 백엔드에 닿는지 · compose가 루트 .env를 읽지 않음
-- task: T01 · PR: (생성 후 기입) · 날짜: 2026-11-09
+- task: T01 · PR: #25 · 날짜: 2026-11-09
 - 영역: deploy/compose.dev, backend
 
 ## 증상
