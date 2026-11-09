@@ -179,7 +179,7 @@ frontend/src/
 - 대역폭: 화면 1080p30 + 카메라 360p30(simulcast). 사양이 낮으면 카메라를 끄도록 안내.
 
 ## 10. 개발·배포 환경
-- **로컬**: `deploy/compose.dev.yml` = Postgres + **`livekit/livekit-server --dev`**(로컬 LiveKit). 웹훅은 `http://host.docker.internal:<BACKEND_PORT>/api/v1/livekit/webhook`. 로컬에서 송출·시청·웹훅·유예까지 확인한다(녹화 Egress만 배포 환경에서 확인).
+- **로컬**: `deploy/compose.dev.yml` = Postgres + **`livekit/livekit-server --dev`**(로컬 LiveKit). 웹훅은 `http://host.docker.internal:<BACKEND_PORT>/api/v1/livekit/webhook`. 개발은 WSL2 Ubuntu에서 하고 Docker는 Docker Desktop의 WSL 연동을 쓴다. 컨테이너에서 WSL의 백엔드로 웹훅이 닿지 않으면(Desktop의 host.docker.internal은 Windows 호스트를 가리킴) compose에 `extra_hosts: ["host.docker.internal:host-gateway"]`를 넣거나 백엔드도 compose로 띄운다 — T01에서 실제로 확인하고 트러블슈팅에 기록. 로컬에서 송출·시청·웹훅·유예까지 확인한다(녹화 Egress만 배포 환경에서 확인).
 - **worktree마다**: `.env`의 `BACKEND_PORT`·`VITE_PORT`·`DATABASE_URL`(DB 이름 `flutch_<task>`)을 지시서에서 정해 준다. `#[sqlx::test]`는 같은 Postgres 서버에 테스트 DB를 스스로 만든다.
 - **허용 Origin**: 환경변수 `ALLOWED_ORIGINS`(로컬 `http://localhost:<VITE_PORT>`, 운영 `https://flutch.kro.kr`). 요청 제한의 클라이언트 IP는 nginx가 넣는 `X-Forwarded-For`의 첫 값만, 신뢰 프록시는 Docker 네트워크 대역.
 - **CI**(GitHub Actions): Postgres service 컨테이너 + `DATABASE_URL`로 `cargo test`, 빌드는 `SQLX_OFFLINE=true`, `cargo sqlx prepare --check`, ts-rs 생성 결과 비교, 프론트 lint·typecheck·build. 캐시 `Swatinem/rust-cache`.
