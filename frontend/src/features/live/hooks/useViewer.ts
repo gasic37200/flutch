@@ -6,7 +6,7 @@ import { useAuth } from '../../auth/hooks/useAuth.ts'
 import { useBroadcast } from '../../broadcast/hooks/useBroadcasts.ts'
 import { useGuestId, useTabId } from './useClientIds.ts'
 
-export type ViewerStatus = 'idle' | 'waiting' | 'connecting' | 'connected' | 'ended' | 'disconnected' | 'error'
+export type ViewerStatus = 'idle' | 'waiting' | 'connecting' | 'connected' | 'reconnecting' | 'ended' | 'disconnected' | 'error'
 export type ViewerTracks = Partial<Record<'screenShare' | 'screenShareAudio' | 'camera' | 'microphone', RemoteTrack>>
 
 const SLOT = {
@@ -53,6 +53,8 @@ export function useViewer(broadcastId: number | undefined, enabled = true) {
     room
       .on(RoomEvent.TrackSubscribed, sync)
       .on(RoomEvent.TrackUnsubscribed, sync)
+      .on(RoomEvent.Reconnecting, () => setStatus('reconnecting'))
+      .on(RoomEvent.Reconnected, () => setStatus('connected'))
       .on(RoomEvent.Disconnected, () => {
         if (!cancelled) setStatus('disconnected')
       })
