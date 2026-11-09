@@ -1,12 +1,13 @@
 //! 테스트용 앱 생성. DB는 `#[sqlx::test]`가 준 진짜 Postgres, 외부 연동(LiveKit·토스)만 fake.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
+use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
 use axum::http::{HeaderMap, Request, StatusCode};
 use flutch::config::{AuthConfig, Config, LiveKitConfig};
-use flutch::livekit::LiveKitApi;
+use flutch::livekit::{LiveKitApi, LiveKitError};
 use flutch::toss::TossApi;
 use flutch::{AppState, realtime};
 use sqlx::PgPool;
@@ -19,13 +20,29 @@ pub const SEED_PASSWORD: &str = "seedpass123";
 pub const PASSWORD: &str = "testpass123";
 
 /// trait에 메서드가 생기면 여기서 호출 기록·응답을 조작해 웹훅 반복·실패를 재현한다.
-pub struct FakeLiveKit;
-impl LiveKitApi for FakeLiveKit {}
+#[derive(Default)]
+pub struct FakeLiveKit {
+    /// `delete_room`으로 닫은 방 이름(호출 순서대로).
+    pub deleted_rooms: Mutex<Vec<String>>,
+}
+
+#[async_trait]
+impl LiveKitApi for FakeLiveKit {
+    async fn delete_room(&self, room: &str) -> Result<(), LiveKitError> {
+        self.deleted_rooms.lock().unwrap().push(room.to_owned());
+        Ok(())
+    }
+}
 
 pub struct FakeToss;
 impl TossApi for FakeToss {}
 
 pub fn test_app(db: PgPool) -> Router {
+    flutch::app(test_state(db, Arc::new(FakeLiveKit::default())))
+}
+
+/// 앱 상태. 호출 기록을 보려면 `FakeLiveKit`을 직접 만들어 넘기고 같은 `Arc`를 들고 있는다.
+pub fn test_state(db: PgPool, livekit: Arc<FakeLiveKit>) -> Arc<AppState> {
     let config = Config {
         backend_port: 0,
         database_url: String::new(),
@@ -39,13 +56,13 @@ pub fn test_app(db: PgPool) -> Router {
             seed_password: Some(SEED_PASSWORD.into()),
         },
     };
-    flutch::app(Arc::new(AppState {
+    Arc::new(AppState {
         config,
         db,
-        livekit: Arc::new(FakeLiveKit),
+        livekit,
         toss: Arc::new(FakeToss),
         realtime: realtime::Hub::default(),
-    }))
+    })
 }
 
 pub struct TestResponse {

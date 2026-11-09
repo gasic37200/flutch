@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE broadcasts SET status = 'ENDED', ended_at = now(), disconnected_at = NULL\n         WHERE id = $1 AND status = 'LIVE'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d2450ab5e865b4cf33d95529d68b47c9a7d6b35855c4406ae50021105f3e42f9"
+}

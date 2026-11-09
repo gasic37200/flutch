@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE broadcasts SET status = 'LIVE', started_at = now()\n         WHERE id = $1 AND status = 'READY'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f687a593e8d84d1dced246dc9d7f0537d199294ac65a6e27f2b276d32609d521"
+}
