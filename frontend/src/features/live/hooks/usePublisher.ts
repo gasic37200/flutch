@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { DisconnectReason, Room, RoomEvent, Track } from 'livekit-client'
+import { DisconnectReason, LocalAudioTrack, LocalVideoTrack, Room, RoomEvent, Track } from 'livekit-client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiRequestError } from '../../../api/client.ts'
 import type { BroadcastDetail } from '../../../api/generated/BroadcastDetail.ts'
@@ -17,6 +17,8 @@ export type PublisherStatus =
   | 'error'
 
 type PubSource = Track.Source.ScreenShare | Track.Source.Camera | Track.Source.Microphone
+/** publishMediaTrack이 받는 소스(화면 소리 포함) */
+export type MediaSource = PubSource | Track.Source.ScreenShareAudio
 
 /**
  * 스튜디오용 송출 훅. 반드시 사용자 클릭 핸들러에서 start()·publish*를 부른다.
@@ -94,6 +96,26 @@ export function usePublisher(broadcastId: number | undefined) {
     }
   }, [])
 
+  // 스튜디오가 직접 잡은(볼륨 처리된) 트랙을 송출한다. 같은 소스가 있으면 교체. 넘긴 트랙은 clone이어야 unpublish 때 원본이 안 꺼진다.
+  const publishMediaTrack = useCallback(async (track: MediaStreamTrack, source: MediaSource) => {
+    const lp = roomRef.current?.localParticipant
+    if (!lp) return
+    try {
+      const old = lp.getTrackPublication(source)?.track
+      if (old) await lp.unpublishTrack(old, true)
+      const local = track.kind === 'video' ? new LocalVideoTrack(track, undefined, true) : new LocalAudioTrack(track, undefined, true)
+      await lp.publishTrack(local, { source })
+    } catch {
+      setError('송출을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.')
+    }
+  }, [])
+
+  const unpublishSource = useCallback(async (source: MediaSource) => {
+    const lp = roomRef.current?.localParticipant
+    const old = lp?.getTrackPublication(source)?.track
+    if (lp && old) await lp.unpublishTrack(old, true)
+  }, [])
+
   const stop = useCallback(async () => {
     if (broadcastId === undefined) return
     try {
@@ -122,6 +144,8 @@ export function usePublisher(broadcastId: number | undefined) {
     publishScreen: (on: boolean) => toggle(Track.Source.ScreenShare, on),
     publishCamera: (on: boolean) => toggle(Track.Source.Camera, on),
     publishMicrophone: (on: boolean) => toggle(Track.Source.Microphone, on),
+    publishMediaTrack,
+    unpublishSource,
     stop,
   }
 }
