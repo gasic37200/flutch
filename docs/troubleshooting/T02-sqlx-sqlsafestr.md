@@ -1,5 +1,5 @@
 # sqlx 0.9 `sqlx::query`에 `format!` 문자열을 넣으면 컴파일 에러
-- task: T02 · PR: (이 PR) · 날짜: 2026-11-09
+- task: T02 · PR: #27 · 날짜: 2026-11-09
 - 영역: backend/tests
 
 ## 증상
