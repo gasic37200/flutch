@@ -1,11 +1,9 @@
-import { Link } from 'react-router'
+import { useRouteError } from 'react-router'
+import ErrorScreen from '../components/ui/ErrorScreen.tsx'
+import { errorKindOf } from '../hooks/errorKind.ts'
 
-// 404·라우터 오류 공통 자리. 마스코트·request_id 표시는 T05.
+// 404(`*` 라우트)·라우터 errorElement 공용. AppShell 안에서 그려진다.
 export default function ErrorPage() {
-  return (
-    <main>
-      <h1>페이지를 찾을 수 없습니다</h1>
-      <Link to='/'>홈으로</Link>
-    </main>
-  )
+  const { kind, requestId } = errorKindOf(useRouteError())
+  return <ErrorScreen kind={kind} requestId={requestId} onRetry={kind === 'notFound' ? undefined : () => window.location.reload()} />
 }

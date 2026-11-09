@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router'
+import AppShell from './layouts/AppShell.tsx'
 import AuthPage from './pages/AuthPage.tsx'
 import ErrorPage from './pages/ErrorPage.tsx'
 import ExplorePage from './pages/ExplorePage.tsx'
@@ -9,22 +10,26 @@ import StudioPage from './pages/StudioPage.tsx'
 import WalletPage from './pages/WalletPage.tsx'
 import WatchPage from './pages/WatchPage.tsx'
 
-// 페이지 라우트 자리. 각 화면 task는 자기 페이지 컴포넌트만 채우고, 레이아웃(AppShell)은 T05가 감싼다.
+// 모든 페이지는 AppShell 안에서 그려지고, 에러 화면(errorElement)도 같은 셸 안에 뜬다.
 export const router = createBrowserRouter([
   {
-    path: '/',
-    errorElement: <ErrorPage />,
+    element: <AppShell />,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'explore', element: <ExplorePage /> },
-      { path: 'live/:broadcastId', element: <WatchPage /> },
-      { path: 'studio', element: <StudioPage /> },
-      { path: 'replay/:recordingId', element: <ReplayPage /> },
-      { path: 'users/:userId', element: <StreamerPage /> },
-      { path: 'wallet', element: <WalletPage /> },
-      { path: 'login', element: <AuthPage mode="login" /> },
-      { path: 'signup', element: <AuthPage mode="signup" /> },
-      { path: '*', element: <ErrorPage /> },
+      {
+        errorElement: <ErrorPage />,
+        children: [
+          { index: true, element: <HomePage /> },
+          { path: 'explore', element: <ExplorePage /> },
+          { path: 'live/:broadcastId', element: <WatchPage /> },
+          { path: 'studio', element: <StudioPage /> },
+          { path: 'replay/:recordingId', element: <ReplayPage /> },
+          { path: 'users/:userId', element: <StreamerPage /> },
+          { path: 'wallet', element: <WalletPage /> },
+          { path: 'login', element: <AuthPage mode="login" /> },
+          { path: 'signup', element: <AuthPage mode="signup" /> },
+          { path: '*', element: <ErrorPage /> },
+        ],
+      },
     ],
   },
 ])
