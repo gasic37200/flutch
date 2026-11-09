@@ -1,12 +1,14 @@
 //! 테스트용 앱 생성. DB는 `#[sqlx::test]`가 준 진짜 Postgres, 외부 연동(LiveKit·토스)만 fake.
 
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
 use axum::http::{HeaderMap, Request, StatusCode};
-use flutch::config::{AuthConfig, Config, LiveKitConfig};
+use flutch::config::{AuthConfig, Config, LiveConfig, LiveKitConfig};
 use flutch::livekit::{LiveKitApi, LiveKitError};
 use flutch::toss::TossApi;
 use flutch::{AppState, realtime};
@@ -26,6 +28,10 @@ pub struct FakeLiveKit {
     pub deleted_rooms: Mutex<Vec<String>>,
     /// `remove_participant`로 내보낸 (방, 신원).
     pub removed_participants: Mutex<Vec<(String, String)>>,
+    /// `list_participants`가 돌려줄 방별 참가자 신원(없는 방은 빈 목록).
+    pub participants: Mutex<HashMap<String, Vec<String>>>,
+    /// true면 `list_participants`가 실패한다.
+    pub list_fails: AtomicBool,
 }
 
 #[async_trait]
@@ -41,6 +47,19 @@ impl LiveKitApi for FakeLiveKit {
             .unwrap()
             .push((room.to_owned(), identity.to_owned()));
         Ok(())
+    }
+
+    async fn list_participants(&self, room: &str) -> Result<Vec<String>, LiveKitError> {
+        if self.list_fails.load(Ordering::SeqCst) {
+            return Err(LiveKitError::Status(503));
+        }
+        Ok(self
+            .participants
+            .lock()
+            .unwrap()
+            .get(room)
+            .cloned()
+            .unwrap_or_default())
     }
 }
 
@@ -65,6 +84,10 @@ pub fn test_state(db: PgPool, livekit: Arc<FakeLiveKit>) -> Arc<AppState> {
         auth: AuthConfig {
             seed_password: Some(SEED_PASSWORD.into()),
         },
+        live: LiveConfig {
+            grace_secs: 60,
+            max_duration_secs: 3 * 60 * 60,
+        },
     };
     Arc::new(AppState {
         config,
@@ -72,6 +95,7 @@ pub fn test_state(db: PgPool, livekit: Arc<FakeLiveKit>) -> Arc<AppState> {
         livekit,
         toss: Arc::new(FakeToss),
         realtime: realtime::Hub::default(),
+        live: Default::default(),
     })
 }
 

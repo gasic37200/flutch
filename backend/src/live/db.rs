@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 
 /// 권한·상태 확인용 최소 정보. 숨긴 방송은 없는 것으로 본다.
@@ -58,4 +59,115 @@ pub async fn claim_publisher(
     .await?;
     tx.commit().await?;
     Ok(Claim::Claimed(previous))
+}
+
+/// LIVE 방송의 송출 상태. LIVE가 아니면 `None`.
+pub struct Live {
+    pub id: i64,
+    pub owner_id: i64,
+    pub publisher_identity: Option<String>,
+    pub away: bool,
+}
+
+pub async fn live(db: &PgPool, id: i64) -> Result<Option<Live>, sqlx::Error> {
+    sqlx::query_as!(
+        Live,
+        r#"SELECT id, owner_id, publisher_identity, disconnected_at IS NOT NULL AS "away!"
+           FROM broadcasts WHERE id = $1 AND status = 'LIVE'"#,
+        id
+    )
+    .fetch_optional(db)
+    .await
+}
+
+/// 모든 LIVE 방송(재시작 동기화).
+pub async fn all_live(db: &PgPool) -> Result<Vec<Live>, sqlx::Error> {
+    sqlx::query_as!(
+        Live,
+        r#"SELECT id, owner_id, publisher_identity, disconnected_at IS NOT NULL AS "away!"
+           FROM broadcasts WHERE status = 'LIVE'"#
+    )
+    .fetch_all(db)
+    .await
+}
+
+/// 유예 시작(`disconnected_at` 기록). `publisher`가 있으면 그 신원이 송출자일 때만.
+/// 이미 유예 중이거나 조건이 안 맞으면 `None`, 기록했으면 그 시각.
+pub async fn start_grace(
+    db: &PgPool,
+    id: i64,
+    publisher: Option<&str>,
+) -> Result<Option<DateTime<Utc>>, sqlx::Error> {
+    sqlx::query_scalar!(
+        r#"UPDATE broadcasts SET disconnected_at = now()
+           WHERE id = $1 AND status = 'LIVE' AND disconnected_at IS NULL
+             AND ($2::text IS NULL OR publisher_identity = $2)
+           RETURNING disconnected_at AS "since!""#,
+        id,
+        publisher
+    )
+    .fetch_optional(db)
+    .await
+}
+
+/// 송출자 복귀: 그 신원이 송출자이고 유예 중이면 해제. 해제했으면 true.
+pub async fn end_grace(db: &PgPool, id: i64, publisher: &str) -> Result<bool, sqlx::Error> {
+    let res = sqlx::query!(
+        "UPDATE broadcasts SET disconnected_at = NULL
+         WHERE id = $1 AND status = 'LIVE' AND publisher_identity = $2
+           AND disconnected_at IS NOT NULL",
+        id,
+        publisher
+    )
+    .execute(db)
+    .await?;
+    Ok(res.rows_affected() == 1)
+}
+
+/// 최고 시청자 수는 올라갈 때만 바꾼다.
+pub async fn raise_peak(db: &PgPool, id: i64, count: i64) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "UPDATE broadcasts SET peak_viewers = $2
+         WHERE id = $1 AND status = 'LIVE' AND peak_viewers < $2",
+        id,
+        i32::try_from(count).unwrap_or(i32::MAX)
+    )
+    .execute(db)
+    .await?;
+    Ok(())
+}
+
+/// LIVE 방송의 시간 규칙 판정(DB `now()` 기준).
+pub struct Deadline {
+    pub id: i64,
+    pub publisher_identity: Option<String>,
+    pub ends_at: DateTime<Utc>,
+    /// 유예(`grace`초) 지남
+    pub grace_over: bool,
+    /// 최대 길이 지남
+    pub over_max: bool,
+    /// 최대 길이 `warn_before`초 전 지남
+    pub warn: bool,
+}
+
+pub async fn deadlines(
+    db: &PgPool,
+    grace: i64,
+    max: i64,
+    warn_before: i64,
+) -> Result<Vec<Deadline>, sqlx::Error> {
+    sqlx::query_as!(
+        Deadline,
+        r#"SELECT id, publisher_identity,
+                  started_at + $2::bigint * interval '1 second' AS "ends_at!",
+                  COALESCE(disconnected_at <= now() - $1::bigint * interval '1 second', false) AS "grace_over!",
+                  started_at <= now() - $2::bigint * interval '1 second' AS "over_max!",
+                  started_at <= now() - ($2::bigint - $3::bigint) * interval '1 second' AS "warn!"
+           FROM broadcasts WHERE status = 'LIVE'"#,
+        grace,
+        max,
+        warn_before
+    )
+    .fetch_all(db)
+    .await
 }

@@ -160,7 +160,7 @@ pub struct Broadcast {
     pub pip_corner: PipCorner,
     /// `/media/thumbs/{id}.jpg?v=<버전>`, 없으면 null(기본 이미지)
     pub thumbnail_url: Option<String>,
-    /// LIVE만 의미. shortcut: 항상 0, T08b가 시청자 수를 채운다(`db::Row::into_broadcast`).
+    /// LIVE만 의미(사용자 단위, 소유자 제외), 그 외 0
     pub viewer_count: i64,
     pub peak_viewers: i32,
     pub started_at: Option<DateTime<Utc>>,
@@ -339,7 +339,7 @@ pub async fn detail_of(
     id: i64,
     viewer: Option<&CurrentUser>,
 ) -> Result<BroadcastDetail, AppError> {
-    handlers::detail(handlers::load(state, id).await?, viewer)
+    handlers::detail(state, handlers::load(state, id).await?, viewer)
 }
 
 async fn missing_or_invalid(db: &PgPool, id: i64) -> AppError {

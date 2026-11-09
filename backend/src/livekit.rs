@@ -1,13 +1,13 @@
 //! LiveKit 연동. 운영은 `LiveKitHttp`, 시나리오 테스트는 fake 구현을 `AppState.livekit`에 넣는다.
-//! 메서드(Egress·웹훅 검증)는 live/recording task가 trait에 추가한다.
+//! 메서드(Egress)는 recording task가 trait에 추가한다.
 //! 토큰은 livekit-api crate 대신 HS256 JWT를 직접 서명한다(protobuf·aws-lc를 끌고 오지 않으려고).
 
 use async_trait::async_trait;
 use base64::Engine;
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
 use hmac::{Hmac, KeyInit, Mac};
 use serde_json::{Value, json};
-use sha2::Sha256;
+use sha2::{Digest, Sha256};
 
 use crate::config::LiveKitConfig;
 
@@ -30,6 +30,48 @@ pub trait LiveKitApi: Send + Sync {
     async fn delete_room(&self, room: &str) -> Result<(), LiveKitError>;
     /// 참가자 한 명을 내보낸다(기기 전환). 방이나 참가자가 이미 없으면 성공.
     async fn remove_participant(&self, room: &str, identity: &str) -> Result<(), LiveKitError>;
+    /// 방에 지금 접속한 참가자 신원. 방이 없으면 빈 목록.
+    async fn list_participants(&self, room: &str) -> Result<Vec<String>, LiveKitError>;
+}
+
+/// 웹훅 검증 시계 오차 허용(초).
+const WEBHOOK_LEEWAY_SECS: i64 = 60;
+
+/// LiveKit 웹훅 검증: `Authorization` 헤더의 JWT가 API secret(HS256)으로 서명됐고 `iss`가 API key이며
+/// 만료 전이고, `sha256` 클레임이 본문 SHA-256의 표준 base64와 같아야 한다(livekit/protocol webhook 방식).
+pub fn verify_webhook(config: &LiveKitConfig, token: &str, body: &[u8], now: i64) -> bool {
+    let mut parts = token.split('.');
+    let (Some(header), Some(payload), Some(sig), None) =
+        (parts.next(), parts.next(), parts.next(), parts.next())
+    else {
+        return false;
+    };
+    let Ok(sig) = URL_SAFE_NO_PAD.decode(sig) else {
+        return false;
+    };
+    let Ok(mut mac) = Hmac::<Sha256>::new_from_slice(config.api_secret.as_bytes()) else {
+        return false;
+    };
+    mac.update(format!("{header}.{payload}").as_bytes());
+    if mac.verify_slice(&sig).is_err() {
+        return false;
+    }
+    let Some(claims) = URL_SAFE_NO_PAD
+        .decode(payload)
+        .ok()
+        .and_then(|p| serde_json::from_slice::<Value>(&p).ok())
+    else {
+        return false;
+    };
+    let body_hash = STANDARD.encode(Sha256::digest(body));
+    claims["iss"] == config.api_key.as_str()
+        && claims["exp"]
+            .as_i64()
+            .is_some_and(|exp| exp + WEBHOOK_LEEWAY_SECS >= now)
+        && claims["nbf"]
+            .as_i64()
+            .is_none_or(|nbf| nbf - WEBHOOK_LEEWAY_SECS <= now)
+        && claims["sha256"] == body_hash.as_str()
 }
 
 /// 클라이언트 접속 토큰. `publish`면 송출(카메라·마이크·화면·화면 소리)+구독, 아니면 구독만.
@@ -97,13 +139,13 @@ impl LiveKitHttp {
         }
     }
 
-    /// RoomService Twirp 호출. Twirp는 없는 방·참가자에 404(not_found)를 준다 — 이미 없는 것이므로 성공.
+    /// RoomService Twirp 호출, 응답 JSON. Twirp는 없는 방·참가자에 404(not_found)를 준다 — 이미 없는 것이므로 성공(`Null`).
     async fn room_service(
         &self,
         method: &str,
         video: Value,
         body: Value,
-    ) -> Result<(), LiveKitError> {
+    ) -> Result<Value, LiveKitError> {
         let token = self.admin_token(chrono::Utc::now().timestamp(), video)?;
         let res = self
             .http
@@ -116,7 +158,8 @@ impl LiveKitHttp {
             .send()
             .await?;
         match res.status() {
-            s if s.is_success() || s.as_u16() == 404 => Ok(()),
+            s if s.is_success() => Ok(res.json().await?),
+            s if s.as_u16() == 404 => Ok(Value::Null),
             s => Err(LiveKitError::Status(s.as_u16())),
         }
     }
@@ -131,6 +174,7 @@ impl LiveKitApi for LiveKitHttp {
             json!({ "room": room }),
         )
         .await
+        .map(drop)
     }
 
     async fn remove_participant(&self, room: &str, identity: &str) -> Result<(), LiveKitError> {
@@ -140,6 +184,23 @@ impl LiveKitApi for LiveKitHttp {
             json!({ "room": room, "identity": identity }),
         )
         .await
+        .map(drop)
+    }
+
+    async fn list_participants(&self, room: &str) -> Result<Vec<String>, LiveKitError> {
+        let res = self
+            .room_service(
+                "ListParticipants",
+                json!({ "roomAdmin": true, "room": room }),
+                json!({ "room": room }),
+            )
+            .await?;
+        Ok(res["participants"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|p| p["identity"].as_str().map(str::to_owned))
+            .collect())
     }
 }
 
@@ -174,5 +235,50 @@ mod tests {
         let claims = claims_of(&t, b"secret");
         assert_eq!(claims["iss"], "key");
         assert_eq!(claims["video"]["roomCreate"], true);
+    }
+
+    #[test]
+    fn webhook_signature_and_body_hash_checked() {
+        let config = LiveKitConfig {
+            url: String::new(),
+            api_key: "key".into(),
+            api_secret: "secret".into(),
+        };
+        let body = br#"{"event":"room_finished"}"#;
+        let token = |secret: &str, iss: &str, body: &[u8], exp: i64| {
+            let hash = STANDARD.encode(Sha256::digest(body));
+            sign(secret, &json!({ "iss": iss, "exp": exp, "sha256": hash })).unwrap()
+        };
+        assert!(verify_webhook(
+            &config,
+            &token("secret", "key", body, 2000),
+            body,
+            1000
+        ));
+        assert!(!verify_webhook(
+            &config,
+            &token("other", "key", body, 2000),
+            body,
+            1000
+        ));
+        assert!(!verify_webhook(
+            &config,
+            &token("secret", "nope", body, 2000),
+            body,
+            1000
+        ));
+        assert!(!verify_webhook(
+            &config,
+            &token("secret", "key", b"{}", 2000),
+            body,
+            1000
+        ));
+        assert!(!verify_webhook(
+            &config,
+            &token("secret", "key", body, 900),
+            body,
+            1000
+        ));
+        assert!(!verify_webhook(&config, "", body, 1000));
     }
 }

@@ -1,25 +1,125 @@
 //! 송출·시청 시나리오 (features/03, api.md §3-1).
 
+use std::net::SocketAddr;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use axum::Router;
-use axum::http::StatusCode;
+use axum::body::Body;
+use axum::http::{Request, StatusCode};
 use base64::Engine;
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
+use flutch::AppState;
+use flutch::live::{check_limits, sync};
 use hmac::{Hmac, KeyInit, Mac};
 use serde_json::{Value, json};
-use sha2::Sha256;
+use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 
-use crate::common::{FakeLiveKit, TestResponse, empty_req, json_req, login_as, send, test_state};
+use crate::common::{
+    FakeLiveKit, ORIGIN, TestResponse, empty_req, json_req, login_as, send, test_state,
+};
+use crate::realtime::{connect, next_event};
 
 const B: &str = "/api/v1/broadcasts";
 const TAB_A: &str = "tab-aaaaaaaa";
 const TAB_B: &str = "tab-bbbbbbbb";
+const TAB_C: &str = "tab-cccccccc";
 
 fn setup(db: PgPool) -> (Router, Arc<FakeLiveKit>) {
+    let (app, lk, _) = setup_state(db);
+    (app, lk)
+}
+
+/// 주기 작업(`check_limits`·`sync`)을 직접 부르려고 상태도 돌려준다.
+fn setup_state(db: PgPool) -> (Router, Arc<FakeLiveKit>, Arc<AppState>) {
     let lk = Arc::new(FakeLiveKit::default());
-    (flutch::app(test_state(db, lk.clone())), lk)
+    let state = test_state(db, lk.clone());
+    (flutch::app(state.clone()), lk, state)
+}
+
+/// 이벤트를 보려고 실제 서버도 띄운다(WebSocket).
+async fn setup_server(db: PgPool) -> (Router, Arc<FakeLiveKit>, Arc<AppState>, SocketAddr) {
+    let (app, lk, state) = setup_state(db);
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let server = flutch::app(state.clone());
+    tokio::spawn(async move { axum::serve(listener, server).await.unwrap() });
+    (app, lk, state, addr)
+}
+
+fn hs256(secret: &str, claims: &Value) -> String {
+    let header = URL_SAFE_NO_PAD.encode(r#"{"alg":"HS256","typ":"JWT"}"#);
+    let payload = URL_SAFE_NO_PAD.encode(claims.to_string());
+    let mut mac = Hmac::<Sha256>::new_from_slice(secret.as_bytes()).unwrap();
+    mac.update(format!("{header}.{payload}").as_bytes());
+    let sig = URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes());
+    format!("{header}.{payload}.{sig}")
+}
+
+/// LiveKit 웹훅과 같은 방식의 서명: `sha256` = 본문 SHA-256의 표준 base64, 만료는 지금 + `exp_in`초.
+fn webhook_token(secret: &str, iss: &str, body: &str, exp_in: i64) -> String {
+    let now = chrono::Utc::now().timestamp();
+    let hash = STANDARD.encode(Sha256::digest(body.as_bytes()));
+    hs256(
+        secret,
+        &json!({ "iss": iss, "nbf": now, "exp": now + exp_in, "sha256": hash, "video": {} }),
+    )
+}
+
+async fn webhook_with(app: &Router, token: Option<&str>, body: &str) -> TestResponse {
+    let mut req = Request::builder()
+        .method("POST")
+        .uri("/api/v1/livekit/webhook")
+        .header("content-type", "application/webhook+json");
+    if let Some(t) = token {
+        req = req.header("authorization", t);
+    }
+    send(app, req.body(Body::from(body.to_owned())).unwrap()).await
+}
+
+/// 올바르게 서명한 웹훅. 200이어야 한다.
+async fn webhook(app: &Router, ev: Value) {
+    let body = ev.to_string();
+    let token = webhook_token("secret", "devkey", &body, 300);
+    let res = webhook_with(app, Some(&token), &body).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+}
+
+/// LiveKit `WebhookEvent` 형식(protojson, false 값은 생략).
+fn participant(event: &str, id: i64, identity: &str, can_publish: bool) -> Value {
+    let permission = if can_publish {
+        json!({ "canSubscribe": true, "canPublish": true })
+    } else {
+        json!({ "canSubscribe": true })
+    };
+    json!({
+        "event": event, "id": "EV_test", "createdAt": "1762650000",
+        "room": { "sid": "RM_test", "name": format!("broadcast-{id}") },
+        "participant": { "sid": "PA_test", "identity": identity, "state": "ACTIVE", "permission": permission },
+    })
+}
+
+fn room_finished(id: i64) -> Value {
+    json!({ "event": "room_finished", "room": { "sid": "RM_test", "name": format!("broadcast-{id}") } })
+}
+
+async fn detail(app: &Router, id: i64) -> Value {
+    send(app, empty_req("GET", &format!("{B}/{id}"), None))
+        .await
+        .json
+}
+
+/// 시간 조작: 유예 시작을 `secs`초 전으로.
+async fn backdate_disconnect(db: &PgPool, id: i64, secs: i64) {
+    sqlx::query(
+        "UPDATE broadcasts SET disconnected_at = now() - $2::bigint * interval '1 second' WHERE id = $1",
+    )
+    .bind(id)
+    .bind(secs)
+    .execute(db)
+    .await
+    .unwrap();
 }
 
 async fn create(app: &Router, cookie: &str) -> i64 {
@@ -240,16 +340,29 @@ async fn live_takeover_other_device(db: PgPool) {
         Some(b.as_str())
     );
 
+    // 밀려난 기기가 옛 송출 토큰으로 LiveKit에 다시 들어오면 웹훅이 내보낸다
+    webhook(&app, participant("participant_joined", id, &a, true)).await;
+    assert_eq!(
+        *lk.removed_participants.lock().unwrap(),
+        vec![(room.clone(), a.clone()), (room.clone(), a.clone())]
+    );
+    // 새 송출자와 소유자의 시청 탭(구독 전용)은 그대로
+    webhook(&app, participant("participant_joined", id, &b, true)).await;
+    let owner_viewer = format!("u:{uid}:{TAB_C}");
+    webhook(
+        &app,
+        participant("participant_joined", id, &owner_viewer, false),
+    )
+    .await;
+    assert_eq!(lk.removed_participants.lock().unwrap().len(), 2);
+
     // 밀려난 기기가 그냥 다시 시작하면 다시 확인
     let res = go_live(&app, Some(&owner), id, json!({ "tabId": TAB_A })).await;
     assert_eq!(code(&res), "LIVE_PUBLISHER_ACTIVE");
 
-    // 송출자가 끊겨 유예 중이면(T08b 웹훅이 기록) 확인 없이 이어서 송출
-    sqlx::query("UPDATE broadcasts SET disconnected_at = now() WHERE id = $1")
-        .bind(id)
-        .execute(&db)
-        .await
-        .unwrap();
+    // 송출자가 끊겨(퇴장 웹훅) 유예 중이면 확인 없이 이어서 송출
+    webhook(&app, participant("participant_left", id, &b, true)).await;
+    assert_eq!(detail(&app, id).await["reconnecting"], true);
     let res = go_live(&app, Some(&owner), id, json!({ "tabId": TAB_A })).await;
     assert_eq!(res.status, StatusCode::OK, "{}", res.json);
     assert_eq!(
@@ -260,6 +373,10 @@ async fn live_takeover_other_device(db: PgPool) {
         lk.removed_participants.lock().unwrap().last(),
         Some(&(room, b))
     );
+    // 새 기기의 참가 웹훅이 오면 유예 해제
+    assert_eq!(detail(&app, id).await["reconnecting"], true);
+    webhook(&app, participant("participant_joined", id, &a, true)).await;
+    assert_eq!(detail(&app, id).await["reconnecting"], false);
 }
 
 #[sqlx::test]
@@ -333,4 +450,299 @@ async fn live_viewer_token_rules(db: PgPool) {
     .await;
     let res = viewer_token(&app, None, id, guest).await;
     assert_eq!(code(&res), "BROADCAST_NOT_LIVE");
+}
+
+#[sqlx::test]
+async fn live_webhook_signature_invalid_rejected(db: PgPool) {
+    let (app, _lk) = setup(db);
+    let (owner, uid) = login_as(&app, "streamer1").await;
+    let id = create(&app, &owner).await;
+    go_live(&app, Some(&owner), id, json!({ "tabId": TAB_A })).await;
+    let body = participant("participant_left", id, &format!("u:{uid}:{TAB_A}"), true).to_string();
+
+    let bad = [
+        None,
+        Some(webhook_token("wrong-secret", "devkey", &body, 300)),
+        Some(webhook_token("secret", "other-key", &body, 300)),
+        Some(webhook_token("secret", "devkey", "{}", 300)), // 다른 본문의 해시
+        Some(webhook_token("secret", "devkey", &body, -300)), // 만료
+        Some("not-a-jwt".to_owned()),
+    ];
+    for token in bad {
+        let res = webhook_with(&app, token.as_deref(), &body).await;
+        assert_eq!(res.status, StatusCode::UNAUTHORIZED, "{token:?}");
+        assert_eq!(code(&res), "LIVE_WEBHOOK_INVALID_SIGNATURE");
+    }
+    // 거절된 웹훅은 상태를 바꾸지 않는다
+    assert_eq!(detail(&app, id).await["reconnecting"], false);
+
+    let token = webhook_token("secret", "devkey", &body, 300);
+    let res = webhook_with(&app, Some(&token), &body).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    assert_eq!(detail(&app, id).await["reconnecting"], true);
+    // 우리 방이 아니거나 모르는 이벤트는 200 무시
+    webhook(
+        &app,
+        json!({ "event": "room_started", "room": { "name": "other" } }),
+    )
+    .await;
+    webhook(
+        &app,
+        json!({ "event": "egress_ended", "room": { "name": format!("broadcast-{id}") } }),
+    )
+    .await;
+}
+
+#[sqlx::test]
+async fn live_disconnect_grace_auto_end(db: PgPool) {
+    let (app, lk, state, addr) = setup_server(db.clone()).await;
+    let (owner, uid) = login_as(&app, "streamer1").await;
+    let id = create(&app, &owner).await;
+    go_live(&app, Some(&owner), id, json!({ "tabId": TAB_A })).await;
+    let a = format!("u:{uid}:{TAB_A}");
+    let room = format!("broadcast-{id}");
+    let mut ws = connect(addr, id, Some(ORIGIN), None).await.unwrap();
+
+    webhook(&app, participant("participant_joined", id, &a, true)).await;
+    // 송출자 퇴장 → 유예 시작
+    webhook(&app, participant("participant_left", id, &a, true)).await;
+    let ev = next_event(&mut ws).await;
+    assert_eq!(ev["type"], "broadcast.reconnecting");
+    assert!(ev["data"]["since"].is_string());
+    let d = detail(&app, id).await;
+    assert_eq!(
+        (d["status"].as_str(), d["reconnecting"].as_bool()),
+        (Some("LIVE"), Some(true))
+    );
+    // 60초 전에는 유지
+    check_limits(&state).await.unwrap();
+    assert_eq!(detail(&app, id).await["status"], "LIVE");
+
+    // 60초 안에 복귀
+    webhook(&app, participant("participant_joined", id, &a, true)).await;
+    assert_eq!(next_event(&mut ws).await["type"], "broadcast.resumed");
+    assert_eq!(detail(&app, id).await["reconnecting"], false);
+
+    // 웹훅 순서가 뒤바뀌어 유예가 지났어도 송출자가 실제로 방에 있으면 유지
+    webhook(&app, participant("participant_left", id, &a, true)).await;
+    assert_eq!(next_event(&mut ws).await["type"], "broadcast.reconnecting");
+    backdate_disconnect(&db, id, 61).await;
+    lk.participants
+        .lock()
+        .unwrap()
+        .insert(room.clone(), vec![a.clone()]);
+    check_limits(&state).await.unwrap();
+    assert_eq!(next_event(&mut ws).await["type"], "broadcast.resumed");
+    assert_eq!(detail(&app, id).await["status"], "LIVE");
+    assert!(lk.deleted_rooms.lock().unwrap().is_empty());
+
+    // 60초 동안 복귀 없음 → 자동 종료 + 방 삭제
+    webhook(&app, participant("participant_left", id, &a, true)).await;
+    assert_eq!(next_event(&mut ws).await["type"], "broadcast.reconnecting");
+    lk.participants.lock().unwrap().clear();
+    backdate_disconnect(&db, id, 61).await;
+    check_limits(&state).await.unwrap();
+    let ev = next_event(&mut ws).await;
+    assert_eq!(ev["type"], "broadcast.ended");
+    assert_eq!(ev["data"]["reason"], "disconnect");
+    let d = detail(&app, id).await;
+    assert_eq!(
+        (d["status"].as_str(), d["reconnecting"].as_bool()),
+        (Some("ENDED"), Some(false))
+    );
+    assert_eq!(*lk.deleted_rooms.lock().unwrap(), vec![room]);
+
+    // 종료 후 웹훅은 상태를 바꾸지 않는다
+    webhook(&app, participant("participant_joined", id, &a, true)).await;
+    webhook(&app, room_finished(id)).await;
+    assert_eq!(detail(&app, id).await["status"], "ENDED");
+}
+
+#[sqlx::test]
+async fn live_max_duration_auto_end(db: PgPool) {
+    let (app, lk, state, addr) = setup_server(db.clone()).await;
+    let (owner, _) = login_as(&app, "streamer1").await;
+    let id = create(&app, &owner).await;
+    go_live(&app, Some(&owner), id, json!({ "tabId": TAB_A })).await;
+    let mut owner_ws = connect(addr, id, Some(ORIGIN), Some(&owner)).await.unwrap();
+    let mut guest_ws = connect(addr, id, Some(ORIGIN), None).await.unwrap();
+    let set_started = |ago: &'static str| {
+        let db = db.clone();
+        async move {
+            sqlx::query("UPDATE broadcasts SET started_at = now() - $2::interval WHERE id = $1")
+                .bind(id)
+                .bind(ago)
+                .execute(&db)
+                .await
+                .unwrap();
+        }
+    };
+
+    // 10분 전 이전에는 경고 없음
+    set_started("2 hours 49 minutes").await;
+    check_limits(&state).await.unwrap();
+    // 10분 전 → 소유자에게만 한 번
+    set_started("2 hours 51 minutes").await;
+    check_limits(&state).await.unwrap();
+    check_limits(&state).await.unwrap();
+    let ev = next_event(&mut owner_ws).await;
+    assert_eq!(ev["type"], "broadcast.duration_warning");
+    let started: chrono::DateTime<chrono::Utc> =
+        sqlx::query_scalar("SELECT started_at FROM broadcasts WHERE id = $1")
+            .bind(id)
+            .fetch_one(&db)
+            .await
+            .unwrap();
+    let ends_at: chrono::DateTime<chrono::Utc> =
+        ev["data"]["endsAt"].as_str().unwrap().parse().unwrap();
+    assert_eq!(ends_at, started + chrono::Duration::hours(3));
+    assert_eq!(detail(&app, id).await["status"], "LIVE");
+
+    // 3시간 초과 → 종료. 두 연결 모두 다음 이벤트가 종료다(경고 중복 없음, 시청자는 경고 없음)
+    set_started("3 hours 1 second").await;
+    check_limits(&state).await.unwrap();
+    for ws in [&mut owner_ws, &mut guest_ws] {
+        let ev = next_event(ws).await;
+        assert_eq!(ev["type"], "broadcast.ended");
+        assert_eq!(ev["data"]["reason"], "max_duration");
+    }
+    assert_eq!(detail(&app, id).await["status"], "ENDED");
+    assert_eq!(
+        *lk.deleted_rooms.lock().unwrap(),
+        vec![format!("broadcast-{id}")]
+    );
+}
+
+#[sqlx::test]
+async fn live_viewer_count(db: PgPool) {
+    let (app, _lk, _state, addr) = setup_server(db).await;
+    let (owner, uid) = login_as(&app, "streamer1").await;
+    let (other, _) = login_as(&app, "streamer2").await;
+    let (_, vid) = login_as(&app, "viewer").await;
+    let id = create(&app, &owner).await;
+    go_live(&app, Some(&owner), id, json!({ "tabId": TAB_A })).await;
+    let mut ws = connect(addr, id, Some(ORIGIN), None).await.unwrap();
+    let join =
+        |identity: String, publish: bool| participant("participant_joined", id, &identity, publish);
+    let leave = |identity: String| participant("participant_left", id, &identity, false);
+
+    // 송출자·소유자의 시청 탭·우리 토큰이 아닌 참가자(Egress 등)는 세지 않는다
+    webhook(&app, join(format!("u:{uid}:{TAB_A}"), true)).await;
+    webhook(&app, join(format!("u:{uid}:{TAB_C}"), false)).await;
+    webhook(&app, join("EG_recorder".into(), false)).await;
+    assert_eq!(detail(&app, id).await["viewerCount"], 0);
+
+    webhook(&app, join(format!("u:{vid}:{TAB_A}"), false)).await;
+    assert_eq!(
+        next_event(&mut ws).await,
+        json!({ "type": "viewer.count", "data": { "count": 1 } })
+    );
+    // 같은 사용자 다른 탭은 1명
+    webhook(&app, join(format!("u:{vid}:{TAB_B}"), false)).await;
+    webhook(&app, join(format!("g:guest-12345678:{TAB_A}"), false)).await;
+    assert_eq!(next_event(&mut ws).await["data"]["count"], 2);
+    webhook(&app, leave(format!("u:{vid}:{TAB_A}"))).await;
+    webhook(&app, leave(format!("u:{vid}:{TAB_B}"))).await;
+    assert_eq!(next_event(&mut ws).await["data"]["count"], 1);
+    let d = detail(&app, id).await;
+    assert_eq!(
+        (d["viewerCount"].as_i64(), d["peakViewers"].as_i64()),
+        (Some(1), Some(2))
+    );
+
+    // 목록은 시청자 수 순(더 최근 방송이라도 시청자가 적으면 뒤), 커서는 순위 위치
+    let second = create(&app, &other).await;
+    go_live(&app, Some(&other), second, json!({ "tabId": TAB_A })).await;
+    let ids = |res: &TestResponse| -> Vec<i64> {
+        res.json["items"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|b| b["id"].as_i64().unwrap())
+            .collect()
+    };
+    let res = send(&app, empty_req("GET", B, None)).await;
+    assert_eq!(ids(&res), vec![id, second]);
+    assert_eq!(res.json["items"][0]["viewerCount"], 1);
+    let res = send(&app, empty_req("GET", &format!("{B}?limit=1"), None)).await;
+    assert_eq!(
+        (ids(&res), res.json["nextCursor"].as_str()),
+        (vec![id], Some("1"))
+    );
+    let res = send(
+        &app,
+        empty_req("GET", &format!("{B}?limit=1&cursor=1"), None),
+    )
+    .await;
+    assert_eq!(
+        (ids(&res), res.json["nextCursor"].is_null()),
+        (vec![second], true)
+    );
+
+    // 방이 닫혀도(빈 방 정리) 바로 끝내지 않고 유예
+    webhook(&app, room_finished(id)).await;
+    assert_eq!(next_event(&mut ws).await["data"]["count"], 0);
+    assert_eq!(next_event(&mut ws).await["type"], "broadcast.reconnecting");
+    let d = detail(&app, id).await;
+    assert_eq!(
+        (
+            d["status"].as_str(),
+            d["reconnecting"].as_bool(),
+            d["viewerCount"].as_i64()
+        ),
+        (Some("LIVE"), Some(true), Some(0))
+    );
+}
+
+#[sqlx::test]
+async fn live_restart_sync(db: PgPool) {
+    let (app, lk, state) = setup_state(db.clone());
+    let (s1, uid1) = login_as(&app, "streamer1").await;
+    let (s2, _) = login_as(&app, "streamer2").await;
+    let (_, vid) = login_as(&app, "viewer").await;
+    let b1 = create(&app, &s1).await;
+    let b2 = create(&app, &s2).await;
+    go_live(&app, Some(&s1), b1, json!({ "tabId": TAB_A })).await;
+    go_live(&app, Some(&s2), b2, json!({ "tabId": TAB_A })).await;
+    // 재시작 전: b1 송출자가 끊겼다가 돌아왔는데 그 웹훅을 놓쳤다 / b2 송출자는 서버가 꺼진 사이 나갔다
+    backdate_disconnect(&db, b1, 10).await;
+    lk.participants.lock().unwrap().insert(
+        format!("broadcast-{b1}"),
+        vec![
+            format!("u:{uid1}:{TAB_A}"),
+            format!("u:{uid1}:{TAB_C}"),
+            format!("u:{vid}:{TAB_A}"),
+            format!("u:{vid}:{TAB_B}"),
+            format!("g:guest-12345678:{TAB_A}"),
+        ],
+    );
+
+    // LiveKit 호출 실패 → DB는 그대로
+    lk.list_fails.store(true, Ordering::SeqCst);
+    assert!(sync(&state).await.is_err());
+    assert_eq!(detail(&app, b1).await["reconnecting"], true);
+    assert_eq!(detail(&app, b2).await["reconnecting"], false);
+
+    lk.list_fails.store(false, Ordering::SeqCst);
+    sync(&state).await.unwrap();
+    let d1 = detail(&app, b1).await;
+    assert_eq!(
+        (
+            d1["reconnecting"].as_bool(),
+            d1["viewerCount"].as_i64(),
+            d1["peakViewers"].as_i64()
+        ),
+        (Some(false), Some(2), Some(2))
+    );
+    let d2 = detail(&app, b2).await;
+    assert_eq!(
+        (d2["status"].as_str(), d2["reconnecting"].as_bool()),
+        (Some("LIVE"), Some(true))
+    );
+
+    // 송출자가 없던 방송은 유예 흐름으로 자연 종료
+    backdate_disconnect(&db, b2, 61).await;
+    check_limits(&state).await.unwrap();
+    assert_eq!(detail(&app, b2).await["status"], "ENDED");
+    assert_eq!(detail(&app, b1).await["status"], "LIVE");
 }

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE broadcasts SET disconnected_at = NULL\n         WHERE id = $1 AND status = 'LIVE' AND publisher_identity = $2\n           AND disconnected_at IS NOT NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a6af9d403e78b6f08f44da699b78632427afc579d31d84abba31eaf581fbcec8"
+}

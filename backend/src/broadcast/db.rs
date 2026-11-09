@@ -24,7 +24,9 @@ pub struct Row {
 }
 
 impl Row {
-    pub fn into_broadcast(self) -> Result<Broadcast, AppError> {
+    /// `viewer_count`는 메모리 값(`LiveState::viewer_count`). LIVE가 아니면 0으로 낸다.
+    pub fn into_broadcast(self, viewer_count: i64) -> Result<Broadcast, AppError> {
+        let live = self.status == "LIVE";
         Ok(Broadcast {
             id: self.id,
             owner: UserSummary {
@@ -41,7 +43,7 @@ impl Row {
             thumbnail_url: self
                 .thumbnail_path
                 .map(|v| format!("/media/thumbs/{}.jpg?v={v}", self.id)),
-            viewer_count: 0,
+            viewer_count: if live { viewer_count } else { 0 },
             peak_viewers: self.peak_viewers,
             started_at: self.started_at,
             ended_at: self.ended_at,
@@ -67,8 +69,7 @@ pub struct Filter {
     pub limit: i64,
 }
 
-/// 목록·상세 공용 조회. 정렬은 최신 id 순.
-/// shortcut: LIVE 목록은 시청자 수 순이어야 하나 시청자 수가 DB에 없어 최신순, T08b가 정렬을 바꾼다.
+/// 목록·상세 공용 조회. 정렬은 최신 id 순(LIVE 목록의 시청자 수 순은 `handlers::list_live`가 메모리 값으로 다시 정렬).
 pub async fn find(db: &PgPool, f: &Filter) -> Result<Vec<Row>, sqlx::Error> {
     sqlx::query_as!(
         Row,

@@ -13,6 +13,7 @@ use axum::extract::{Path, State};
 use axum::http::HeaderMap;
 use axum::response::Response;
 use axum::routing::get;
+use chrono::{DateTime, Utc};
 use serde::Serialize;
 use tokio::sync::broadcast::{self, error::RecvError};
 use ts_rs::TS;
@@ -41,6 +42,20 @@ pub enum WsEvent {
     BroadcastUpdated(Broadcast),
     #[serde(rename = "broadcast.ended")]
     BroadcastEnded(BroadcastEnded),
+    /// 송출자 끊김, 60초 유예 시작
+    #[serde(rename = "broadcast.reconnecting")]
+    BroadcastReconnecting { since: DateTime<Utc> },
+    #[serde(rename = "broadcast.resumed")]
+    BroadcastResumed {},
+    /// 자동 종료 10분 전(소유자만)
+    #[serde(rename = "broadcast.duration_warning")]
+    BroadcastDurationWarning {
+        #[serde(rename = "endsAt")]
+        ends_at: DateTime<Utc>,
+    },
+    /// 시청자 수(사용자 단위, 소유자 제외)
+    #[serde(rename = "viewer.count")]
+    ViewerCount { count: i64 },
     /// 서버 채널 지연으로 이벤트를 놓침 → 상세·채팅을 다시 조회
     #[serde(rename = "resync")]
     Resync {},

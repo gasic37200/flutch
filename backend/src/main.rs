@@ -32,6 +32,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         livekit: Arc::new(LiveKitHttp::new(config.livekit.clone(), http.clone())),
         toss: Arc::new(TossHttp::new(http)),
         realtime: realtime::Hub::default(),
+        live: Default::default(),
         db,
         config,
     });

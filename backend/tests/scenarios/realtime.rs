@@ -20,7 +20,7 @@ use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use crate::common::{FakeLiveKit, ORIGIN, empty_req, json_req, login_as, send, test_state};
 
 const B: &str = "/api/v1/broadcasts";
-type Ws = WebSocketStream<MaybeTlsStream<TcpStream>>;
+pub type Ws = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
 /// REST용 앱과 WebSocket용 서버 주소. 둘은 같은 상태(허브)를 쓴다.
 async fn setup(db: PgPool) -> (Router, Arc<AppState>, SocketAddr) {
@@ -32,7 +32,7 @@ async fn setup(db: PgPool) -> (Router, Arc<AppState>, SocketAddr) {
     (flutch::app(state.clone()), state, addr)
 }
 
-async fn connect(
+pub async fn connect(
     addr: SocketAddr,
     id: i64,
     origin: Option<&str>,
@@ -55,7 +55,7 @@ async fn connect(
 }
 
 /// 다음 텍스트 메시지(JSON). 5초 안에 없으면 실패.
-async fn next_event(ws: &mut Ws) -> Value {
+pub async fn next_event(ws: &mut Ws) -> Value {
     loop {
         let msg = tokio::time::timeout(Duration::from_secs(5), ws.next())
             .await

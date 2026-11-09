@@ -35,3 +35,5 @@
 | [T07-letsencrypt-kro-kr-rate-limit.md](T07-letsencrypt-kro-kr-rate-limit.md) | T07 | kro.kr 전체가 Let's Encrypt 주간 발급 한도(50개)에 걸려 인증서 발급 거절 → 한도 해제 시각 이후 재시도 |
 | [T02-sqlx-sqlsafestr.md](T02-sqlx-sqlsafestr.md) | T02 | sqlx 0.9 `query()`는 `&'static str`만 받음 → `format!` SQL 대신 `.bind()` |
 | [T08a-livekit-grant-defaults.md](T08a-livekit-grant-defaults.md) | T08a | LiveKit 토큰 `canPublish`·`canPublishData`는 생략 시 true → 시청 토큰에 false 명시 |
+| [T08b-livekit-room-finished-before-grace.md](T08b-livekit-room-finished-before-grace.md) | T08b | LiveKit은 빈 방을 약 20초 뒤 닫음 → `room_finished`에서 바로 종료하지 않고 60초 유예 시작 |
+| [T08b-shared-livekit-room-collision.md](T08b-shared-livekit-room-collision.md) | T08b | 공용 로컬 LiveKit에서 worktree끼리 방 이름·웹훅이 섞임 → 웹훅 확인은 다른 LiveKit task와 시간을 나눠서 |

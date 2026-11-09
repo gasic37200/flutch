@@ -92,6 +92,11 @@ fn filter_from(q: &ListQuery) -> Result<(Filter, i64), AppError> {
     }
 }
 
+fn into_broadcast(state: &AppState, row: db::Row) -> Result<Broadcast, AppError> {
+    let n = state.live.viewer_count(row.id);
+    row.into_broadcast(n)
+}
+
 async fn page(
     state: &AppState,
     mut f: Filter,
@@ -105,7 +110,7 @@ async fn page(
     });
     let items = rows
         .into_iter()
-        .map(db::Row::into_broadcast)
+        .map(|r| into_broadcast(state, r))
         .collect::<Result<_, _>>()?;
     Ok(Json(Page {
         items,
@@ -113,13 +118,32 @@ async fn page(
     }))
 }
 
+/// LIVE 목록, 시청자 수 내림차순(동률 최신순). 시청자 수는 메모리 값이라 DB가 정렬할 수 없어
+/// 조건에 맞는 LIVE를 전부 읽어 정렬하고, 커서는 순위 위치(offset)다.
+/// shortcut: 페이지 사이에 시청자 수가 바뀌면 경계에서 중복·누락될 수 있다(홈은 10초 폴링이라 허용),
+/// LIVE가 수백 개를 넘으면 시청자 수를 DB에 두고 DB에서 정렬한다.
 pub async fn list_live(
     State(state): State<Arc<AppState>>,
     Query(q): Query<ListQuery>,
 ) -> Result<Json<Page<Broadcast>>, AppError> {
     let (mut f, limit) = filter_from(&q)?;
+    let offset = usize::try_from(f.before.take().unwrap_or(0)).unwrap_or(0);
     f.status = Some("LIVE");
-    page(&state, f, limit).await
+    f.limit = i64::MAX;
+    let mut items = db::find(&state.db, &f)
+        .await?
+        .into_iter()
+        .map(|r| into_broadcast(&state, r))
+        .collect::<Result<Vec<_>, _>>()?;
+    items.sort_by_key(|b| std::cmp::Reverse((b.viewer_count, b.id)));
+    let end = offset.saturating_add(limit as usize);
+    let next_cursor = (items.len() > end).then(|| end.to_string());
+    let items = items
+        .into_iter()
+        .skip(offset)
+        .take(limit as usize)
+        .collect();
+    Ok(Json(Page { items, next_cursor }))
 }
 
 pub async fn list_mine(
@@ -161,12 +185,13 @@ pub(super) async fn load(state: &AppState, id: i64) -> Result<db::Row, AppError>
 
 /// 상세 응답. shortcut: gauge·burstPrice·ban·freeClutchesLeft는 기본값, T19·T24·T18이 이 함수에서 채운다.
 pub(super) fn detail(
+    state: &AppState,
     row: db::Row,
     viewer: Option<&CurrentUser>,
 ) -> Result<BroadcastDetail, AppError> {
     let is_owner = viewer.is_some_and(|u| u.id == row.owner_id);
     Ok(BroadcastDetail {
-        broadcast: row.into_broadcast()?,
+        broadcast: into_broadcast(state, row)?,
         gauge: ClutchGauge {
             percent: 0,
             phase: ClutchPhase::Charging,
@@ -186,7 +211,11 @@ pub async fn get_one(
     OptionalUser(user): OptionalUser,
     Path(id): Path<i64>,
 ) -> Result<Json<BroadcastDetail>, AppError> {
-    Ok(Json(detail(load(&state, id).await?, user.as_ref())?))
+    Ok(Json(detail(
+        &state,
+        load(&state, id).await?,
+        user.as_ref(),
+    )?))
 }
 
 fn check_title(title: &str) -> Result<String, &'static str> {
@@ -248,7 +277,7 @@ pub async fn create(
     .await?
     .ok_or(BroadcastError::ReadyLimit)?;
     tracing::info!(broadcast_id = id, owner_id = user.id, "broadcast created");
-    let d = detail(load(&state, id).await?, Some(&user))?;
+    let d = detail(&state, load(&state, id).await?, Some(&user))?;
     Ok((StatusCode::CREATED, Json(d)))
 }
 
@@ -302,7 +331,7 @@ pub async fn update(
     if !db::update_fields(&state.db, id, status, &patch).await? {
         return Err(BroadcastError::InvalidTransition.into());
     }
-    let d = detail(load(&state, id).await?, Some(&user))?;
+    let d = detail(&state, load(&state, id).await?, Some(&user))?;
     let event = WsEvent::BroadcastUpdated(d.broadcast.clone());
     state.realtime.publish(id, Event::public(event));
     Ok(Json(d))
