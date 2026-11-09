@@ -14,6 +14,8 @@
 | Oracle ARM 인스턴스 생성 (3 OCPU / 18GB, Ubuntu) + OCI Security List 80/443 개방 — `flutch-server-prod-01` 146.56.116.48, Docker·iptables 80/443 완료 | T07 | 11/10 | ✅ |
 | 내도메인 `flutch.kro.kr` 발급 → 인스턴스 IP 연결 (A 146.56.116.48 확인) | T07 | 11/10 | ✅ |
 | GHCR 이미지 pull용 토큰(`read:packages`) + 서버 SSH 키 → GitHub Secrets | T07 | 11/10 | ⬜ |
+| **GitHub Secrets 4개**: `DEPLOY_HOST`(146.56.116.48) · `DEPLOY_USER`(ubuntu) · `DEPLOY_SSH_KEY`(서버 개인키 전체) · `GHCR_READ_TOKEN`(read:packages PAT). 넣은 뒤 Actions › Deploy › Run workflow(main) | T07 완료 확인 | 11/10 | ⬜ |
+| **HTTPS 인증서**: Let's Encrypt가 `kro.kr` 전체 주간 50개 한도로 거절(11/09 18:30·18:46). 서버에서 `cd ~/flutch && ./init-cert.sh` 재시도(22:11 KST 이후). 메인 세션이 30분 재시도 cron을 걸려다 권한 분류기에 막힘 — 허용하면 자동 재시도 | T07 완료 확인 | 11/10 | ⬜ |
 | Oracle Object Storage 버킷 2개(`recordings` 공개 읽기·목록 비공개, `backups` 비공개) + Customer Secret Key(S3 호환) + namespace·region | T07 백업, T25 | 11/11 | ⬜ |
 | LiveKit Cloud 가입, API key/secret, **대시보드 Settings › Project에서 Build 플랜 한도(분·Egress) 확인** | T08a 운영 확인 | 11/11 | ⬜ |
 | LiveKit 대시보드에 웹훅 URL 등록 `https://flutch.kro.kr/api/v1/livekit/webhook` | T08b 운영 확인 | T07 배포 후 | ⬜ |
@@ -39,6 +41,12 @@
 | 2026-11-09 | T05 | 좁은 화면에서 오른쪽 패널은 숨기지 않고 **본문 아래로 쌓음**, 사이드바는 lg 미만에서 햄버거 서랍 | 숨기면 채팅이 사라짐(DESIGN §7) | AppShell·ShellBody 수정 | 대기 |
 | 2026-11-09 | T05 | 비로그인도 방송하기 아이콘은 `/studio`로 이동, 로그인 요구는 스튜디오 화면에서 | 진입점 단순화 | 헤더 링크 조건 추가 | 대기 |
 | 2026-11-09 | T05 | 글꼴은 CDN(Google Fonts·jsDelivr), 헤더 메뉴의 "내 정보"는 화면이 생기면 추가 | 의존성 없이 적용 | CSP 도입 시 도메인 허용 필요 | 대기 |
+| 2026-11-09 | T07 | 배포는 workflow가 deploy 파일 3개를 scp로 서버에 올림(서버에 저장소 clone 없음) | 비공개 저장소 | 없음 | 대기 |
+| 2026-11-09 | T07 | DB 백업 파일명을 요일로 해 7개 순환(별도 삭제 로직 없음) | 7일 보관을 가장 단순하게 | 없음 | 대기 |
+| 2026-11-09 | T02b | 방송 소유자는 자기 방송에 후원·클러치·버스트 불가(`DONATION_SELF`·`CLUTCH_SELF`) | 게이지·후원 집계 부풀리기 방지 | 에러 코드 제거 | 대기 |
+| 2026-11-09 | T02b | 잔액 후원 API에 멱등 키 없음(두 번 누르면 2건, 원장 정합성은 유지) → 프론트 버튼 비활성화 | 결제 확정은 멱등, 잔액 후원은 사용자 동작 | 요청 키 컬럼·검사 추가 | 대기 |
+| 2026-11-09 | T02b | 카테고리 코드 8개 `just_chatting·game·fps·rpg·horror·virtual·sports·music`, 썸네일 JPEG 512KB, 검색어 1~30자, LiveKit 토큰 TTL 4시간 | 문서에 수치 없음 | api.md·상수 수정 | 대기 |
+| 2026-11-09 | T02b | 후원 목록은 donation·burst만, 유료 클러치는 합계(`clutchTotal`)로만. 후원자 배지는 donation·burst 이력 기준 | 1비트 클러치가 목록을 덮음 | 응답 필드 변경 | 대기 |
 
 ## Task
 > task 1개 = 서브에이전트 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "(병렬)" 표시 task끼리 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
@@ -52,8 +60,8 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 |---|---|---|---|---|---|
 | T01 | 저장소 골격: backend(Axum health), frontend(Vite+Tailwind), **충돌 방지 골격**(모든 도메인 라우터 미리 연결, 도메인별 config·scheduler 등록·에러 enum 패턴), ts-rs 설정, compose.dev(Postgres + 로컬 LiveKit), `.env.example`, CI(Postgres service, `SQLX_OFFLINE`, fmt·clippy·test·ts-rs 비교·lint·typecheck·build, rust-cache), 로컬 sccache | architecture §3·§10 | — | Opus · high | ✅ |
 | T02 | DB 스키마 v1: **모든 테이블**(users, sessions, broadcasts, chats, bans·ban_events, follows, wallets·ledger_entries, payment_orders, donations, clutch_events·super_clutches, recordings·recording_views) | architecture §7 | T01 | Opus · high | ✅ |
-| T02b | **API 계약**: `docs/api.md`의 엔드포인트별 요청·응답·권한·도메인 에러 코드 채우기 (코드 없음, 문서만) | 전체 | T02 | Opus · medium | 🟨 |
-| T03 | 인증 백엔드: 가입·로그인·로그아웃·내 정보·닉네임/비밀번호 변경·테스트 로그인·시드·요청 제한·CSRF·Origin + **금지어·욕설·흔한 비밀번호 목록**(`backend/data/`, 출처 README) + 시나리오 | 01, 10 | T02b | Opus · high | ⬜ |
+| T02b | **API 계약**: `docs/api.md`의 엔드포인트별 요청·응답·권한·도메인 에러 코드 채우기 (코드 없음, 문서만) | 전체 | T02 | Opus · medium | ✅ |
+| T03 | 인증 백엔드: 가입·로그인·로그아웃·내 정보·닉네임/비밀번호 변경·테스트 로그인·시드·요청 제한·CSRF·Origin + **금지어·욕설·흔한 비밀번호 목록**(`backend/data/`, 출처 README) + 시나리오 | 01, 10 | T02b | Opus · high | 🟨 |
 | T04 | 방송 CRUD·상태 전이·제한·목록/검색 API + 시나리오(재시작 후 조회 포함) | 02 | T03 | Sonnet · medium | ⬜ |
 | T05 | 디자인 토큰 + **DESIGN §9 공통 컴포넌트 전체** + 앱 레이아웃(헤더·사이드바) + 에러 화면 (병렬) | DESIGN | T01 | Sonnet · medium | ✅ |
 | T07 | 배포: 서버 세팅·nginx·certbot·compose.prod·`ubuntu-24.04-arm` 러너 이미지 빌드·GHCR·SSH 배포·health 확인·DB 백업 (병렬, 서버·도메인 준비 후) | 10, architecture §10 | T01 | Sonnet · medium | 🟨 |
