@@ -77,9 +77,11 @@ flowchart LR
 ```
 backend/src/
   main.rs            설정 로드, 마이그레이션, 라우터·스케줄러 시작
+  lib.rs             AppState, app() 라우터 조립(main·시나리오 테스트 공용), DB 연결
   config.rs          환경변수
   error.rs           AppError → {error:{code,message,request_id}}
   extract.rs         CurrentUser / OptionalUser 추출기(세션 쿠키)
+  middleware.rs      request_id·접근 로그, 변경 요청 Origin 검사(웹훅 예외)
   realtime.rs        방송별 이벤트 허브(tokio::broadcast) + WebSocket 핸들러
   scheduler.rs       주기 작업(아래 §5)
   livekit.rs         trait LiveKitApi + HTTP 구현(토큰·방·Egress), 웹훅 검증
@@ -89,13 +91,13 @@ backend/src/
       mod.rs         라우트
       handlers.rs    요청 처리·권한 확인
       db.rs          SQL (sqlx::query! 컴파일 검증)
-backend/tests/scenarios/   시나리오 테스트 (#[sqlx::test], LiveKit·토스는 fake)
+backend/tests/scenarios/   시나리오 테스트 (#[sqlx::test], LiveKit·토스는 fake). 바이너리 하나(main.rs에 도메인별 mod 한 줄), 헬퍼 common/
 backend/migrations/        SQLx 마이그레이션
 backend/data/              금지어·욕설·흔한 비밀번호 목록
 ```
 - 계층은 **handlers → db** 두 단계. 여러 도메인이 쓰는 규칙만 함수로 뺀다(예: `wallet::debit`, `broadcast::ensure_owner`).
 - 권한 확인은 핸들러 첫 줄에서: 추출기(로그인) → 소유자/차단/상태 확인 → 처리.
-- API 타입은 `ts-rs`로 Rust 구조체에서 TypeScript 타입을 생성해 `frontend/src/api/generated/`에 둔다(프론트·백엔드 타입 불일치 방지). **i64 필드는 `#[ts(type = "number")]`**(JSON은 number). 생성은 `cargo test export_bindings`, CI에서 생성 결과가 커밋본과 다르면 실패.
+- API 타입은 `ts-rs`로 Rust 구조체에서 TypeScript 타입을 생성해 `frontend/src/api/generated/`에 둔다(프론트·백엔드 타입 불일치 방지). **i64는 TS `number`**(JSON은 number) — `backend/.cargo/config.toml`의 `TS_RS_LARGE_INT="number"`로 전체 적용되므로 필드마다 붙일 필요 없다. 생성은 `cargo test export_bindings`, CI에서 생성 결과가 커밋본과 다르면 실패.
 - **충돌 방지 골격(T01에서 만든다)**: `routes/mod.rs`는 모든 도메인의 `routes()`를 미리 `merge`해 두고, 각 도메인은 자기 `mod.rs`의 Router만 채운다. 설정은 도메인별 하위 구조체(`config.chat` 등), 주기 작업은 도메인별 `register(&mut Scheduler)` 함수, 에러 코드는 도메인별 enum을 `AppError`로 변환. 그래서 서브에이전트는 공용 파일을 거의 건드리지 않는다.
 - 외부 HTTP: `reqwest`(rustls, `ring` 백엔드 — Windows에서 aws-lc 빌드 도구가 필요 없게). Object Storage 삭제·용량 조회는 가벼운 S3 호환 crate 1개(path-style 주소).
 
