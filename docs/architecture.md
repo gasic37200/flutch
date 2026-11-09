@@ -154,7 +154,8 @@ frontend/src/
 ### 7-1. 데이터 기본 규칙
 - **ID**: 모든 테이블 `BIGINT GENERATED ALWAYS AS IDENTITY`(채팅 커서 페이지네이션이 증가하는 id를 전제).
 - **돈**: 비트는 `BIGINT` 정수. 원 단위 소수 없음.
-- **시간**: `timestamptz`로 UTC 저장. "하루"(조회수)·"최근 7일"·"월 필터"의 경계는 **KST(Asia/Seoul)**.
+- **시간**: `timestamptz`로 저장하고 Postgres `timezone`은 **UTC로 고정**(compose에 `PGTZ=UTC`, 연결 시 `SET TIME ZONE 'UTC'`). API는 UTC(`Z`) RFC 3339로 주고받고, **화면은 KST로 표시**(`Intl.DateTimeFormat('ko-KR', {timeZone: 'Asia/Seoul'})`). "하루"(조회수)·"최근 7일"·"월 필터"의 경계는 **KST(Asia/Seoul)**로 계산.
+- **OS·컨테이너 시간대**: 개발 WSL과 운영 서버 OS는 `Asia/Seoul`(로그 읽기·cron 기준). 앱 컨테이너는 `TZ=Asia/Seoul` 환경변수, `tracing` 로그 시각은 `+09:00` 오프셋 포함. 백업 등 cron은 KST 기준(예: 매일 04:00 KST).
 - **원장**:
   - 유형: `charge`(+), `donation`(-), `clutch`(-), `burst`(-), `withdraw_forfeit`(-). 참조는 유형별 nullable FK 컬럼.
   - 차감: `UPDATE wallets SET balance = balance - $n WHERE user_id = $u AND balance >= $n RETURNING balance` → 그 값을 `balance_after`로 같은 트랜잭션에서 원장에 추가.
