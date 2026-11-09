@@ -4,11 +4,12 @@ import { api, ApiRequestError } from '../../../api/client.ts'
 import type { BroadcastDetail } from '../../../api/generated/BroadcastDetail.ts'
 import type { WsEvent } from '../../../api/generated/WsEvent.ts'
 
-// shortcut: T08b가 WsEvent에 넣기 전까지 이 세 이벤트는 여기서 직접 정의한다, 생성 타입에 들어오면 지운다.
+// shortcut: T08b가 WsEvent에 넣기 전까지 이 이벤트들은 여기서 직접 정의한다, 생성 타입에 들어오면 지운다.
 type PendingEvent =
   | { type: 'viewer.count'; data: { count: number } }
   | { type: 'broadcast.reconnecting'; data: { since: string } }
   | { type: 'broadcast.resumed'; data: Record<string, never> }
+  | { type: 'broadcast.duration_warning'; data: { endsAt: string } }
 type AnyEvent = WsEvent | PendingEvent
 type EventType = AnyEvent['type']
 type EventData<T extends EventType> = Extract<AnyEvent, { type: T }>['data']
