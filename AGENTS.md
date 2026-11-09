@@ -145,7 +145,7 @@ feat(broadcast): 송출 시작·종료 API 추가
 
 ### 9-2. 메인 세션 루프
 1. **시작 시 숙지**: `docs/spec.md` → `decisions.md` → `architecture.md` → `features/` → `DESIGN.md` → `api.md` → `roadmap.md` → `troubleshooting/README.md`.
-2. **할당**: roadmap에서 선행이 모두 ✅인 task를 고른다. 서브에이전트(스레드)는 **Agent 도구 + `isolation: "worktree"`, 백그라운드 실행**으로 띄운다. 지시서는 §9-4 양식. 띄운 시각을 기록해 둔다.
+2. **할당**: roadmap에서 선행이 모두 ✅인 task를 고른다. 서브에이전트(스레드)는 **Agent 도구 백그라운드 실행**으로 띄우고, worktree는 서브에이전트가 **WSL에서 직접** 만든다(`git worktree add ~/flutch-wt/<task> -b <브랜치> origin/main`, 파일은 UNC `\\wsl.localhost\Ubuntu-24.04\home\dbsrh\flutch-wt\<task>`, 명령은 SSH `localhost:2222`). 메인 세션이 Windows에서 돌면 `isolation: "worktree"`는 빌드할 수 없는 Windows 쪽에 worktree를 만들기 때문. 지시서는 §9-4 양식. 띄운 시각을 기록해 둔다.
    - 서브에이전트가 도는 동안에도 메인 세션은 사용자와 대화할 수 있다. 사용자 질문에 답하느라 할당을 멈추지 않는다.
 3. **보고 판단** (§9-5 보고서 기준):
    - "위험·건너뛴 것"이 있으면 → 판단해서 **후속 서브에이전트에게 다시 할당**(같은 PR 브랜치에 이어서, 또는 새 task). 사용자 결정이 필요한 것만 §9-6으로.
