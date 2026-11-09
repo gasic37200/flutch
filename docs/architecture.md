@@ -188,3 +188,6 @@ frontend/src/
 - **CI**(GitHub Actions): Postgres service 컨테이너 + `DATABASE_URL`로 `cargo test`, 빌드는 `SQLX_OFFLINE=true`, `cargo sqlx prepare --check`, ts-rs 생성 결과 비교, 프론트 lint·typecheck·build. 캐시 `Swatinem/rust-cache`.
 - **이미지 빌드**: GitHub의 **`ubuntu-24.04-arm` 러너**(비공개 저장소도 2026-01부터 지원)에서 네이티브 arm64 빌드 → GHCR. 에뮬레이션(QEMU) 빌드는 쓰지 않는다. 서버는 `read:packages` 토큰으로 pull.
 - **배포**: main 머지 → 이미지 빌드 → SSH로 `docker compose pull && up -d` → `GET /api/v1/health` 확인.
+  - 이미지 2개: `flutch-backend`(Rust 바이너리, `TZ=Asia/Seoul`)와 `flutch-web`(nginx + SPA 정적 파일, 한 이미지라 프론트 버전이 이미지 태그로 정해짐). 비공개 저장소라 서버는 git clone 대신 workflow가 `deploy/compose.prod.yml`·`backup.sh`·`init-cert.sh`를 scp로 올린다. 서버의 `.env`는 서버에만 있다.
+  - HTTPS: 최초 1회 `init-cert.sh`(임시 80번 nginx + certbot webroot), 갱신은 `certbot` 컨테이너 루프 + `web`의 12시간 reload. nginx는 `X-Forwarded-For`를 `$remote_addr`로 덮어쓴다(위조 방지).
+  - DB 백업: 호스트 cron `backup.sh` → 요일별 파일명(7개 순환 = 7일 보관) → Object Storage(키가 있을 때).
