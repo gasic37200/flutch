@@ -184,12 +184,14 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 | LIVE, 다른 기기(`identity` 다름)가 송출 중 | `takeover`가 아니면 409 `LIVE_PUBLISHER_ACTIVE` → `takeover: true`면 기존 참가자 제거 후 새 토큰, `publisherIdentity` 교체 |
 | ENDED | 409 `BROADCAST_INVALID_TRANSITION` |
 
+- "송출 중" 판정은 DB만 본다(T08a): `publisherIdentity`가 있고 요청 신원과 다르며 `disconnectedAt`이 없으면 다른 기기가 송출 중. LiveKit 실제 접속은 조회하지 않으므로 웹훅(T08b)이 `disconnectedAt`을 기록하기 전에는 탭을 닫고 새 탭에서 시작해도 전환 확인(409)이 뜬다. 신원이 바뀌면(전환·유예 중 다른 탭 복귀) 이전 신원을 LiveKit에서 내보낸다(이미 없으면 무시).
+- TS 타입: 요청 `StartLiveRequest`·`ViewerTokenRequest`, 응답 `StartLiveResponse`·`LiveKitToken`. 형식 오류는 422 `fields.tabId`·`fields.guestId`.
 - 종료(`DELETE /live`, 60초 유예 만료, 3시간 초과, LIVE 중 삭제 공통): ENDED 전이(`endedAt`) → LiveKit 방 삭제(송출 실제 중단) → Egress 종료 → `broadcast.ended`. READY·ENDED에서 `DELETE /live`는 `BROADCAST_INVALID_TRANSITION`.
 - **LiveKit 신원**: 로그인 `u:<userId>:<tabId>`, 비로그인 `g:<guestId>:<tabId>`. 방 이름 `broadcast-<id>`. `tabId`는 탭마다 `sessionStorage`의 랜덤값, `guestId`는 브라우저 `localStorage`의 랜덤값, 둘 다 `^[A-Za-z0-9_-]{8,64}$`(아니면 422). 로그인 사용자의 `guestId`는 무시한다.
-- 권한: publish 토큰 = `roomJoin, canPublish(camera·microphone·screen_share·screen_share_audio), canSubscribe`, 시청 토큰 = `roomJoin, canSubscribe`만. 둘 다 `canPublishData=false`, TTL 4시간.
+- 권한: publish 토큰 = `roomJoin, canPublish(camera·microphone·screen_share·screen_share_audio), canSubscribe`, 시청 토큰 = `roomJoin, canSubscribe`만(`canPublish=false` 명시 — LiveKit은 빠지면 true로 본다). 둘 다 `canPublishData=false`, TTL 4시간.
 - 시청자 수: 신원을 사용자 단위(`u:<id>`/`g:<id>`)로 묶어 세고 **방송 소유자는 제외**.
 - READY 방송 시청 화면은 토큰 없이 대기하고, WebSocket `broadcast.updated`(status LIVE)를 받으면 시청 토큰을 요청한다.
-- 시나리오: `live_start_owner_only` `live_end_closes_room` `live_disconnect_grace_auto_end` `live_takeover_other_device` `live_max_duration_auto_end` `live_webhook_signature_invalid_rejected`
+- 시나리오: `live_start_owner_only` `live_end_closes_room` `live_viewer_token_rules` `live_disconnect_grace_auto_end` `live_takeover_other_device` `live_max_duration_auto_end` `live_webhook_signature_invalid_rejected`
 
 ## 4. 채팅 (f04)
 | 메서드·경로 | 권한 | 요청 | 응답 | 에러 |

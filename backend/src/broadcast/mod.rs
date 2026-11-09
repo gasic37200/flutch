@@ -14,6 +14,7 @@ use ts_rs::TS;
 use crate::AppState;
 use crate::auth::UserSummary;
 use crate::error::AppError;
+use crate::extract::CurrentUser;
 
 mod db;
 mod handlers;
@@ -290,6 +291,15 @@ pub async fn end_live(state: &AppState, id: i64, reason: EndReason) -> Result<()
     // shortcut: Egress 종료(T25)와 `broadcast.ended` 발행(T08c의 Hub API)은 아직 없다.
     tracing::info!(broadcast_id = id, ?reason, "broadcast ended");
     Ok(())
+}
+
+/// `GET /broadcasts/{id}`와 같은 상세 응답. 다른 도메인(live) 응답에 싣는다. 숨김·없음은 404.
+pub async fn detail_of(
+    state: &AppState,
+    id: i64,
+    viewer: Option<&CurrentUser>,
+) -> Result<BroadcastDetail, AppError> {
+    handlers::detail(handlers::load(state, id).await?, viewer)
 }
 
 async fn missing_or_invalid(db: &PgPool, id: i64) -> AppError {

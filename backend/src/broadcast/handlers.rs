@@ -145,7 +145,7 @@ pub async fn list_by_user(
     page(&state, f, limit).await
 }
 
-async fn load(state: &AppState, id: i64) -> Result<db::Row, AppError> {
+pub(super) async fn load(state: &AppState, id: i64) -> Result<db::Row, AppError> {
     let f = Filter {
         id: Some(id),
         limit: 1,
@@ -159,7 +159,10 @@ async fn load(state: &AppState, id: i64) -> Result<db::Row, AppError> {
 }
 
 /// 상세 응답. shortcut: gauge·burstPrice·ban·freeClutchesLeft는 기본값, T19·T24·T18이 이 함수에서 채운다.
-fn detail(row: db::Row, viewer: Option<&CurrentUser>) -> Result<BroadcastDetail, AppError> {
+pub(super) fn detail(
+    row: db::Row,
+    viewer: Option<&CurrentUser>,
+) -> Result<BroadcastDetail, AppError> {
     let is_owner = viewer.is_some_and(|u| u.id == row.owner_id);
     Ok(BroadcastDetail {
         broadcast: row.into_broadcast()?,

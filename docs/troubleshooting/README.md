@@ -34,3 +34,4 @@
 | [T01-reqwest-ring-backend.md](T01-reqwest-ring-backend.md) | T01 | reqwest 0.13은 rustls 기본이 aws-lc → ring 쓰려고 0.12 고정 |
 | [T07-letsencrypt-kro-kr-rate-limit.md](T07-letsencrypt-kro-kr-rate-limit.md) | T07 | kro.kr 전체가 Let's Encrypt 주간 발급 한도(50개)에 걸려 인증서 발급 거절 → 한도 해제 시각 이후 재시도 |
 | [T02-sqlx-sqlsafestr.md](T02-sqlx-sqlsafestr.md) | T02 | sqlx 0.9 `query()`는 `&'static str`만 받음 → `format!` SQL 대신 `.bind()` |
+| [T08a-livekit-grant-defaults.md](T08a-livekit-grant-defaults.md) | T08a | LiveKit 토큰 `canPublish`·`canPublishData`는 생략 시 true → 시청 토큰에 false 명시 |

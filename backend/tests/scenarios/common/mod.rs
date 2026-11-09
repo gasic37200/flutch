@@ -24,12 +24,22 @@ pub const PASSWORD: &str = "testpass123";
 pub struct FakeLiveKit {
     /// `delete_room`으로 닫은 방 이름(호출 순서대로).
     pub deleted_rooms: Mutex<Vec<String>>,
+    /// `remove_participant`로 내보낸 (방, 신원).
+    pub removed_participants: Mutex<Vec<(String, String)>>,
 }
 
 #[async_trait]
 impl LiveKitApi for FakeLiveKit {
     async fn delete_room(&self, room: &str) -> Result<(), LiveKitError> {
         self.deleted_rooms.lock().unwrap().push(room.to_owned());
+        Ok(())
+    }
+
+    async fn remove_participant(&self, room: &str, identity: &str) -> Result<(), LiveKitError> {
+        self.removed_participants
+            .lock()
+            .unwrap()
+            .push((room.to_owned(), identity.to_owned()));
         Ok(())
     }
 }
