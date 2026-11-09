@@ -11,7 +11,7 @@
 |---|---|---|---|
 | **Rust(rustup) + MSVC Build Tools 설치** (관리자 권한) | T01 | 지금 | ⬜ |
 | **Claude 권한 허용 목록 승인** (cargo·npm·git·gh·docker 등, 무인 실행용) | 전부 | 지금 | ⬜ |
-| Oracle ARM 인스턴스 생성 (3 OCPU / 18GB, Ubuntu) + OCI Security List 80/443 개방 | T07 | 11/10 | ⬜ |
+| Oracle ARM 인스턴스 생성 (3 OCPU / 18GB, Ubuntu) + OCI Security List 80/443 개방 — `flutch-server-prod-01` 146.56.116.48, Docker·iptables 80/443 완료 | T07 | 11/10 | ✅ |
 | 내도메인 `flutch.kro.kr` 발급 → 인스턴스 IP 연결 | T07 | 11/10 | ⬜ |
 | GHCR 이미지 pull용 토큰(`read:packages`) + 서버 SSH 키 → GitHub Secrets | T07 | 11/10 | ⬜ |
 | Oracle Object Storage 버킷 2개(`recordings` 공개 읽기·목록 비공개, `backups` 비공개) + Customer Secret Key(S3 호환) + namespace·region | T07 백업, T25 | 11/11 | ⬜ |

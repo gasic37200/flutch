@@ -58,6 +58,7 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
   status=$?
 
   if [ $status -eq 0 ]; then
+    OUTPUT=$(echo "$OUTPUT" | grep -o 'ocid1\.instance\.[a-z0-9.-]*' | tail -n1)  # --wait-for-state 안내 문구 제거
     log "성공: $OUTPUT"
     IP=$(oci compute instance list-vnics --instance-id "$OUTPUT" --query 'data[0]."public-ip"' --raw-output 2>/dev/null)
     log "공인 IP: ${IP:-콘솔에서 확인} → 내도메인 flutch.kro.kr A 레코드에 등록"
