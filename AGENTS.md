@@ -37,12 +37,12 @@ cd frontend && npm run lint && npm run typecheck && npm run build
 
 ## 4. 개발 우선순위
 앞 단계의 완료 기준을 통과하기 전에 뒤 단계로 가지 않는다.
-필수 기능 → 댓글·밴·클러치 버튼 → 도네이션·예치금 → 녹화 → 팔로우 → Clutch Time 대기열·클립
+필수 기능 → 댓글·밴·클러치 버튼 → 도네이션·예치금 → 녹화 → 팔로우·카카오 → SUPER CLUTCH 회전·클립
 
 ## 5. 코드 작성 원칙 (Ponytail: 게으른 시니어 개발자)
 > 출처: [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) `AGENTS.md` (MIT) 한국어 번역. 이 프로젝트에는 Ponytail 플러그인이 프로젝트 범위로 설치되어 있다(`.claude/settings.json`). 플러그인이 없는 환경에서도 이 절을 따른다.
 
-최고의 코드는 쓰지 않은 코드다. 문제 전체를 가장 적은 새 코드로 푼다. **모든 답변은 1~2줄로 끝낸다: 건너뛰었거나 확인하지 않은 것, 사용자가 알아야 할 위험.**
+최고의 코드는 쓰지 않은 코드다. 문제 전체를 가장 적은 새 코드로 푼다. **모든 답변은 1~2줄로 끝낸다: 건너뛰었거나 확인하지 않은 것, 사용자가 알아야 할 위험.** (예외: 서브에이전트의 §9-5 요약 보고는 양식의 모든 필드를 쓴다.)
 
 **쓰기 전에**
 작업과 그 작업이 건드리는 코드를 읽는다. 변경이 닿아야 하는 모든 곳(호출처, 테스트, 픽스처, 설정, export)을 나열한다. 변경이 사용자에게 깨뜨릴 수 있는 것(파괴·노출될 데이터, 동작을 멈출 호출처)을 확인한다. 그것이 범위다. 추가 기능은 범위가 아니다.
@@ -91,7 +91,7 @@ cd frontend && npm run lint && npm run typecheck && npm run build
 - 권한 규칙 (비로그인 / 소유자 / 다른 사용자 / 차단 사용자)
 - 방송 상태 전이
 - 돈: 결제 확정, 원장, 잔액 차감, 멱등성(같은 승인 통지 반복)
-- Clutch 게이지·대기열 규칙
+- Clutch 게이지·회전 규칙
 
 **테스트를 쓰지 않는 곳**
 - UI 마크업, 문구, 스타일, 단순 CRUD 조회
@@ -147,16 +147,17 @@ feat(broadcast): 송출 시작·종료 API 추가
 3. **보고 판단** (§9-5 보고서 기준):
    - "위험·건너뛴 것"이 있으면 → 판단해서 **후속 서브에이전트에게 다시 할당**(같은 PR 브랜치에 이어서, 또는 새 task). 사용자 결정이 필요한 것만 §9-6으로.
    - PR의 **docs 변경분만 따로 검토**: decisions·features·architecture·api와 모순이 없고 사실이면 승인하고 **변경된 문서를 다시 읽어 숙지**한다. 틀리면 서브에이전트에게 수정 요청.
-   - `auth` `donation` `wallet` 범위면 `/ponytail-review branch` 1회.
+   - `auth` `donation` `wallet` 범위면 `gh pr checkout <번호>`로 PR 브랜치를 받은 뒤 `/ponytail-review branch` 1회, 끝나면 main으로 돌아온다.
 4. **머지**: CI 통과 + 위 판단 통과 → Squash merge → roadmap 상태와 **`docs/worklog.md`**(§9-7) 갱신을 묶어 docs PR.
 5. **배포 확인**: 머지 후 자동 배포가 끝나면 `GET /api/v1/health` 확인. 실패하면 **즉시 revert PR을 올려 머지**하고 원인 task를 다시 할당.
 6. **컨텍스트 관리**: task를 머지할 때마다 roadmap에 상태가 남아 있으므로, 컨텍스트가 길어지면 `/compact` 후 1번(숙지)부터 다시.
 
 ### 9-3. 병렬 규칙
 - 서브에이전트 1개 = task 1개 = 브랜치 1개 = worktree 1개. **동시 최대 3개**(Rust 빌드 캐시가 worktree마다 수 GB, CPU 경쟁).
-- 기반 단계(T01~T07)는 **직렬**. 병렬은 그 이후, roadmap에 "(병렬)" 표시된 task끼리만.
+- 기반 단계는 T01 → T02 → T02b → T03 → T04 **직렬**, T05·T07은 T01 직후부터 병렬. 그 외 병렬은 roadmap에 "(병렬)" 표시된 task끼리만.
 - 파일이 겹치지 않는 단위로만 병렬. 프론트·백엔드가 같은 기능을 나누면 `docs/api.md` 계약을 먼저 머지.
-- 충돌 위험 파일은 **메인 세션만** 수정: `docs/roadmap.md`, `backend/src/routes/mod.rs`. 의존성 추가(`Cargo.toml`·`package.json`)는 보고서에 명시.
+- 공용 파일(`backend/src/routes/mod.rs`, `main.rs`, `config.rs`, `scheduler.rs`, `error.rs`, `frontend/src/router.tsx`)은 T01이 만든 골격대로 **자기 도메인 부분만** 채운다(라우터는 미리 연결돼 있음). 골격 밖 수정이 필요하면 보고서에 요청한다. `docs/roadmap.md`·`docs/worklog.md`는 메인 세션만.
+- 의존성 추가(`Cargo.toml`·`package.json`)는 보고서에 명시. lock 파일 rebase 충돌은 메인 세션이 해결한다.
 - 마이그레이션은 동시에 한 task만 추가. 포트는 worktree마다 `.env`의 `BACKEND_PORT`·`VITE_PORT`로 분리.
 - PR 전 `main`으로 rebase. 머지는 메인 세션이 의존 순서대로.
 - **처리 순서**: roadmap 표 순서 + 선행 관계. 선행이 끝난 task가 여러 개면 표에서 위에 있는 것부터, 병렬 가능한 것은 최대 3개 동시에. 하나가 끝나면 즉시 다음 가능한 task를 채운다(대기 줄이기).
@@ -169,7 +170,8 @@ feat(broadcast): 송출 시작·종료 API 추가
 - 건드릴 범위: <폴더/파일>
 - 건드리지 말 것: docs/roadmap.md, routes/mod.rs(필요하면 보고서에 요청), 다른 task 영역
 - 완료 기준: <features 문서의 시나리오 테스트 이름 / 화면 확인 항목>
-- 브랜치: <type>/<이름>
+- 브랜치: <type>/<이름> (push는 이 브랜치만, main 직접 push 금지)
+- 포트·DB: BACKEND_PORT=<…>, VITE_PORT=<…>, DATABASE_URL=…/flutch_<task>
 - 이전 시도·후속 할당이면: <이전 보고서의 위험·건너뛴 것>
 ```
 
@@ -204,7 +206,7 @@ feat(broadcast): 송출 시작·종료 API 추가
    - §11 승인 항목(외부 계정·비용, 기능 빼기, 저장소 공개, 제출)
    - 데이터·돈이 걸려 되돌리기 어려운 결정(원장 구조, 권한 규칙, 운영 DB 스키마의 파괴적 변경)
    - 사용자만 가진 것(키 입력, 서버·도메인 준비)
-4. **질문은 모아서 한 번에.** 같은 시점의 질문은 한 메시지로 묶고, 각 질문에 추천안을 함께 쓴다. 질문을 올리면 **PushNotification으로 알린다.**
+4. **질문은 모아서 한 번에.** 같은 시점의 질문은 한 메시지로 묶고, 각 질문에 추천안을 함께 쓴다. 질문을 올리면 **PushNotification으로 알린다**(지연 로드 도구라 처음엔 ToolSearch `select:PushNotification`으로 불러온다).
 5. 사용자 답은 메인 세션이 바로 `docs/`에 반영(docs PR)하고, 진행 중인 서브에이전트에 영향이 있으면 지시서를 갱신해 후속 할당한다.
 
 ### 9-7. 작업 기록 (worklog)
@@ -214,6 +216,11 @@ feat(broadcast): 송출 시작·종료 API 추가
 - 후속 할당(같은 task 재시도)은 별도 줄, task 칸에 `T08 (2차)`.
 - 하루가 끝나면 마지막 줄에 그날 합계(task 수, 총 시간, 총 토큰).
 - 메인 세션 자체의 사용량은 Ponytail band(비용·토큰·시간)로 확인하고 하루 합계 줄에 함께 적는다.
+
+### 9-8. 검증 범위
+- 서브에이전트는 시나리오 테스트·검사 명령으로 백엔드를 검증하고, 화면은 Browser 미리보기로 **레이아웃과 콘솔 에러만** 확인한다.
+- 화면 공유 소리, 휴대폰 카메라, 다른 기기 시청은 AI가 확인할 수 없다 → roadmap "사용자 준비물"의 **U1 수동 확인**으로 검증하고, 메인 세션은 U1 전에는 T15를 완료 처리하지 않는다.
+- 로컬에서 송출·웹훅은 compose.dev의 로컬 LiveKit으로 확인한다. 녹화(Egress)와 토스 웹훅은 배포 환경에서만 실제 확인된다.
 
 ## 10. 완료 기준 (PR 올리기 전)
 - [ ] 백엔드·프론트 검사 명령 통과, 전체 테스트 1회 통과

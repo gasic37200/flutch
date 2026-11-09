@@ -26,5 +26,6 @@
 - 키보드로 주요 동작, 버튼·이미지 대체 텍스트, 색만으로 정보 구분 금지(LIVE 배지에 글자), `prefers-reduced-motion` 존중.
 
 ## 보안 공통
-- CSRF: SameSite=Lax + 변경 요청 `Origin` 검사. 웹훅(LiveKit·토스)은 서명·시크릿 검증.
+- CSRF: SameSite=Lax + 변경 요청 `Origin` 검사(`ALLOWED_ORIGINS`). WebSocket 업그레이드도 Origin 검사.
+- 웹훅: LiveKit은 서명 검증, 토스는 결제 조회 API로 재확인.
 - 모든 입력은 서버에서 길이·형식 검증. 에러 응답 형식은 `docs/api.md`.
