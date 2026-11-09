@@ -18,6 +18,7 @@
 | `docs/design-refs/` | Stitch 시안 이미지 | 참고용 |
 | `docs/troubleshooting/` | 작업 중 겪은 문제와 해결 기록 | 같은 영역 작업 전 확인, 서브에이전트가 기록 |
 | `docs/worklog.md` | 서브에이전트별 소요 시간·토큰·결과 | 메인 세션만 기록 (§9-7) |
+| [Notion: Flutch 기능 및 트러블슈팅](https://app.notion.com/p/Flutch-41349c16438d8083a407de3fbedf0830) | 사람이 보는 요약본(기능 완료·트러블슈팅·하루 요약) | 메인 세션만, Notion 커넥터로 갱신 (§9-11) |
 
 ## 2. 스택
 - `backend/` Rust · Axum · SQLx · PostgreSQL · livekit-api
@@ -240,6 +241,13 @@ feat(broadcast): 송출 시작·종료 API 추가
 ### 9-10. 시간 표기
 - 사용자에게 보이는 모든 시각(보고, worklog, roadmap, PR 본문, 트러블슈팅 날짜)은 **KST**. 마감도 "2026-11-19 23:59 KST" 기준으로 남은 시간을 계산한다.
 - 개발 환경(WSL)과 운영 서버의 OS 시간대는 `Asia/Seoul`로 설정돼 있다. 코드·DB의 시간 규칙은 `docs/architecture.md` §7-1.
+
+### 9-11. Notion 요약 기록
+- 원본은 저장소(`docs/troubleshooting/`, `docs/worklog.md`)다. Notion 페이지는 사용자가 보기 쉬운 **요약본**이다. 서브에이전트는 Notion에 쓰지 않는다(동시에 쓰면 섞인다).
+- 메인 세션이 Notion 커넥터로 갱신한다:
+  - **task 머지 때마다**: "기능 완료 내역"에 `날짜·시각(KST) · Txx · 한 줄 요약 · PR 링크` 한 줄 추가. 그 PR에 트러블슈팅 파일이 있으면 "트러블슈팅"에 소제목 하나로 요약(증상/원인/해결/재발 방지/관련 task·PR).
+  - **하루 끝**: "하루 요약"에 완료 task 수, 총 소요 시간, 총 토큰, 남은 일정.
+- 비밀값·서버 키·토큰은 Notion에 적지 않는다. Notion 커넥터를 쓸 수 없으면 건너뛰고 worklog 메모에 "Notion 미반영"이라 적은 뒤, 다음에 쓸 수 있을 때 한꺼번에 반영한다(작업을 멈추지 않는다).
 
 ## 10. 완료 기준 (PR 올리기 전)
 - [ ] 백엔드·프론트 검사 명령 통과, 전체 테스트 1회 통과
