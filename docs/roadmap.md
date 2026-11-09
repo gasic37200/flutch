@@ -59,6 +59,8 @@
 | 2026-11-09 | T06b | 방송 등록·수정 폼에서 PIP 위치 제외(스튜디오 T09에서 설정) | PIP는 송출 중 조작 | 폼 필드 추가 | 대기 |
 | 2026-11-09 | T08a | "다른 기기 송출 중" 판정은 DB(`publisher_identity`+`disconnected_at`)만 사용, LiveKit 참가자 조회 안 함 | 불확실하면 확인창 쪽으로, LiveKit 장애 무관 | T08b 웹훅 전까지 탭을 닫고 새 탭에서 시작해도 전환 확인창이 뜸 | 대기 |
 | 2026-11-09 | T08a | 시청 토큰 요청에 요청 제한 없음 | 문서에 없음 | 제한 추가 시 handler 한 줄 | 대기 |
+| 2026-11-09 | T08c | WebSocket은 Origin 검사(403)를 방송 존재 확인(404)보다 먼저, 소유자 여부는 연결 시점에 한 번 판정 | CSWSH 방어를 DB 조회 전에 | 연결 중 로그아웃해도 그 연결은 소유자형 이벤트 유지 | 대기 |
+| 2026-11-09 | T08c | 방송별 채널 크기 256, ping 30초(다음 주기까지 pong 없으면 끊음) | 문서에 수치 없음 | realtime.rs 상수 | 대기 |
 
 ## Task
 > task 1개 = 서브에이전트 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "(병렬)" 표시 task끼리 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
@@ -84,9 +86,9 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
 |---|---|---|---|---|---|
 | T08a | LiveKit 기본: 토큰(송출·시청), 송출 시작/종료, 방 닫기, `publisher_identity` + 시나리오 `live_start_owner_only` `live_end_closes_room` | 03 | T04 | Opus · high | ✅ |
-| T08b | LiveKit 웹훅(서명)·60초 유예·기기 전환·3시간 제한·재시작 동기화·**시청자 수**(WebSocket으로 발행) + 나머지 live 시나리오 (T08d와 병렬) | 03 | T08a, T08c | Opus · high | ⬜ |
-| T08c | WebSocket 허브: 방송별 채널, Origin 검사, 쿠키 식별, **연결별 필터링**, 이벤트 형식 | architecture §6 | T08a | Opus · high | 🟨 |
-| T08d | 프론트 LiveKit 기반: `livekit-client` 설치, 연결·트랙 훅, Watch·Studio 라우트 자리, WebSocket 클라이언트 훅 | 03 | T08a, T08c, T06b | Sonnet · medium | ⬜ |
+| T08b | LiveKit 웹훅(서명)·60초 유예·기기 전환·3시간 제한·재시작 동기화·**시청자 수**(WebSocket으로 발행) + 나머지 live 시나리오 (T08d와 병렬) | 03 | T08a, T08c | Opus · high | 🟨 |
+| T08c | WebSocket 허브: 방송별 채널, Origin 검사, 쿠키 식별, **연결별 필터링**, 이벤트 형식 | architecture §6 | T08a | Opus · high | ✅ |
+| T08d | 프론트 LiveKit 기반: `livekit-client` 설치, 연결·트랙 훅, Watch·Studio 라우트 자리, WebSocket 클라이언트 훅 | 03 | T08a, T08c, T06b | Sonnet · medium | 🟨 |
 | T09 | PC 송출 화면: 송출 전 확인·화면 공유·탭/시스템 소리·마이크·볼륨 슬라이더·레벨 미터·웹캠 모드·환경 안내·이어하기/기기 전환 모달 (병렬) | 03 | T08d | Sonnet · medium | ⬜ |
 | T10 | 모바일 송출 화면: 카메라 전환·음소거·Wake Lock (병렬) | 03 | T08d | Sonnet · medium | ⬜ |
 | T11 | 시청 화면: 플레이어·상태 4종(대기·재연결·화면 공유 중단·종료)·실시간 정보 변경·게이지 바 자리 (병렬) | 03 | T08d | Sonnet · medium | ⬜ |
