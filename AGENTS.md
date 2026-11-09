@@ -14,6 +14,7 @@
 | `docs/roadmap.md` | 단계·일정·진행 상태 | **메인 세션만** 갱신 |
 | `docs/DESIGN.md` | 디자인 토큰·컴포넌트 규칙 | UI 작업 전 필독 |
 | `docs/api.md` | REST/WebSocket 명세 | 엔드포인트 변경 시 같은 PR에서 갱신 |
+| `docs/conventions.md` | 안티패턴, Rust·Axum·SQLx·React 주의점, 코드 관례 | **코드 작성 전 필독** (모든 서브에이전트) |
 | `docs/design-refs/` | Stitch 시안 이미지 | 참고용 |
 | `docs/troubleshooting/` | 작업 중 겪은 문제와 해결 기록 | 같은 영역 작업 전 확인, 서브에이전트가 기록 |
 | `docs/worklog.md` | 서브에이전트별 소요 시간·토큰·결과 | 메인 세션만 기록 (§9-7) |
@@ -167,7 +168,8 @@ feat(broadcast): 송출 시작·종료 API 추가
 ### 9-4. 작업 지시서 양식 (메인 → 서브에이전트)
 ```
 [Txx] <task 이름>
-- 읽을 문서: AGENTS.md, docs/features/<nn>.md, docs/architecture.md §<n>, (해당 시) docs/api.md·DESIGN.md
+- 읽을 문서: AGENTS.md, docs/conventions.md, docs/features/<nn>.md, docs/architecture.md §<n>, (해당 시) docs/api.md·DESIGN.md
+- 모델·사고: <roadmap의 모델·사고 칸 그대로>
 - 건드릴 범위: <폴더/파일>
 - 건드리지 말 것: docs/roadmap.md·worklog.md, 공용 파일의 다른 도메인 부분(골격 밖 수정은 보고서에 요청), 다른 task 영역
 - 완료 기준: <features 문서의 시나리오 테스트 이름 / 화면 확인 항목>
@@ -222,6 +224,18 @@ feat(broadcast): 송출 시작·종료 API 추가
 - 서브에이전트는 시나리오 테스트·검사 명령으로 백엔드를 검증하고, 화면은 Browser 미리보기로 **레이아웃과 콘솔 에러만** 확인한다.
 - 화면 공유 소리, 휴대폰 카메라, 다른 기기 시청은 AI가 확인할 수 없다 → roadmap "사용자 준비물"의 **U1 수동 확인**으로 검증하고, 메인 세션은 U1 전에는 T15를 완료 처리하지 않는다.
 - 로컬에서 송출·웹훅은 compose.dev의 로컬 LiveKit으로 확인한다. 녹화(Egress)와 토스 웹훅은 배포 환경에서만 실제 확인된다.
+
+### 9-9. 모델과 사고 단계
+| 역할 | 모델 | 사고 단계(`effort`) |
+|---|---|---|
+| 메인 세션 | Opus 5.5 | high |
+| 위험 task (roadmap "Opus · high": 골격·스키마·인증·LiveKit·WebSocket 필터링·원장·결제·후원·유료 클러치·회전) | `model: "opus"` | `effort: "high"` |
+| API 계약 문서(T02b) | `model: "opus"` | `effort: "medium"` |
+| 나머지 (화면, CRUD, 채팅·모더레이션, 녹화, 팔로우, README, 모니터링 등) | `model: "sonnet"` | `effort: "medium"` |
+- 같은 task를 다시 맡길 때(2차)는 사고 단계를 한 단계 올린다(medium → high → xhigh). Sonnet으로 두 번 실패하면 Opus로 바꾼다.
+- `max`는 쓰지 않는다(비용 대비 효과 낮음). `low`는 오타·문구 수정 같은 단순 변경에만.
+- worklog에 모델·사고 단계를 메모 칸에 적어 두고, 하루 단위로 비용 대비 결과를 보고 배분을 조정한다.
+- Ponytail 강도는 모든 세션 `full`. 화면 task 결과가 시안보다 지나치게 단순하면 그 task만 `lite`로 다시 맡긴다.
 
 ## 10. 완료 기준 (PR 올리기 전)
 - [ ] 백엔드·프론트 검사 명령 통과, 전체 테스트 1회 통과
