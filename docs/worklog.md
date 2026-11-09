@@ -10,3 +10,5 @@
 | 2026-11-09 | T07 | 부분 | 2026-11-09 18:16 → 18:47 | 30분 | 146,750 | 45 | [#29](https://github.com/gasic37200/flutch/pull/29) | Sonnet·medium. arm64 빌드·GHCR 푸시 확인. 인증서(kro.kr LE 한도)·Secrets 없어 실배포 미확인. 메인이 main 충돌 merge 해결 |
 | 2026-11-09 | T02b | 완료 | 2026-11-09 18:40 → 18:52 | 12분 | 197,638 | 15 | [#31](https://github.com/gasic37200/flutch/pull/31) | Opus·medium. 에러 코드 51개, WS 이벤트 15종 |
 | 2026-11-09 | T03 | 완료 | 2026-11-09 18:54 → 19:26 | 32분 | 251,788 | 86 | [#33](https://github.com/gasic37200/flutch/pull/33) | Opus·high. ponytail-review: 비밀번호 변경 시도 제한 1건 → 메인이 수정 후 머지 |
+| 2026-11-09 | T06a | 완료 | 2026-11-09 19:32 → 19:46 | 14분 | 151,351 | 72 | [#35](https://github.com/gasic37200/flutch/pull/35) | Sonnet·medium. 브라우저로 가입·로그인·테스트 로그인 흐름 확인 |
+| 2026-11-09 | T04 | 완료 | 2026-11-09 19:32 → 19:50 | 18분 | 195,874 | 53 | [#36](https://github.com/gasic37200/flutch/pull/36) | Sonnet·medium. /tmp 공유로 T06a worktree 오염 → 스스로 되돌림, AGENTS §9-4 규칙 추가 |

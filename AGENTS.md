@@ -176,6 +176,7 @@ feat(broadcast): 송출 시작·종료 API 추가
 - 완료 기준: <features 문서의 시나리오 테스트 이름 / 화면 확인 항목>
 - 브랜치: <type>/<이름> (push는 이 브랜치만, main 직접 push 금지)
 - 포트·DB: BACKEND_PORT=<…>, VITE_PORT=<…>, DATABASE_URL=…/flutch_<task>
+- 임시 파일: `/tmp/<task>/` 아래에만 (WSL `/tmp`는 병렬 서브에이전트끼리 공유 — 같은 이름 스크립트가 덮어써져 다른 worktree를 건드린 사고, T04)
 - 이전 시도·후속 할당이면: <이전 보고서의 위험·건너뛴 것>
 ```
 
