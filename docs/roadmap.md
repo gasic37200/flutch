@@ -55,6 +55,10 @@
 | 2026-11-09 | T04 | `thumbnailUrl` = `/media/thumbs/{id}.jpg?v=<thumbnail_path>` — T12가 `thumbnail_path`에 버전 문자열 저장 | 캐시 무효화 | T12 저장 형식 | 대기 |
 | 2026-11-09 | T04 | LiveKit 서버 API는 livekit-api crate 대신 HS256 JWT 직접 서명 + Twirp 호출(`hmac` 추가) | crate가 protobuf·aws-lc까지 끌고 옴 | crate 도입 시 livekit.rs 교체 | 대기 |
 | 2026-11-09 | T06a | 프론트 경로 `/terms` `/privacy` `/me` | 문서에 경로 없음 | router·링크 수정 | 대기 |
+| 2026-11-09 | T06b | 프론트 경로 `/manage`(내 방송 관리) `/broadcasts/new` `/broadcasts/:id/edit`, 스튜디오 진입 `/studio?broadcast=<id>`, 등록·수정 후 `/manage`로 이동 | 문서에 경로 없음 | router·링크 수정 | 대기 |
+| 2026-11-09 | T06b | 방송 등록·수정 폼에서 PIP 위치 제외(스튜디오 T09에서 설정) | PIP는 송출 중 조작 | 폼 필드 추가 | 대기 |
+| 2026-11-09 | T08a | "다른 기기 송출 중" 판정은 DB(`publisher_identity`+`disconnected_at`)만 사용, LiveKit 참가자 조회 안 함 | 불확실하면 확인창 쪽으로, LiveKit 장애 무관 | T08b 웹훅 전까지 탭을 닫고 새 탭에서 시작해도 전환 확인창이 뜸 | 대기 |
+| 2026-11-09 | T08a | 시청 토큰 요청에 요청 제한 없음 | 문서에 없음 | 제한 추가 시 handler 한 줄 | 대기 |
 
 ## Task
 > task 1개 = 서브에이전트 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "(병렬)" 표시 task끼리 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
@@ -74,14 +78,14 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | T05 | 디자인 토큰 + **DESIGN §9 공통 컴포넌트 전체** + 앱 레이아웃(헤더·사이드바) + 에러 화면 (병렬) | DESIGN | T01 | Sonnet · medium | ✅ |
 | T07 | 배포: 서버 세팅·nginx·certbot·compose.prod·`ubuntu-24.04-arm` 러너 이미지 빌드·GHCR·SSH 배포·health 확인·DB 백업 (병렬, 서버·도메인 준비 후) | 10, architecture §10 | T01 | Sonnet · medium | 🟨 |
 | T06a | 인증 화면: 로그인·가입·약관 2장·테스트 로그인 버튼·내 정보 (병렬) | 01 | T03, T05 | Sonnet · medium | ✅ |
-| T06b | 방송 화면: 등록·수정·**삭제**·**내 방송 관리**(READY 목록), 홈 그리드, **탐색·검색** (병렬) | 02 | T04, T05 | Sonnet · medium | 🟨 |
+| T06b | 방송 화면: 등록·수정·**삭제**·**내 방송 관리**(READY 목록), 홈 그리드, **탐색·검색** (병렬) | 02 | T04, T05 | Sonnet · medium | ✅ |
 
 ### 1. 송출·시청 — 11/11~12
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
 |---|---|---|---|---|---|
-| T08a | LiveKit 기본: 토큰(송출·시청), 송출 시작/종료, 방 닫기, `publisher_identity` + 시나리오 `live_start_owner_only` `live_end_closes_room` | 03 | T04 | Opus · high | 🟨 |
+| T08a | LiveKit 기본: 토큰(송출·시청), 송출 시작/종료, 방 닫기, `publisher_identity` + 시나리오 `live_start_owner_only` `live_end_closes_room` | 03 | T04 | Opus · high | ✅ |
 | T08b | LiveKit 웹훅(서명)·60초 유예·기기 전환·3시간 제한·재시작 동기화·**시청자 수**(WebSocket으로 발행) + 나머지 live 시나리오 (T08d와 병렬) | 03 | T08a, T08c | Opus · high | ⬜ |
-| T08c | WebSocket 허브: 방송별 채널, Origin 검사, 쿠키 식별, **연결별 필터링**, 이벤트 형식 | architecture §6 | T08a | Opus · high | ⬜ |
+| T08c | WebSocket 허브: 방송별 채널, Origin 검사, 쿠키 식별, **연결별 필터링**, 이벤트 형식 | architecture §6 | T08a | Opus · high | 🟨 |
 | T08d | 프론트 LiveKit 기반: `livekit-client` 설치, 연결·트랙 훅, Watch·Studio 라우트 자리, WebSocket 클라이언트 훅 | 03 | T08a, T08c, T06b | Sonnet · medium | ⬜ |
 | T09 | PC 송출 화면: 송출 전 확인·화면 공유·탭/시스템 소리·마이크·볼륨 슬라이더·레벨 미터·웹캠 모드·환경 안내·이어하기/기기 전환 모달 (병렬) | 03 | T08d | Sonnet · medium | ⬜ |
 | T10 | 모바일 송출 화면: 카메라 전환·음소거·Wake Lock (병렬) | 03 | T08d | Sonnet · medium | ⬜ |

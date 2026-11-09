@@ -12,3 +12,5 @@
 | 2026-11-09 | T03 | 완료 | 2026-11-09 18:54 → 19:26 | 32분 | 251,788 | 86 | [#33](https://github.com/gasic37200/flutch/pull/33) | Opus·high. ponytail-review: 비밀번호 변경 시도 제한 1건 → 메인이 수정 후 머지 |
 | 2026-11-09 | T06a | 완료 | 2026-11-09 19:32 → 19:46 | 14분 | 151,351 | 72 | [#35](https://github.com/gasic37200/flutch/pull/35) | Sonnet·medium. 브라우저로 가입·로그인·테스트 로그인 흐름 확인 |
 | 2026-11-09 | T04 | 완료 | 2026-11-09 19:32 → 19:50 | 18분 | 195,874 | 53 | [#36](https://github.com/gasic37200/flutch/pull/36) | Sonnet·medium. /tmp 공유로 T06a worktree 오염 → 스스로 되돌림, AGENTS §9-4 규칙 추가 |
+| 2026-11-09 | T06b | 완료 | 2026-11-09 19:52 → 20:13 | 21분 | 186,006 | 94 | [#39](https://github.com/gasic37200/flutch/pull/39) | Sonnet·medium |
+| 2026-11-09 | T08a | 완료 | 2026-11-09 19:52 → 20:13 | 21분 | 195,633 | 55 | [#38](https://github.com/gasic37200/flutch/pull/38) | Opus·high. 로컬 LiveKit으로 토큰 권한·takeover·방 삭제 실측 |
