@@ -35,6 +35,8 @@ pub struct AppState {
     pub livekit: Arc<dyn LiveKitApi>,
     pub toss: Arc<dyn TossApi>,
     pub realtime: realtime::Hub,
+    /// 송출 메모리 상태(시청자 집합 등)
+    pub live: live::LiveState,
 }
 
 /// 전체 앱 라우터. `main`과 시나리오 테스트가 같은 조립을 쓴다.

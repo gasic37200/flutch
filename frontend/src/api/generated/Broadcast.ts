@@ -11,7 +11,7 @@ export type Broadcast = { id: number, owner: UserSummary, status: BroadcastStatu
  */
 thumbnailUrl: string | null, 
 /**
- * LIVE만 의미. shortcut: 항상 0, T08b가 시청자 수를 채운다(`db::Row::into_broadcast`).
+ * LIVE만 의미(사용자 단위, 소유자 제외), 그 외 0
  */
 viewerCount: number, peakViewers: number, startedAt: string | null, endedAt: string | null, createdAt: string, reconnecting: boolean, 
 /**

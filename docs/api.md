@@ -163,10 +163,10 @@ type Page<T> = { items: T[]; nextCursor: string | null }
   | READY | `title` `category` `tags` `record` `pipCorner` |
   | LIVE | `title` `category` `tags` `pipCorner` |
   | ENDED | `title` |
-- 목록 정렬·커서: 모든 목록은 현재 최신 id 순이고 `nextCursor`는 마지막 항목 id다(T04). `GET /broadcasts`의 시청자 수 순 정렬은 시청자 수 집계(T08b)와 함께 바뀐다. 잘못된 `limit`(숫자 아님)·`cursor`·`category`·`status`는 422, `limit`은 1~50으로 보정한다.
+- 목록 정렬·커서: `GET /me/broadcasts`·`GET /users/{id}/broadcasts`는 최신 id 순이고 `nextCursor`는 마지막 항목 id다(T04). `GET /broadcasts`는 **시청자 수 내림차순, 동률은 최신순**이고 `nextCursor`는 순위 위치(앞에서 건너뛸 개수)다 — 시청자 수가 서버 메모리 값이라 조건에 맞는 LIVE를 전부 읽어 정렬한다(T08b). 페이지 사이에 시청자 수가 바뀌면 경계에서 한 방송이 겹치거나 빠질 수 있다(홈은 10초 폴링). 잘못된 `limit`(숫자 아님)·`cursor`·`category`·`status`는 422, `limit`은 1~50으로 보정한다.
 - 등록 한도: 내 READY가 이미 5개면 `BROADCAST_READY_LIMIT`. "이전 방송 정보 복사"는 별도 API 없이 프론트가 `GET /me/broadcasts`의 값을 등록 폼에 채운다.
 - 삭제: READY → 행 삭제. LIVE → 송출 종료(§3-1 종료 절차, `broadcast.ended` reason `deleted`) 후 ENDED 규칙. ENDED → `hiddenAt` 기록(이후 모든 조회·하위 리소스·WebSocket 404) + 녹화 파일 삭제(`recordings.status=deleted`). 채팅·후원·원장은 보존.
-- 방송 길이: LIVE 3시간(설정값)에 자동 종료(reason `max_duration`), 10분 전 `broadcast.duration_warning`.
+- 방송 길이: LIVE 3시간(설정값 `LIVE_MAX_DURATION_SECS`)에 자동 종료(reason `max_duration`), 10분 전 `broadcast.duration_warning` 한 번(서버 메모리로 중복 방지 — 경고 구간에 서버가 재시작하면 한 번 더 갈 수 있다). 판정은 5초 주기 작업이라 최대 5초 늦다.
 - 시나리오: `broadcast_owner_crud` `broadcast_other_user_forbidden` `broadcast_public_read` `broadcast_state_transitions` `broadcast_limits` `broadcast_delete_live_ends_first` `broadcast_persists_after_restart`
 
 ### 3-1. 송출·시청 토큰 (f03)
@@ -184,14 +184,16 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 | LIVE, 다른 기기(`identity` 다름)가 송출 중 | `takeover`가 아니면 409 `LIVE_PUBLISHER_ACTIVE` → `takeover: true`면 기존 참가자 제거 후 새 토큰, `publisherIdentity` 교체 |
 | ENDED | 409 `BROADCAST_INVALID_TRANSITION` |
 
-- "송출 중" 판정은 DB만 본다(T08a): `publisherIdentity`가 있고 요청 신원과 다르며 `disconnectedAt`이 없으면 다른 기기가 송출 중. LiveKit 실제 접속은 조회하지 않으므로 웹훅(T08b)이 `disconnectedAt`을 기록하기 전에는 탭을 닫고 새 탭에서 시작해도 전환 확인(409)이 뜬다. 신원이 바뀌면(전환·유예 중 다른 탭 복귀) 이전 신원을 LiveKit에서 내보낸다(이미 없으면 무시).
+- "송출 중" 판정은 DB만 본다(T08a): `publisherIdentity`가 있고 요청 신원과 다르며 `disconnectedAt`이 없으면 다른 기기가 송출 중. LiveKit 실제 접속은 조회하지 않으므로 퇴장 웹훅이 `disconnectedAt`을 기록하기 전(탭을 닫은 직후 몇 초)에는 새 탭에서 시작해도 전환 확인(409)이 뜬다. 신원이 바뀌면(전환·유예 중 다른 탭 복귀) 이전 신원을 LiveKit에서 내보낸다(이미 없으면 무시). 밀려난 기기가 옛 송출 토큰(TTL 4시간)으로 다시 접속하면 참가 웹훅에서 `canPublish`인데 `publisherIdentity`가 아닌 참가자를 내보낸다.
+- **60초 유예**(설정값 `LIVE_GRACE_SECS`): 송출자 퇴장 웹훅 → `disconnectedAt` 기록 + `broadcast.reconnecting`. 송출자 신원의 참가 웹훅 → 해제 + `broadcast.resumed`. 5초 주기 작업이 유예가 지난 LIVE를 찾으면 LiveKit 참가자 목록을 한 번 확인해(웹훅 순서가 뒤바뀌는 경우) 송출자가 있으면 해제, 없으면(또는 확인 실패) 종료(reason `disconnect`).
+- **서버 재시작**: 시작 후 첫 주기에 LIVE 방송마다 LiveKit 참가자 목록으로 시청자 수를 복구하고, 송출자가 없으면 유예 시작(60초 뒤 자연 종료), 유예 중인데 송출자가 있으면 해제. LiveKit 호출이 실패하면 DB를 바꾸지 않고 다음 주기에 다시 한다.
 - TS 타입: 요청 `StartLiveRequest`·`ViewerTokenRequest`, 응답 `StartLiveResponse`·`LiveKitToken`. 형식 오류는 422 `fields.tabId`·`fields.guestId`.
 - 종료(`DELETE /live`, 60초 유예 만료, 3시간 초과, LIVE 중 삭제 공통): ENDED 전이(`endedAt`) → LiveKit 방 삭제(송출 실제 중단) → Egress 종료 → `broadcast.ended`. READY·ENDED에서 `DELETE /live`는 `BROADCAST_INVALID_TRANSITION`.
 - **LiveKit 신원**: 로그인 `u:<userId>:<tabId>`, 비로그인 `g:<guestId>:<tabId>`. 방 이름 `broadcast-<id>`. `tabId`는 탭마다 `sessionStorage`의 랜덤값, `guestId`는 브라우저 `localStorage`의 랜덤값, 둘 다 `^[A-Za-z0-9_-]{8,64}$`(아니면 422). 로그인 사용자의 `guestId`는 무시한다.
 - 권한: publish 토큰 = `roomJoin, canPublish(camera·microphone·screen_share·screen_share_audio), canSubscribe`, 시청 토큰 = `roomJoin, canSubscribe`만(`canPublish=false` 명시 — LiveKit은 빠지면 true로 본다). 둘 다 `canPublishData=false`, TTL 4시간.
-- 시청자 수: 신원을 사용자 단위(`u:<id>`/`g:<id>`)로 묶어 세고 **방송 소유자는 제외**.
+- 시청자 수: 참가·퇴장 웹훅으로 서버 메모리에 방송별 신원 집합을 두고, 사용자 단위(`u:<id>`/`g:<id>`)로 묶어 센다(같은 사용자 여러 탭은 1명). **방송 소유자(`u:<ownerId>:` 전부)와 우리 형식이 아닌 신원(Egress 등)은 제외**. 바뀔 때 `viewer.count`, `peakViewers`는 올라갈 때만 DB에 저장.
 - READY 방송 시청 화면은 토큰 없이 대기하고, WebSocket `broadcast.updated`(status LIVE)를 받으면 시청 토큰을 요청한다.
-- 시나리오: `live_start_owner_only` `live_end_closes_room` `live_viewer_token_rules` `live_disconnect_grace_auto_end` `live_takeover_other_device` `live_max_duration_auto_end` `live_webhook_signature_invalid_rejected`
+- 시나리오: `live_start_owner_only` `live_end_closes_room` `live_viewer_token_rules` `live_disconnect_grace_auto_end` `live_takeover_other_device` `live_max_duration_auto_end` `live_webhook_signature_invalid_rejected` `live_viewer_count` `live_restart_sync`
 
 ## 4. 채팅 (f04)
 | 메서드·경로 | 권한 | 요청 | 응답 | 에러 |
@@ -326,7 +328,7 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 ## 10. 웹훅·운영
 | 메서드·경로 | 호출자 | 검증 | 처리 |
 |---|---|---|---|
-| POST `/livekit/webhook` | LiveKit (Origin 예외) | `Authorization` 헤더 JWT 서명 + 본문 SHA-256. 실패 401 `LIVE_WEBHOOK_INVALID_SIGNATURE` | `participant_joined`/`participant_left`: 시청자 수 갱신, 송출자(`publisherIdentity`)면 유예 해제·시작 · `room_finished`: LIVE면 종료 · `egress_ended`: 녹화 `ready`(object_key·size·duration) 또는 `failed` + `recording.updated`. 그 외 이벤트는 200 무시 |
+| POST `/livekit/webhook` | LiveKit (Origin 예외) | `Authorization` 헤더 JWT(API secret HS256, `iss`=API key, 만료 전) + `sha256` 클레임 = 본문 SHA-256의 표준 base64. 실패 401 `LIVE_WEBHOOK_INVALID_SIGNATURE`(WARN 로그). 본문(LiveKit `WebhookEvent` protojson)이 JSON이 아니면 422 | `participant_joined`/`participant_left`: 시청자 수 갱신, 송출자(`publisherIdentity`)면 유예 해제·시작, 송출 권한인데 송출자가 아니면 내보냄(§3-1) · `room_finished`: LIVE면 **유예 시작**(종료 아님 — LiveKit은 마지막 참가자가 나가고 약 20초 뒤 빈 방을 닫아 60초 유예보다 빠르다. 송출자가 돌아오면 방은 다시 생긴다) · `egress_ended`(T25, 지금은 무시): 녹화 `ready`(object_key·size·duration) 또는 `failed` + `recording.updated`. 그 외 이벤트는 200 무시 |
 | POST `/payments/webhook` | 토스 (Origin 예외) | 서명 대신 결제 조회 API 재확인(§6) | 확정 또는 무시 |
 | GET `/health` | 누구나 | — | 200 `{status: 'ok'}` / 503 `{status: 'unavailable'}` |
 - 로컬 웹훅 주소 `http://host.docker.internal:<BACKEND_PORT>/api/v1/livekit/webhook`. `/metrics`는 API 밖(외부 비공개).

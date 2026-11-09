@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE broadcasts SET disconnected_at = now()\n           WHERE id = $1 AND status = 'LIVE' AND disconnected_at IS NULL\n             AND ($2::text IS NULL OR publisher_identity = $2)\n           RETURNING disconnected_at AS \"since!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "since!",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "broadcasts",
+            "name": "disconnected_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "e1ee697ca90692a32c5dc6d23bdb1dd49565de964d039f06927b98f313c06710"
+}

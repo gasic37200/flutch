@@ -5,4 +5,4 @@ import type { BroadcastEnded } from "./BroadcastEnded";
 /**
  * WebSocket 메시지 `{type, data}`. 이벤트를 추가하는 task가 여기에 변형 하나를 더한다(api.md §11 표의 이름 그대로).
  */
-export type WsEvent = { "type": "broadcast.updated", "data": Broadcast } | { "type": "broadcast.ended", "data": BroadcastEnded } | { "type": "resync", "data": Record<symbol, never> };
+export type WsEvent = { "type": "broadcast.updated", "data": Broadcast } | { "type": "broadcast.ended", "data": BroadcastEnded } | { "type": "broadcast.reconnecting", "data": { since: string, } } | { "type": "broadcast.resumed", "data": Record<symbol, never> } | { "type": "broadcast.duration_warning", "data": { endsAt: string, } } | { "type": "viewer.count", "data": { count: number, } } | { "type": "resync", "data": Record<symbol, never> };

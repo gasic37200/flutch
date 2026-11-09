@@ -13,6 +13,38 @@ pub struct Config {
     pub allowed_origins: Vec<String>,
     pub livekit: LiveKitConfig,
     pub auth: AuthConfig,
+    pub live: LiveConfig,
+}
+
+/// 송출 시간 규칙(features/03). 수동 확인용으로 환경변수로 줄일 수 있다.
+#[derive(Debug, Clone)]
+pub struct LiveConfig {
+    /// `LIVE_GRACE_SECS`: 송출자 끊김 후 자동 종료까지(기본 60초)
+    pub grace_secs: i64,
+    /// `LIVE_MAX_DURATION_SECS`: LIVE 최대 길이(기본 3시간). 10분 전에 경고한다.
+    pub max_duration_secs: i64,
+}
+
+impl LiveConfig {
+    pub fn from_env() -> Result<Self, ConfigError> {
+        Ok(Self {
+            grace_secs: secs_or("LIVE_GRACE_SECS", 60)?,
+            max_duration_secs: secs_or("LIVE_MAX_DURATION_SECS", 3 * 60 * 60)?,
+        })
+    }
+}
+
+/// 선택 환경변수(양의 정수 초). 없으면 기본값.
+fn secs_or(name: &'static str, default: i64) -> Result<i64, ConfigError> {
+    match required(name) {
+        Err(_) => Ok(default),
+        Ok(v) => v
+            .trim()
+            .parse()
+            .ok()
+            .filter(|n: &i64| *n > 0)
+            .ok_or(ConfigError(name, "양의 정수(초)여야 합니다")),
+    }
 }
 
 pub struct AuthConfig {
@@ -57,6 +89,7 @@ impl Config {
             allowed_origins: parse_list(&required("ALLOWED_ORIGINS")?),
             livekit: LiveKitConfig::from_env()?,
             auth: AuthConfig::from_env(),
+            live: LiveConfig::from_env()?,
         })
     }
 }
@@ -93,6 +126,7 @@ impl fmt::Debug for Config {
             .field("allowed_origins", &self.allowed_origins)
             .field("livekit", &self.livekit)
             .field("auth", &self.auth)
+            .field("live", &self.live)
             .finish()
     }
 }
