@@ -59,6 +59,7 @@ export default function Header({ user, onMenu, onLogout }: Props) {
               items={[
                 { label: '내 채널', to: `/users/${user.id}` },
                 { label: '내 지갑', to: '/wallet' },
+                { label: '내 방송 관리', to: '/manage' },
                 { label: '내 정보', to: '/me' },
                 { label: '로그아웃', onSelect: onLogout },
               ]}
