@@ -14,3 +14,4 @@
 | 2026-11-09 | T04 | 완료 | 2026-11-09 19:32 → 19:50 | 18분 | 195,874 | 53 | [#36](https://github.com/gasic37200/flutch/pull/36) | Sonnet·medium. /tmp 공유로 T06a worktree 오염 → 스스로 되돌림, AGENTS §9-4 규칙 추가 |
 | 2026-11-09 | T06b | 완료 | 2026-11-09 19:52 → 20:13 | 21분 | 186,006 | 94 | [#39](https://github.com/gasic37200/flutch/pull/39) | Sonnet·medium |
 | 2026-11-09 | T08a | 완료 | 2026-11-09 19:52 → 20:13 | 21분 | 195,633 | 55 | [#38](https://github.com/gasic37200/flutch/pull/38) | Opus·high. 로컬 LiveKit으로 토큰 권한·takeover·방 삭제 실측 |
+| 2026-11-09 | T08c | 완료 | 2026-11-09 20:15 → 20:33 | 18분 | 181,409 | 46 | [#41](https://github.com/gasic37200/flutch/pull/41) | Opus·high. tokio-tungstenite로 실제 WS 시나리오 5개 |
