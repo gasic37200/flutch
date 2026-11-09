@@ -1,9 +1,11 @@
 import { createBrowserRouter } from 'react-router'
-import AppShell from './layouts/AppShell.tsx'
+import AuthShell from './features/auth/components/AuthShell.tsx'
 import AuthPage from './pages/AuthPage.tsx'
 import ErrorPage from './pages/ErrorPage.tsx'
 import ExplorePage from './pages/ExplorePage.tsx'
 import HomePage from './pages/HomePage.tsx'
+import LegalPage from './pages/LegalPage.tsx'
+import MePage from './pages/MePage.tsx'
 import ReplayPage from './pages/ReplayPage.tsx'
 import StreamerPage from './pages/StreamerPage.tsx'
 import StudioPage from './pages/StudioPage.tsx'
@@ -13,7 +15,7 @@ import WatchPage from './pages/WatchPage.tsx'
 // 모든 페이지는 AppShell 안에서 그려지고, 에러 화면(errorElement)도 같은 셸 안에 뜬다.
 export const router = createBrowserRouter([
   {
-    element: <AppShell />,
+    element: <AuthShell />,
     children: [
       {
         errorElement: <ErrorPage />,
@@ -27,6 +29,9 @@ export const router = createBrowserRouter([
           { path: 'wallet', element: <WalletPage /> },
           { path: 'login', element: <AuthPage mode="login" /> },
           { path: 'signup', element: <AuthPage mode="signup" /> },
+          { path: 'me', element: <MePage /> },
+          { path: 'terms', element: <LegalPage doc="terms" /> },
+          { path: 'privacy', element: <LegalPage doc="privacy" /> },
           { path: '*', element: <ErrorPage /> },
         ],
       },
