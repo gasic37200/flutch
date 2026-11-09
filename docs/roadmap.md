@@ -28,6 +28,10 @@
 
 | 날짜 | task | 가정한 내용 | 이유 | 바꾸면 영향 | 상태 |
 |---|---|---|---|---|---|
+| 2026-11-09 | T01 | 프론트 린터를 ESLint 대신 **oxlint**(`--deny-warnings`, any·console 금지·hooks 규칙) | Vite 최신 템플릿 기본값, 빠름 | ESLint로 교체 task 1개(설정만) | 대기 |
+| 2026-11-09 | T01 | `Origin` 헤더가 **없는** 변경 요청도 403 | CSRF 보수적 처리(브라우저는 항상 보냄) | curl·외부 도구 호출에 Origin 필요. 바꾸면 middleware 한 줄 | 대기 |
+| 2026-11-09 | T01 | 프론트 경로 `/` `/explore` `/live/:broadcastId` `/studio` `/replay/:recordingId` `/users/:userId` `/wallet` `/login` `/signup` | 문서에 경로 이름 없음 | router.tsx·링크 수정 | 대기 |
+| 2026-11-09 | T01 | 로컬 compose.dev Postgres 호스트 포트 **5433**(이 PC의 5432는 다른 프로젝트가 사용) | 포트 충돌 | `.env`의 `POSTGRES_PORT`만 변경 | 대기 |
 
 ## Task
 > task 1개 = 서브에이전트 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "(병렬)" 표시 task끼리 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
@@ -39,13 +43,13 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
 |---|---|---|---|---|---|
-| T01 | 저장소 골격: backend(Axum health), frontend(Vite+Tailwind), **충돌 방지 골격**(모든 도메인 라우터 미리 연결, 도메인별 config·scheduler 등록·에러 enum 패턴), ts-rs 설정, compose.dev(Postgres + 로컬 LiveKit), `.env.example`, CI(Postgres service, `SQLX_OFFLINE`, fmt·clippy·test·ts-rs 비교·lint·typecheck·build, rust-cache), 로컬 sccache | architecture §3·§10 | — | Opus · high | ⬜ |
-| T02 | DB 스키마 v1: **모든 테이블**(users, sessions, broadcasts, chats, bans·ban_events, follows, wallets·ledger_entries, payment_orders, donations, clutch_events·super_clutches, recordings·recording_views) | architecture §7 | T01 | Opus · high | ⬜ |
+| T01 | 저장소 골격: backend(Axum health), frontend(Vite+Tailwind), **충돌 방지 골격**(모든 도메인 라우터 미리 연결, 도메인별 config·scheduler 등록·에러 enum 패턴), ts-rs 설정, compose.dev(Postgres + 로컬 LiveKit), `.env.example`, CI(Postgres service, `SQLX_OFFLINE`, fmt·clippy·test·ts-rs 비교·lint·typecheck·build, rust-cache), 로컬 sccache | architecture §3·§10 | — | Opus · high | ✅ |
+| T02 | DB 스키마 v1: **모든 테이블**(users, sessions, broadcasts, chats, bans·ban_events, follows, wallets·ledger_entries, payment_orders, donations, clutch_events·super_clutches, recordings·recording_views) | architecture §7 | T01 | Opus · high | 🟨 |
 | T02b | **API 계약**: `docs/api.md`의 엔드포인트별 요청·응답·권한·도메인 에러 코드 채우기 (코드 없음, 문서만) | 전체 | T02 | Opus · medium | ⬜ |
 | T03 | 인증 백엔드: 가입·로그인·로그아웃·내 정보·닉네임/비밀번호 변경·테스트 로그인·시드·요청 제한·CSRF·Origin + **금지어·욕설·흔한 비밀번호 목록**(`backend/data/`, 출처 README) + 시나리오 | 01, 10 | T02b | Opus · high | ⬜ |
 | T04 | 방송 CRUD·상태 전이·제한·목록/검색 API + 시나리오(재시작 후 조회 포함) | 02 | T03 | Sonnet · medium | ⬜ |
-| T05 | 디자인 토큰 + **DESIGN §9 공통 컴포넌트 전체** + 앱 레이아웃(헤더·사이드바) + 에러 화면 (병렬) | DESIGN | T01 | Sonnet · medium | ⬜ |
-| T07 | 배포: 서버 세팅·nginx·certbot·compose.prod·`ubuntu-24.04-arm` 러너 이미지 빌드·GHCR·SSH 배포·health 확인·DB 백업 (병렬, 서버·도메인 준비 후) | 10, architecture §10 | T01 | Sonnet · medium | ⬜ |
+| T05 | 디자인 토큰 + **DESIGN §9 공통 컴포넌트 전체** + 앱 레이아웃(헤더·사이드바) + 에러 화면 (병렬) | DESIGN | T01 | Sonnet · medium | 🟨 |
+| T07 | 배포: 서버 세팅·nginx·certbot·compose.prod·`ubuntu-24.04-arm` 러너 이미지 빌드·GHCR·SSH 배포·health 확인·DB 백업 (병렬, 서버·도메인 준비 후) | 10, architecture §10 | T01 | Sonnet · medium | 🟨 |
 | T06a | 인증 화면: 로그인·가입·약관 2장·테스트 로그인 버튼·내 정보 (병렬) | 01 | T03, T05 | Sonnet · medium | ⬜ |
 | T06b | 방송 화면: 등록·수정·**삭제**·**내 방송 관리**(READY 목록), 홈 그리드, **탐색·검색** (병렬) | 02 | T04, T05 | Sonnet · medium | ⬜ |
 
