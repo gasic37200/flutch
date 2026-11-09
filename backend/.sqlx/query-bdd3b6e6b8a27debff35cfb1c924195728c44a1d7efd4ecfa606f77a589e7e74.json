@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM sessions s WHERE s.expires_at < now()\n           AND NOT EXISTS (SELECT 1 FROM broadcasts b WHERE b.owner_id = s.user_id AND b.status = 'LIVE')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "bdd3b6e6b8a27debff35cfb1c924195728c44a1d7efd4ecfa606f77a589e7e74"
+}

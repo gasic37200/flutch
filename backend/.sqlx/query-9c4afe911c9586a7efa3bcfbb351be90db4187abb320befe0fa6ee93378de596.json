@@ -1,0 +1,85 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT u.id, u.login_id, u.nickname, u.nickname_changed_at,\n                  u.password_hash IS NOT NULL AS \"has_password!\",\n                  COALESCE((SELECT w.balance FROM wallets w WHERE w.user_id = u.id), 0) AS \"balance!\",\n                  (SELECT b.id FROM broadcasts b WHERE b.owner_id = u.id AND b.status = 'LIVE') AS live_broadcast_id\n           FROM users u WHERE u.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "login_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "login_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nickname",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "nickname"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "nickname_changed_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "nickname_changed_at"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "has_password!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "balance!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 6,
+        "name": "live_broadcast_id",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      true,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "9c4afe911c9586a7efa3bcfbb351be90db4187abb320befe0fa6ee93378de596"
+}

@@ -5,7 +5,7 @@ use std::sync::Arc;
 use axum::Router;
 use axum::body::Body;
 use axum::http::{HeaderMap, Request, StatusCode};
-use flutch::config::{Config, LiveKitConfig};
+use flutch::config::{AuthConfig, Config, LiveKitConfig};
 use flutch::livekit::LiveKitApi;
 use flutch::toss::TossApi;
 use flutch::{AppState, realtime};
@@ -13,6 +13,10 @@ use sqlx::PgPool;
 use tower::ServiceExt;
 
 pub const ORIGIN: &str = "http://localhost:5173";
+/// 테스트 앱의 시드 계정(streamer1·streamer2·viewer) 비밀번호.
+pub const SEED_PASSWORD: &str = "seedpass123";
+/// `signup` 헬퍼가 쓰는 비밀번호.
+pub const PASSWORD: &str = "testpass123";
 
 /// trait에 메서드가 생기면 여기서 호출 기록·응답을 조작해 웹훅 반복·실패를 재현한다.
 pub struct FakeLiveKit;
@@ -30,6 +34,9 @@ pub fn test_app(db: PgPool) -> Router {
             url: "ws://livekit.test".into(),
             api_key: "devkey".into(),
             api_secret: "secret".into(),
+        },
+        auth: AuthConfig {
+            seed_password: Some(SEED_PASSWORD.into()),
         },
     };
     flutch::app(Arc::new(AppState {
@@ -61,4 +68,86 @@ pub async fn send(app: &Router, req: Request<Body>) -> TestResponse {
         headers,
         json,
     }
+}
+
+/// JSON 요청. 변경 요청이 Origin 검사를 통과하도록 `Origin`을 붙이고, `cookie`가 있으면 세션 쿠키로 보낸다.
+pub fn json_req(
+    method: &str,
+    path: &str,
+    cookie: Option<&str>,
+    body: serde_json::Value,
+) -> Request<Body> {
+    let mut req = Request::builder()
+        .method(method)
+        .uri(path)
+        .header("origin", ORIGIN)
+        .header("content-type", "application/json");
+    if let Some(c) = cookie {
+        req = req.header("cookie", c);
+    }
+    req.body(Body::from(body.to_string())).unwrap()
+}
+
+/// 본문 없는 요청(GET·로그아웃 등).
+pub fn empty_req(method: &str, path: &str, cookie: Option<&str>) -> Request<Body> {
+    let mut req = Request::builder()
+        .method(method)
+        .uri(path)
+        .header("origin", ORIGIN);
+    if let Some(c) = cookie {
+        req = req.header("cookie", c);
+    }
+    req.body(Body::empty()).unwrap()
+}
+
+/// 응답의 `Set-Cookie`에서 `flutch_session=<토큰>` 부분만 꺼낸다(다음 요청의 `cookie` 헤더로 쓴다).
+pub fn session_cookie(res: &TestResponse) -> String {
+    let set = res.headers["set-cookie"].to_str().unwrap();
+    set.split(';').next().unwrap().to_string()
+}
+
+/// 새 사용자로 가입하고 세션 쿠키를 돌려준다(비밀번호 `PASSWORD`). 가입 IP 제한을 피하려고 아이디마다 XFF를 다르게 준다.
+pub async fn signup(app: &Router, login_id: &str, nickname: &str) -> String {
+    let mut req = json_req(
+        "POST",
+        "/api/v1/auth/signup",
+        None,
+        serde_json::json!({
+            "loginId": login_id, "password": PASSWORD, "nickname": nickname,
+            "agreeTerms": true, "agreePrivacy": true, "over14": true,
+        }),
+    );
+    req.headers_mut().insert(
+        "x-forwarded-for",
+        format!("signup-{login_id}").parse().unwrap(),
+    );
+    let res = send(app, req).await;
+    assert_eq!(
+        res.status,
+        StatusCode::CREATED,
+        "signup {login_id}: {}",
+        res.json
+    );
+    session_cookie(&res)
+}
+
+/// 시드 계정(`streamer1`·`streamer2`·`viewer`)으로 테스트 로그인하고 `(세션 쿠키, 사용자 id)`를 돌려준다.
+pub async fn login_as(app: &Router, account: &str) -> (String, i64) {
+    let res = send(
+        app,
+        json_req(
+            "POST",
+            "/api/v1/auth/test-login",
+            None,
+            serde_json::json!({ "account": account }),
+        ),
+    )
+    .await;
+    assert_eq!(
+        res.status,
+        StatusCode::OK,
+        "test-login {account}: {}",
+        res.json
+    );
+    (session_cookie(&res), res.json["id"].as_i64().unwrap())
 }

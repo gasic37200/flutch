@@ -4,13 +4,17 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+argon2 = "0.6.0"
 async-trait = "0.1.92"
 axum = { version = "0.8.9", features = ["ws", "macros"] }
+base64 = "0.22"
 chrono = { version = "0.4.45", features = ["serde"] }
 dotenvy = "0.15.7"
+getrandom = "0.4"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
+sha2 = "0.11"
 sqlx = { version = "0.9.0", default-features = false, features = ["postgres", "runtime-tokio", "tls-rustls-ring-webpki", "chrono", "migrate", "macros"] }
 thiserror = "2.0.21"
 tokio = { version = "1.54.1", features = ["macros", "rt-multi-thread", "net", "time", "signal"] }
@@ -21,3 +25,10 @@ uuid = { version = "1.29.2", features = ["v4"] }
 
 [dev-dependencies]
 tower = { version = "0.5.3", features = ["util"] }
+
+# argon2는 디버그 빌드에서 매우 느려(해시 1회 수 초) 테스트·로컬 실행을 위해 최적화해 둔다.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3

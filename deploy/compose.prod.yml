@@ -38,6 +38,7 @@ services:
       LIVEKIT_URL: ${LIVEKIT_URL:?}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:?}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:?}
+      SEED_PASSWORD: ${SEED_PASSWORD:-}
       RUST_LOG: ${RUST_LOG:-info}
     logging: *logging
 

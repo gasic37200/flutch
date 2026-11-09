@@ -3,6 +3,7 @@
 
 mod common;
 
+mod auth;
 mod csrf;
 mod health;
 mod schema;

@@ -2,7 +2,7 @@
 
 > 상태: **계약 v1** (T02b). 프론트·백엔드는 이 문서만 보고 병렬로 구현한다. 엔드포인트·필드를 바꾸는 PR은 이 문서를 같은 PR에서 갱신한다.
 > 근거: `docs/features/01~10`, `docs/architecture.md`, `backend/migrations/*_schema_v1.sql`. 절 제목의 `(f02)`는 `features/02`.
-> **T03에서 `error.rs`를 이 문서의 camelCase 에러 형식(`requestId`·`retryAfterSec`)으로 맞춘다** (T01 구현은 snake_case).
+> 에러 형식은 T03에서 이 문서의 camelCase(`requestId`·`retryAfterSec`)로 맞췄다.
 
 ## 0. 규칙
 - 접두사 `/api/v1`. 리소스는 경로, 필터·검색·페이지는 쿼리, 데이터는 JSON 본문. **JSON 필드는 전부 camelCase**.
@@ -18,6 +18,7 @@
                "fields": { "title": "2~50자로 입력해 주세요." }, "retryAfterSec": 30 } }
   ```
   `fields`는 `VALIDATION_FAILED`에만, `retryAfterSec`는 429와 `MODERATION_TIMED_OUT`에만 붙는다. 화면은 `message`를 그대로 보여준다.
+  JSON 본문이 깨졌거나 필드 타입·누락이 맞지 않으면 422 `VALIDATION_FAILED` + `fields.body`(백엔드 `extract::JsonBody`).
 - 상태 코드: 200/201/204 성공, 401 미인증, 403 권한 없음(소유자 아님·차단됨·Origin), 404 없음(숨김 방송 포함), 409 상태 충돌(잘못된 전이·LIVE 아님·잔액 부족·한도), 422 검증 실패(형식·금지어), 429 제한 초과, 502 외부 연동(토스) 실패, 500 `INTERNAL`.
 - 검사 순서: 401 → 404 → 403 → 422 → 409. (권한 없는 사람에게 상태를 알려 주지 않도록 403이 409보다 먼저)
 
@@ -121,9 +122,9 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 | POST `/auth/login` | 누구나 | `{loginId, password, remember: boolean}` | 200 `Me` + 쿠키(7일, remember면 30일) | 401 `AUTH_INVALID_CREDENTIALS`, 429 `AUTH_LOCKED`(+`retryAfterSec`)·`RATE_LIMITED`(IP 1분 20회) |
 | POST `/auth/test-login` | 누구나 | `{account: 'streamer1' \| 'streamer2' \| 'viewer'}` | 200 `Me` + 쿠키 | 422 |
 | POST `/auth/logout` | 누구나 | — | 204, 세션 삭제·쿠키 만료(세션 없어도 204) | — |
-| GET `/me` | 로그인 | — | 200 `Me` | 401 |
-| PATCH `/me` | 로그인 | `{nickname}` | 200 `Me` | 401, 422, 409 `AUTH_NICKNAME_TAKEN`·`AUTH_NICKNAME_CHANGE_TOO_SOON` |
-| PUT `/me/password` | 로그인·비밀번호 계정 | `{currentPassword, newPassword}` | 204, **현재 세션 외 전부 삭제** | 401, 422 `VALIDATION_FAILED`·`AUTH_WRONG_PASSWORD` |
+| GET `/me` | 로그인 | — | 200 `Me` + 쿠키 만료 갱신(7일/30일) | 401 |
+| PATCH `/me` | 로그인 | `{nickname}` | 200 `Me` (지금과 같은 닉네임이면 변경 없이 200) | 401, 422, 409 `AUTH_NICKNAME_TAKEN`·`AUTH_NICKNAME_CHANGE_TOO_SOON` |
+| PUT `/me/password` | 로그인·비밀번호 계정 | `{currentPassword, newPassword}` | 204, **현재 세션 외 전부 삭제** | 401, 403 `FORBIDDEN`(카카오 계정), 422 `VALIDATION_FAILED`·`AUTH_WRONG_PASSWORD` |
 | DELETE `/me` | 로그인 | `{password, confirmForfeit: boolean}` | 204, 세션 전부 삭제 | 401, 422 `AUTH_WRONG_PASSWORD`, 409 `AUTH_WITHDRAW_WHILE_LIVE`·`AUTH_WITHDRAW_CONFIRM_FORFEIT` |
 
 검증 규칙 (실패 시 `fields.<이름>`에 이유):
@@ -131,11 +132,12 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 - `password`/`newPassword`: 8~64자, 영문·숫자 각 1자 이상, 아이디와 같으면 안 됨, 흔한 비밀번호 상위 100개 금지.
 - `nickname`: 2~12자 `^[가-힣a-zA-Z0-9]+$`, 예약어·욕설·FLUTCH 금지어 불가(422). 활성 사용자 또는 **탈퇴 30일 이내** 사용자와 대소문자 무시 중복이면 `AUTH_NICKNAME_TAKEN`.
 - `agreeTerms`·`agreePrivacy`·`over14`가 `true`가 아니면 422.
-- 로그인: 같은 아이디 5회 연속 실패 → 5분 잠금(`AUTH_LOCKED`, 잠금 중엔 비밀번호가 맞아도 거절, 성공하면 실패 횟수 0). 없는 아이디·틀린 비밀번호·탈퇴 계정 모두 `AUTH_INVALID_CREDENTIALS`.
-- 세션: 7일(사용 시 연장) / remember 30일. LIVE 송출 중인 사용자의 세션은 만료되지 않는다.
+- 로그인: 같은 아이디 5회 연속 실패 → 5분 잠금(`AUTH_LOCKED`, 5번째 실패 응답부터. 잠금 중엔 비밀번호가 맞아도 거절, 성공하면 실패 횟수 0). 없는 아이디·틀린 비밀번호·탈퇴 계정 모두 `AUTH_INVALID_CREDENTIALS`.
+- 요청 제한 IP는 `X-Forwarded-For` 첫 값(nginx가 `$remote_addr`로 덮어씀). 가입 제한은 검증(422)을 통과한 시도만 센다.
+- 세션: 7일(사용 시 연장) / remember 30일. LIVE 송출 중인 사용자의 세션은 만료되지 않는다. 쿠키 `HttpOnly; Secure; SameSite=Lax; Path=/`(로컬 `http://localhost`도 브라우저가 Secure 쿠키를 받는다).
 - 닉네임 변경: `nicknameChangedAt + 30일` 전이면 `AUTH_NICKNAME_CHANGE_TOO_SOON`(message에 남은 일수). 가입 시 설정은 기록하지 않는다.
 - 탈퇴: 내 방송이 LIVE면 `AUTH_WITHDRAW_WHILE_LIVE`. 잔액 > 0이고 `confirmForfeit=false`면 `AUTH_WITHDRAW_CONFIRM_FORFEIT`(message "남은 N비트는 사라지고 되돌릴 수 없어요") → 확인 후 원장 `withdraw_forfeit -N` 추가하고 탈퇴. 카카오 계정은 `password` 없이 `confirmForfeit`만(T28).
-- 테스트 로그인: 시드 계정 3개(서버 시작 시 없으면 생성)만. 다른 값은 422.
+- 테스트 로그인: 시드 계정 3개(서버 시작 시 없으면 생성, 비밀번호 `SEED_PASSWORD`)만. 다른 값은 422 `fields.account`. 쿠키는 7일.
 - 시나리오: `auth_signup_login_logout` `auth_lockout` `auth_password_change_revokes_other_sessions` `auth_nickname_change_30day_limit` `auth_withdraw_forfeits_balance`
 
 **카카오 로그인 (T28, 윤곽만 — T28에서 이 절 확정)**: GET `/auth/kakao/start` → 302 카카오(`state` 쿠키) · GET `/auth/kakao/callback?code&state` → 기존 계정이면 세션 발급 후 302 `/`, 처음이면 302 `/signup/kakao`(임시 서명 쿠키) · POST `/auth/kakao/signup {nickname, agreeTerms, agreePrivacy, over14}` → 201 `Me`.
