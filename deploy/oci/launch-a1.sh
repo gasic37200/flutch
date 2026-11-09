@@ -17,6 +17,12 @@ CLOUD_INIT="./cloud-init.yaml"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
+# IMAGE_ID를 비워 두면 A1용 최신 Ubuntu 24.04 aarch64 이미지를 찾는다
+if [ -z "${IMAGE_ID:-}" ]; then
+  IMAGE_ID=$(oci compute image list --compartment-id "$COMPARTMENT_ID"     --operating-system "Canonical Ubuntu" --operating-system-version "24.04"     --shape "VM.Standard.A1.Flex" --sort-by TIMECREATED --sort-order DESC     --query 'data[0].id' --raw-output)
+  log "이미지: $IMAGE_ID"
+fi
+
 # 이미 같은 이름의 인스턴스가 있으면 만들지 않는다(타임아웃 뒤 재시도로 중복 생성되는 것 방지)
 existing_instance() {
   oci compute instance list \
