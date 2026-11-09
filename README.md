@@ -50,6 +50,30 @@ cd frontend && npm run lint && npm run typecheck && npm run build
 ```
 - API 타입은 `cargo test`가 `frontend/src/api/generated/`에 생성합니다. 바뀌면 함께 커밋합니다(CI가 비교).
 
+## 배포
+main에 머지되면 `.github/workflows/deploy.yml`이 arm64 이미지(`ghcr.io/gasic37200/flutch-backend`, `flutch-web`)를 GitHub의 `ubuntu-24.04-arm` 러너에서 빌드해 GHCR에 올리고, SSH로 서버(`~/flutch/`)에서 `docker compose pull && up -d` 한 뒤 `https://flutch.kro.kr/api/v1/health`를 확인합니다. 서버에서는 Rust를 빌드하지 않습니다. `flutch-web` 이미지는 프론트 정적 파일과 nginx 설정을 함께 담습니다.
+
+**GitHub Secrets** (저장소 Settings → Secrets and variables → Actions)
+| 이름 | 값 |
+|---|---|
+| `DEPLOY_HOST` | 서버 IP 또는 도메인 |
+| `DEPLOY_USER` | 서버 SSH 사용자 (`ubuntu`) |
+| `DEPLOY_SSH_KEY` | 서버 접속용 개인키 전체(`-----BEGIN ...` 포함) |
+| `GHCR_READ_TOKEN` | `read:packages` 권한 classic PAT. 서버가 비공개 이미지를 pull 할 때 쓴다 |
+
+**서버 준비 (한 번)**
+1. Docker·Compose 설치, 80/443 개방(서버 iptables + OCI Security List). 도메인 A 레코드가 서버 IP를 가리켜야 한다.
+2. `~/flutch/.env` 작성(`.env.example`의 "운영 서버 전용" 항목, 파일 권한 600). `POSTGRES_PASSWORD`는 `openssl rand -hex 24`.
+3. `deploy/compose.prod.yml`, `backup.sh`, `init-cert.sh`를 `~/flutch/`에 둔다(첫 배포 workflow가 올려 주므로 이후엔 자동).
+4. 최초 인증서: `cd ~/flutch && ./init-cert.sh` (이메일 없이 발급, 80번 포트가 비어 있을 때). 갱신은 `certbot` 컨테이너가 12시간마다 확인하고 `web`이 12시간마다 nginx를 reload 한다.
+5. DB 백업 cron: `crontab -e` → `0 4 * * * /home/ubuntu/flutch/backup.sh >> /home/ubuntu/flutch/backups/backup.log 2>&1` (서버 시간대가 KST). 요일별 파일 7개가 돌아가며 덮어써져 7일 보관이 된다. Oracle Object Storage 업로드는 `.env`에 `BACKUP_S3_*`를 채우면 켜진다.
+
+**수동 재배포** (Actions → Deploy → Run workflow, 또는 서버에서)
+```bash
+cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f compose.prod.yml up -d
+# 특정 커밋으로 되돌리기: FLUTCH_TAG=<커밋 SHA> docker compose -f compose.prod.yml up -d
+```
+
 ## 기능 확인
 준비 중
 

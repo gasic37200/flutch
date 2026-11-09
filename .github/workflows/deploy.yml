@@ -1,0 +1,100 @@
+name: Deploy
+
+# main 머지 → arm64 이미지 빌드·GHCR 푸시 → SSH 배포 → health 확인.
+# PR에서는 배포 관련 파일이 바뀔 때만 이미지 빌드·푸시(검증용 pr-N 태그)까지 하고 배포는 하지 않는다.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - backend/Dockerfile
+      - deploy/**
+      - .github/workflows/deploy.yml
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+
+jobs:
+  build:
+    # 서버가 arm64이므로 네이티브 arm 러너에서 빌드한다(QEMU 금지).
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - image: flutch-backend
+            context: backend
+            file: backend/Dockerfile
+          - image: flutch-web
+            context: .
+            file: deploy/web.Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tags
+        id: tags
+        run: |
+          T="$REGISTRY/${{ matrix.image }}"
+          if [ "$GITHUB_REF" = refs/heads/main ]; then
+            echo "list=$T:$GITHUB_SHA,$T:latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "list=$T:$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.list }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,scope=${{ matrix.image }},mode=max
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: SSH 설정
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # shortcut: 호스트 키를 처음 보는 대로 신뢰(TOFU), 필요하면 DEPLOY_KNOWN_HOSTS 시크릿으로 고정
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+      - name: 배포 파일 업로드 + 이미지 교체
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+          GHCR_USER: ${{ github.repository_owner }}
+        run: |
+          SSH="ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_HOST"
+          # 비공개 저장소라 서버가 git clone 하지 않고 필요한 파일만 올린다.
+          $SSH 'mkdir -p ~/flutch'
+          scp -i ~/.ssh/deploy_key deploy/compose.prod.yml deploy/backup.sh deploy/init-cert.sh "$DEPLOY_USER@$DEPLOY_HOST:flutch/"
+          printf '%s' "$GHCR_READ_TOKEN" | $SSH "docker login ghcr.io -u $GHCR_USER --password-stdin"
+          $SSH "cd ~/flutch && chmod +x backup.sh init-cert.sh && export FLUTCH_TAG=$GITHUB_SHA && docker compose -f compose.prod.yml pull && docker compose -f compose.prod.yml up -d --remove-orphans && docker image prune -f"
+      - name: health 확인
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS https://flutch.kro.kr/api/v1/health; then exit 0; fi
+            echo "대기 ($i/12)"; sleep 10
+          done
+          echo "::error::health 확인 실패"; exit 1

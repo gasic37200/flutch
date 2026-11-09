@@ -1,0 +1,77 @@
+# 운영(Oracle ARM 서버). 서버의 ~/flutch/ 에서 실행한다. .env는 서버에만 있다(.env.example 참고).
+# 모니터링(Prometheus·Loki·Grafana·Alloy)은 T13, 썸네일 볼륨은 T12에서 이 파일에 추가한다.
+name: flutch
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: flutch
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?.env에 POSTGRES_PASSWORD 필요}
+      POSTGRES_DB: flutch
+      TZ: UTC
+      PGTZ: UTC
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flutch"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    logging: *logging
+
+  backend:
+    image: ghcr.io/gasic37200/flutch-backend:${FLUTCH_TAG:-latest}
+    restart: unless-stopped
+    stop_grace_period: 15s # WebSocket이 열려 있으면 graceful 종료가 늦어진다
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      BACKEND_PORT: "8080"
+      DATABASE_URL: postgres://flutch:${POSTGRES_PASSWORD}@postgres:5432/flutch
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?}
+      LIVEKIT_URL: ${LIVEKIT_URL:?}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:?}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:?}
+      RUST_LOG: ${RUST_LOG:-info}
+    logging: *logging
+
+  web:
+    image: ghcr.io/gasic37200/flutch-web:${FLUTCH_TAG:-latest}
+    restart: unless-stopped
+    depends_on: [backend]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - letsencrypt:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    logging: *logging
+
+  certbot:
+    image: certbot/certbot:latest
+    restart: unless-stopped
+    entrypoint: ["sh", "-c", "while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h; done"]
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    logging: *logging
+
+  # 최초 인증서 발급 전용(deploy/init-cert.sh). web 이미지가 인증서 없이는 뜨지 못하므로 임시 80번 서버를 쓴다.
+  acme-http:
+    image: nginx:1.27-alpine
+    profiles: ["init"]
+    ports:
+      - "80:80"
+    volumes:
+      - certbot-www:/usr/share/nginx/html
+
+volumes:
+  pgdata:
+  letsencrypt:
+  certbot-www:
