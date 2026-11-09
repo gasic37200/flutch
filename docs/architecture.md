@@ -53,12 +53,12 @@ flowchart LR
 
 ### 송출 시작
 1. 스트리머 `POST /api/v1/broadcasts/{id}/live` → 백엔드가 세션·소유자·상태(READY)·동시 LIVE 확인.
-2. 트랜잭션으로 LIVE 전이 + `started_at` 기록 → LiveKit publish 토큰 발급(신원 `userId:tabId`) → 녹화 켜짐이면 Egress 시작 요청.
+2. 트랜잭션으로 LIVE 전이 + `started_at` 기록 → LiveKit publish 토큰 발급(신원 `u:<userId>:<tabId>`) → 녹화 켜짐이면 Egress 시작 요청.
 3. 브라우저가 토큰으로 LiveKit 접속, 트랙 송출: `screen_share`(+`screen_share_audio`) / `camera` / `microphone`.
 4. 커밋 후 WebSocket `broadcast.updated`(LIVE) 발행.
 
 ### 시청
-1. `POST /broadcasts/{id}/viewer-token` → subscribe 전용 토큰(신원 `userId|guestId:tabId`).
+1. `POST /broadcasts/{id}/viewer-token` → subscribe 전용 토큰(신원 `u:<userId>:<tabId>` 또는 `g:<guestId>:<tabId>`).
 2. 브라우저가 LiveKit 구독. `adaptiveStream`으로 화면 크기에 맞는 화질만 받는다.
 3. WebSocket `/broadcasts/{id}/events` 구독: 채팅·제목 변경·후원·게이지·종료 이벤트.
 
@@ -79,7 +79,7 @@ backend/src/
   main.rs            설정 로드, 마이그레이션, 라우터·스케줄러 시작
   lib.rs             AppState, app() 라우터 조립(main·시나리오 테스트 공용), DB 연결
   config.rs          환경변수
-  error.rs           AppError → {error:{code,message,request_id}}
+  error.rs           AppError → {error:{code,message,requestId}}
   extract.rs         CurrentUser / OptionalUser 추출기(세션 쿠키)
   middleware.rs      request_id·접근 로그, 변경 요청 Origin 검사(웹훅 예외)
   realtime.rs        방송별 이벤트 허브(tokio::broadcast) + WebSocket 핸들러
@@ -135,7 +135,7 @@ frontend/src/
 - 이벤트 형식 `{ "type": "chat.created", "data": {...} }` (목록은 `docs/api.md`).
 - 클라이언트는 끊기면 자동 재접속 후 필요한 데이터를 다시 조회(이벤트 누락 허용).
 - **WebSocket 인증·필터링**: 업그레이드 요청에서 `Origin`을 검사(CSWSH 방지)하고, 세션 쿠키가 있으면 사용자를 식별한다(없으면 익명 연결). 이벤트는 **연결별로 걸러서** 보낸다: `donation.created`의 익명 후원자 실명은 방송 소유자 연결에만 포함하고, 나머지 연결에는 "익명의 후원자"로 바꿔 보낸다. 이벤트를 만들 때 `public` / `owner_only` 두 형태를 같이 만들어 연결 종류에 따라 고른다.
-- **홈은 WebSocket을 쓰지 않는다**: 히어로(회전 상태)·목록·사이드바는 **10초 폴링**. 히어로 전환 시각은 서버가 응답에 `next_switch_at`으로 준다.
+- **홈은 WebSocket을 쓰지 않는다**: 히어로(회전 상태)·목록·사이드바는 **10초 폴링**. 히어로 전환 시각은 서버가 응답에 `slot.nextSwitchAt`으로 준다.
 - 시청자 수: LiveKit 웹훅(참가·퇴장)으로 방송별 접속 신원 집합을 메모리에 유지 → 사용자 단위로 묶어 계산 → 변경 시 `viewer.count` 발행, 최고값은 DB 저장. 재시작 시 LiveKit 참가자 목록으로 복구.
 
 ## 7. 데이터 모델 (요약)
