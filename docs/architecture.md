@@ -84,7 +84,7 @@ backend/src/
   scheduler.rs       주기 작업(아래 §5)
   livekit.rs         trait LiveKitApi + HTTP 구현(토큰·방·Egress), 웹훅 검증
   toss.rs            trait TossApi + HTTP 구현(승인·조회), 웹훅 검증
-  routes/mod.rs      /api/v1 라우터 조립 (메인 개발 세션만 수정)
+  routes/mod.rs      /api/v1 라우터 조립 (메인 세션만 수정)
   auth/  broadcast/  live/  chat/  moderation/  wallet/  clutch/  recording/  follow/
       mod.rs         라우트
       handlers.rs    요청 처리·권한 확인
