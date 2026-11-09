@@ -76,7 +76,7 @@ pub async fn ensure_seed_accounts(state: &AppState) -> Result<(), AppError> {
     Ok(())
 }
 
-#[derive(Serialize, TS)]
+#[derive(Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct UserSummary {

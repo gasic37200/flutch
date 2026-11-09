@@ -332,7 +332,7 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 - 로컬 웹훅 주소 `http://host.docker.internal:<BACKEND_PORT>/api/v1/livekit/webhook`. `/metrics`는 API 밖(외부 비공개).
 
 ## 11. WebSocket `/api/v1/broadcasts/{id}/events`
-- 업그레이드 시 `Origin` 검사(불일치 403), 세션 쿠키가 있으면 사용자 식별(없으면 익명). 없는·숨긴 방송은 404. 클라이언트 → 서버 메시지는 없다(쓰기는 모두 REST).
+- 업그레이드 시 `Origin` 검사(없거나 불일치 403, 방송 조회보다 먼저), 세션 쿠키가 있으면 사용자 식별(없으면 익명). 없는·숨긴 방송은 404. 소유자 여부는 연결 시점에 정한다. 클라이언트 → 서버 메시지는 없다(쓰기는 모두 REST, 받은 메시지는 무시). 서버가 30초마다 ping, 다음 ping까지 pong이 없으면 끊는다.
 - 메시지 `{ "type": "chat.created", "data": {...} }`. **DB 커밋 후** 발행. 끊기면 자동 재접속 후 필요한 것을 다시 조회(이벤트 누락 허용).
 - 대상: **public** = 모든 연결, **owner** = 방송 소유자 연결만, **split** = 소유자 연결엔 소유자형, 나머지엔 공개형(익명 후원자 `donor=null`). 이벤트를 만들 때 두 형태를 같이 만들어 연결 종류로 고른다.
 
@@ -355,6 +355,7 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 | `resync` | 해당 연결 | `{}` — 서버 채널 지연(`Lagged`)으로 이벤트를 놓침. 상세·채팅을 다시 조회 |
 
 - 화면 공유 중단·웹캠 켜짐 같은 트랙 변화는 시청자가 LiveKit 이벤트로 직접 감지한다.
+- TS 타입: `WsEvent`(`type`으로 좁히는 유니온, 이벤트가 생길 때마다 변형이 늘어난다). 백엔드 발행은 `realtime::Event::{public, owner_only, split}` + `Hub::publish`.
 
 ## 12. 에러 코드
 공통: `UNAUTHENTICATED`(401 "로그인이 필요합니다.") `FORBIDDEN`(403, Origin 포함) `NOT_FOUND`(404) `VALIDATION_FAILED`(422 + `fields`) `RATE_LIMITED`(429 + `retryAfterSec`) `CONFLICT`(409) `INTERNAL`(500).

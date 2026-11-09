@@ -8,4 +8,5 @@ mod broadcast;
 mod csrf;
 mod health;
 mod live;
+mod realtime;
 mod schema;

@@ -11,6 +11,7 @@ use crate::broadcast::{self, BroadcastDetail, BroadcastError, EndReason, room_na
 use crate::error::AppError;
 use crate::extract::{CurrentUser, JsonBody, OptionalUser};
 use crate::livekit;
+use crate::realtime::{Event, WsEvent};
 
 const ID_FORMAT: &str = "영문·숫자·_·- 8~64자여야 해요.";
 
@@ -71,7 +72,11 @@ pub async fn start(
     let identity = format!("u:{}:{}", user.id, req.tab_id);
     if status == "READY" {
         broadcast::start_live(&state.db, id).await?;
-        // shortcut: 녹화 켜짐이면 Egress 시작(T25)과 `broadcast.updated`(LIVE) 발행(T08c)이 여기 붙는다.
+        let live = broadcast::detail_of(&state, id, None).await?.broadcast;
+        state
+            .realtime
+            .publish(id, Event::public(WsEvent::BroadcastUpdated(live)));
+        // shortcut: 녹화 켜짐이면 Egress 시작(T25)이 여기 붙는다.
     }
     let takeover = req.takeover.unwrap_or(false);
     let previous = match db::claim_publisher(&state.db, id, &identity, takeover).await? {

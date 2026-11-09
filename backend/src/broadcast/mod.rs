@@ -15,6 +15,7 @@ use crate::AppState;
 use crate::auth::UserSummary;
 use crate::error::AppError;
 use crate::extract::CurrentUser;
+use crate::realtime::{Event, WsEvent};
 
 mod db;
 mod handlers;
@@ -74,13 +75,27 @@ pub enum BroadcastStatus {
 }
 
 /// `broadcast.ended` 이벤트의 reason (api.md §11).
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, TS)]
 #[serde(rename_all = "snake_case")]
+#[ts(export)]
 pub enum EndReason {
     Owner,
     Disconnect,
     MaxDuration,
     Deleted,
+}
+
+/// `broadcast.ended` 이벤트 data (api.md §11).
+#[derive(Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct BroadcastEnded {
+    pub ended_at: DateTime<Utc>,
+    pub peak_viewers: i32,
+    pub duration_sec: i64,
+    pub reason: EndReason,
+    /// shortcut: 항상 null, T25가 채운다.
+    pub recording: Option<RecordingRef>,
 }
 
 /// shortcut: 녹화 task(T25)가 recording 도메인으로 옮긴다. 지금은 `Broadcast.recording` 타입용.
@@ -131,7 +146,7 @@ pub struct Page<T> {
     pub next_cursor: Option<String>,
 }
 
-#[derive(Serialize, TS)]
+#[derive(Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct Broadcast {
@@ -288,9 +303,34 @@ pub async fn end_live(state: &AppState, id: i64, reason: EndReason) -> Result<()
     if let Err(e) = state.livekit.delete_room(&room_name(id)).await {
         tracing::error!(broadcast_id = id, error = %e, "livekit room delete failed");
     }
-    // shortcut: Egress 종료(T25)와 `broadcast.ended` 발행(T08c의 Hub API)은 아직 없다.
+    // shortcut: Egress 종료(T25)는 아직 없다.
     tracing::info!(broadcast_id = id, ?reason, "broadcast ended");
+    // 종료는 이미 커밋됐다. 이벤트를 못 만들어도 종료를 실패로 돌리지 않는다(시청자는 재조회로 따라온다).
+    match ended_event(state, id, reason).await {
+        Ok(data) => state
+            .realtime
+            .publish(id, Event::public(WsEvent::BroadcastEnded(data))),
+        Err(e) => tracing::error!(broadcast_id = id, error = %e, "broadcast.ended event failed"),
+    }
     Ok(())
+}
+
+async fn ended_event(
+    state: &AppState,
+    id: i64,
+    reason: EndReason,
+) -> Result<BroadcastEnded, AppError> {
+    let row = handlers::load(state, id).await?;
+    let ended_at = row
+        .ended_at
+        .ok_or_else(|| AppError::Internal("ended broadcast without ended_at".into()))?;
+    Ok(BroadcastEnded {
+        ended_at,
+        peak_viewers: row.peak_viewers,
+        duration_sec: row.started_at.map_or(0, |s| (ended_at - s).num_seconds()),
+        reason,
+        recording: None,
+    })
 }
 
 /// `GET /broadcasts/{id}`와 같은 상세 응답. 다른 도메인(live) 응답에 싣는다. 숨김·없음은 404.
