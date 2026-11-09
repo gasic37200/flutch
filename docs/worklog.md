@@ -15,3 +15,4 @@
 | 2026-11-09 | T06b | 완료 | 2026-11-09 19:52 → 20:13 | 21분 | 186,006 | 94 | [#39](https://github.com/gasic37200/flutch/pull/39) | Sonnet·medium |
 | 2026-11-09 | T08a | 완료 | 2026-11-09 19:52 → 20:13 | 21분 | 195,633 | 55 | [#38](https://github.com/gasic37200/flutch/pull/38) | Opus·high. 로컬 LiveKit으로 토큰 권한·takeover·방 삭제 실측 |
 | 2026-11-09 | T08c | 완료 | 2026-11-09 20:15 → 20:33 | 18분 | 181,409 | 46 | [#41](https://github.com/gasic37200/flutch/pull/41) | Opus·high. tokio-tungstenite로 실제 WS 시나리오 5개 |
+| 2026-11-09 | T08d | 완료 | 2026-11-09 20:34 → 20:47 | 13분 | 129,827 | 46 | [#43](https://github.com/gasic37200/flutch/pull/43) | Sonnet·medium. 브라우저로 READY 대기→LIVE 구독→종료 확인, 미디어 트랙은 미확인(U1) |
