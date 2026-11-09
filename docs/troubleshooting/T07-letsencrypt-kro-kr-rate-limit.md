@@ -1,5 +1,5 @@
 # kro.kr 인증서 발급이 Let's Encrypt 주간 한도로 거절됨
-- task: T07 · PR: (T07 PR) · 날짜: 2026-11-09
+- task: T07 · PR: #29 · 날짜: 2026-11-09
 - 영역: deploy (init-cert.sh, certbot)
 
 ## 증상

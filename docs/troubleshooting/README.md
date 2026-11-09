@@ -33,3 +33,4 @@
 | [T01-livekit-webhook-wsl.md](T01-livekit-webhook-wsl.md) | T01 | 로컬 LiveKit 웹훅은 WSL 백엔드에 닿음(확인), compose는 루트 .env를 안 읽어 `--env-file .env` 필요 |
 | [T01-reqwest-ring-backend.md](T01-reqwest-ring-backend.md) | T01 | reqwest 0.13은 rustls 기본이 aws-lc → ring 쓰려고 0.12 고정 |
 | [T07-letsencrypt-kro-kr-rate-limit.md](T07-letsencrypt-kro-kr-rate-limit.md) | T07 | kro.kr 전체가 Let's Encrypt 주간 발급 한도(50개)에 걸려 인증서 발급 거절 → 한도 해제 시각 이후 재시도 |
+| [T02-sqlx-sqlsafestr.md](T02-sqlx-sqlsafestr.md) | T02 | sqlx 0.9 `query()`는 `&'static str`만 받음 → `format!` SQL 대신 `.bind()` |

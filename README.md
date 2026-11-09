@@ -85,4 +85,9 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 - [일정](docs/roadmap.md)
 
 ## 오픈소스·에셋 출처
-준비 중
+| 항목 | 출처·라이선스 |
+|---|---|
+| Pretendard (본문 글꼴) | [orioncactus/pretendard](https://github.com/orioncactus/pretendard), SIL OFL 1.1, jsDelivr CDN |
+| Chakra Petch (영문 제목 글꼴) | [Google Fonts](https://fonts.google.com/specimen/Chakra+Petch), SIL OFL 1.1 |
+| JetBrains Mono (숫자 글꼴) | [Google Fonts](https://fonts.google.com/specimen/JetBrains+Mono), SIL OFL 1.1 |
+| 로고·마스코트·배너·배경 텍스처 (`frontend/public/brand/`) | **AI 생성 이미지**를 가공해 사용 (원본·가공본은 `docs/design-refs/`) |

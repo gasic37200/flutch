@@ -5,3 +5,4 @@ mod common;
 
 mod csrf;
 mod health;
+mod schema;
