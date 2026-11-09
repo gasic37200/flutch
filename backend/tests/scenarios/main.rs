@@ -4,6 +4,7 @@
 mod common;
 
 mod auth;
+mod broadcast;
 mod csrf;
 mod health;
 mod schema;

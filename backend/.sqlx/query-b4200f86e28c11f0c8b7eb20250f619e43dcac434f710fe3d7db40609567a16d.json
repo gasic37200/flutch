@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE recordings SET status = 'deleted' WHERE broadcast_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b4200f86e28c11f0c8b7eb20250f619e43dcac434f710fe3d7db40609567a16d"
+}

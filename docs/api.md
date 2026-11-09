@@ -163,6 +163,7 @@ type Page<T> = { items: T[]; nextCursor: string | null }
   | READY | `title` `category` `tags` `record` `pipCorner` |
   | LIVE | `title` `category` `tags` `pipCorner` |
   | ENDED | `title` |
+- 목록 정렬·커서: 모든 목록은 현재 최신 id 순이고 `nextCursor`는 마지막 항목 id다(T04). `GET /broadcasts`의 시청자 수 순 정렬은 시청자 수 집계(T08b)와 함께 바뀐다. 잘못된 `limit`(숫자 아님)·`cursor`·`category`·`status`는 422, `limit`은 1~50으로 보정한다.
 - 등록 한도: 내 READY가 이미 5개면 `BROADCAST_READY_LIMIT`. "이전 방송 정보 복사"는 별도 API 없이 프론트가 `GET /me/broadcasts`의 값을 등록 폼에 채운다.
 - 삭제: READY → 행 삭제. LIVE → 송출 종료(§3-1 종료 절차, `broadcast.ended` reason `deleted`) 후 ENDED 규칙. ENDED → `hiddenAt` 기록(이후 모든 조회·하위 리소스·WebSocket 404) + 녹화 파일 삭제(`recordings.status=deleted`). 채팅·후원·원장은 보존.
 - 방송 길이: LIVE 3시간(설정값)에 자동 종료(reason `max_duration`), 10분 전 `broadcast.duration_warning`.
