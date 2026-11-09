@@ -51,3 +51,4 @@
 - `broadcast_state_transitions`: 허용 전이만 성공, ENDED→LIVE 409, LIVE 중 제목만 수정, ENDED는 제목만
 - `broadcast_limits`: 동시 LIVE 2개 거절, READY 6개째 거절
 - `broadcast_delete_live_ends_first`
+- `broadcast_persists_after_restart`: 저장 후 앱 상태를 새로 만들어도(서버 재시작 가정) 목록·상세 조회

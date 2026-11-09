@@ -95,7 +95,9 @@ backend/data/              금지어·욕설·흔한 비밀번호 목록
 ```
 - 계층은 **handlers → db** 두 단계. 여러 도메인이 쓰는 규칙만 함수로 뺀다(예: `wallet::debit`, `broadcast::ensure_owner`).
 - 권한 확인은 핸들러 첫 줄에서: 추출기(로그인) → 소유자/차단/상태 확인 → 처리.
-- API 타입은 `ts-rs`로 Rust 구조체에서 TypeScript 타입을 생성해 `frontend/src/api/generated/`에 둔다(프론트·백엔드 타입 불일치 방지).
+- API 타입은 `ts-rs`로 Rust 구조체에서 TypeScript 타입을 생성해 `frontend/src/api/generated/`에 둔다(프론트·백엔드 타입 불일치 방지). **i64 필드는 `#[ts(type = "number")]`**(JSON은 number). 생성은 `cargo test export_bindings`, CI에서 생성 결과가 커밋본과 다르면 실패.
+- **충돌 방지 골격(T01에서 만든다)**: `routes/mod.rs`는 모든 도메인의 `routes()`를 미리 `merge`해 두고, 각 도메인은 자기 `mod.rs`의 Router만 채운다. 설정은 도메인별 하위 구조체(`config.chat` 등), 주기 작업은 도메인별 `register(&mut Scheduler)` 함수, 에러 코드는 도메인별 enum을 `AppError`로 변환. 그래서 서브에이전트는 공용 파일을 거의 건드리지 않는다.
+- 외부 HTTP: `reqwest`(rustls, `ring` 백엔드 — Windows에서 aws-lc 빌드 도구가 필요 없게). Object Storage 삭제·용량 조회는 가벼운 S3 호환 crate 1개(path-style 주소).
 
 ## 4. 프론트엔드 구조 (React + Vite)
 
@@ -130,22 +132,38 @@ frontend/src/
 - 방송마다 `tokio::broadcast` 채널 하나. **DB 커밋 후** 발행.
 - 이벤트 형식 `{ "type": "chat.created", "data": {...} }` (목록은 `docs/api.md`).
 - 클라이언트는 끊기면 자동 재접속 후 필요한 데이터를 다시 조회(이벤트 누락 허용).
+- **WebSocket 인증·필터링**: 업그레이드 요청에서 `Origin`을 검사(CSWSH 방지)하고, 세션 쿠키가 있으면 사용자를 식별한다(없으면 익명 연결). 이벤트는 **연결별로 걸러서** 보낸다: `donation.created`의 익명 후원자 실명은 방송 소유자 연결에만 포함하고, 나머지 연결에는 "익명의 후원자"로 바꿔 보낸다. 이벤트를 만들 때 `public` / `owner_only` 두 형태를 같이 만들어 연결 종류에 따라 고른다.
+- **홈은 WebSocket을 쓰지 않는다**: 히어로(회전 상태)·목록·사이드바는 **10초 폴링**. 히어로 전환 시각은 서버가 응답에 `next_switch_at`으로 준다.
 - 시청자 수: LiveKit 웹훅(참가·퇴장)으로 방송별 접속 신원 집합을 메모리에 유지 → 사용자 단위로 묶어 계산 → 변경 시 `viewer.count` 발행, 최고값은 DB 저장. 재시작 시 LiveKit 참가자 목록으로 복구.
 
 ## 7. 데이터 모델 (요약)
 | 테이블 | 핵심 컬럼 |
 |---|---|
 | users | login_id(유니크·영구), nickname(유니크), password_hash, kakao_id, nickname_changed_at, withdrawn_at |
-| sessions | id(쿠키 값의 해시), user_id, expires_at, remember |
-| broadcasts | owner_id, status, title, category, tags, record, pip_corner, started_at, ended_at, disconnected_at, peak_viewers, thumbnail_path, hidden_at |
+| sessions | token_hash(SHA-256, PK), user_id, expires_at, remember, last_seen_at |
+| broadcasts | owner_id, status, title, category, tags(text[]), record, pip_corner, **publisher_identity**(현재 송출 기기의 LiveKit 신원), started_at, ended_at, disconnected_at, peak_viewers, thumbnail_path, hidden_at |
 | chats | broadcast_id, streamer_id, user_id, body, edited_at, deleted_at |
 | bans / ban_events | streamer_id, user_id, until(NULL=영구) / 이력 |
 | follows | follower_id, streamer_id |
-| wallets / ledger_entries | user_id, balance / type, amount(+/-), balance_after, 참조 id |
+| wallets / ledger_entries | user_id(PK), balance `CHECK (balance BETWEEN 0 AND 3000000)` / user_id, type, amount(+/-), balance_after, payment_order_id?, donation_id?, broadcast_id?, created_at |
 | payment_orders | order_id(유니크), payment_key(유니크), purpose, amount, broadcast_id, status, expires_at |
 | donations | broadcast_id, donor_id, amount, kind(donation/clutch/burst), anonymous, message, ledger_entry_id |
-| clutch_events / clutch_queue | broadcast_id, user_id, points, paid / status, starts_at, ends_at |
-| recordings / recording_views | broadcast_id, egress_id, status, object_key, duration, expires_at, views / (recording_id, viewer_key, date) 유니크 |
+| clutch_events / super_clutches | broadcast_id, user_id, points, paid, created_at / broadcast_id, triggered_at, expires_at(=+5분), rotation_order |
+| recordings / recording_views | broadcast_id, egress_id, status, object_key, **size_bytes**, duration, expires_at, views / (recording_id, viewer_key, date_kst) 유니크 |
+
+### 7-1. 데이터 기본 규칙
+- **ID**: 모든 테이블 `BIGINT GENERATED ALWAYS AS IDENTITY`(채팅 커서 페이지네이션이 증가하는 id를 전제).
+- **돈**: 비트는 `BIGINT` 정수. 원 단위 소수 없음.
+- **시간**: `timestamptz`로 UTC 저장. "하루"(조회수)·"최근 7일"·"월 필터"의 경계는 **KST(Asia/Seoul)**.
+- **원장**:
+  - 유형: `charge`(+), `donation`(-), `clutch`(-), `burst`(-), `withdraw_forfeit`(-). 참조는 유형별 nullable FK 컬럼.
+  - 차감: `UPDATE wallets SET balance = balance - $n WHERE user_id = $u AND balance >= $n RETURNING balance` → 그 값을 `balance_after`로 같은 트랜잭션에서 원장에 추가.
+  - **스트리머는 받은 비트를 원장에 적립받지 않는다**(정산 없음, 받은 비트를 다시 쓰면 안 됨). 받은 합계는 `donations`에서 집계.
+- **세션**: 32바이트 랜덤 토큰(base64url)을 쿠키 `flutch_session`(httpOnly·Secure·SameSite=Lax)에, DB에는 SHA-256 해시만. 연장은 `last_seen_at`이 1시간 이상 지났을 때만 UPDATE. LIVE 송출 중인 사용자의 세션은 만료 작업이 건너뛴다.
+
+## 7-2. 결제 웹훅
+- 토스 웹훅(`PAYMENT_STATUS_CHANGED`)은 헤더 서명이 아니라 **본문의 `paymentKey`로 결제 조회 API를 다시 호출**해 상태·금액을 확인하고 확정한다(본문의 `secret`은 결제 객체의 `secret`과 대조). 확정은 `payment_key` 유니크로 멱등.
+- 결제위젯을 쓰므로 키는 **결제위젯 연동 키**(클라이언트 `test_gck_…`, 시크릿 `test_gsk_…`).
 
 ## 8. 확장 시 바꿀 지점 (지금은 하지 않음)
 - 백엔드 여러 대: 실시간 허브 → Redis pub/sub, 스케줄러 → 한 대만 실행(리더 선출), 시청자 수·요청 제한 메모리 상태 → Redis.
@@ -159,3 +177,11 @@ frontend/src/
 - 시청자: PIP 숨기기 버튼(모바일에서는 탭으로 숨김·표시).
 - 녹화: LiveKit 기본 배치(화면 크게 + 카메라 옆)로 저장. 라이브와 배치가 다른 점은 README에 명시.
 - 대역폭: 화면 1080p30 + 카메라 360p30(simulcast). 사양이 낮으면 카메라를 끄도록 안내.
+
+## 10. 개발·배포 환경
+- **로컬**: `deploy/compose.dev.yml` = Postgres + **`livekit/livekit-server --dev`**(로컬 LiveKit). 웹훅은 `http://host.docker.internal:<BACKEND_PORT>/api/v1/livekit/webhook`. 로컬에서 송출·시청·웹훅·유예까지 확인한다(녹화 Egress만 배포 환경에서 확인).
+- **worktree마다**: `.env`의 `BACKEND_PORT`·`VITE_PORT`·`DATABASE_URL`(DB 이름 `flutch_<task>`)을 지시서에서 정해 준다. `#[sqlx::test]`는 같은 Postgres 서버에 테스트 DB를 스스로 만든다.
+- **허용 Origin**: 환경변수 `ALLOWED_ORIGINS`(로컬 `http://localhost:<VITE_PORT>`, 운영 `https://flutch.kro.kr`). 요청 제한의 클라이언트 IP는 nginx가 넣는 `X-Forwarded-For`의 첫 값만, 신뢰 프록시는 Docker 네트워크 대역.
+- **CI**(GitHub Actions): Postgres service 컨테이너 + `DATABASE_URL`로 `cargo test`, 빌드는 `SQLX_OFFLINE=true`, `cargo sqlx prepare --check`, ts-rs 생성 결과 비교, 프론트 lint·typecheck·build. 캐시 `Swatinem/rust-cache`.
+- **이미지 빌드**: GitHub의 **`ubuntu-24.04-arm` 러너**(비공개 저장소도 2026-01부터 지원)에서 네이티브 arm64 빌드 → GHCR. 에뮬레이션(QEMU) 빌드는 쓰지 않는다. 서버는 `read:packages` 토큰으로 pull.
+- **배포**: main 머지 → 이미지 빌드 → SSH로 `docker compose pull && up -d` → `GET /api/v1/health` 확인.
