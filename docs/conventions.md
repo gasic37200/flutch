@@ -8,7 +8,7 @@
 | JSON 필드 이름 | **camelCase** (`#[serde(rename_all = "camelCase")]`) |
 | id·금액 | JSON number(i64), Rust `i64`, DB `BIGINT`. 금액에 `f64` 금지 |
 | 시간 | Rust `chrono::DateTime<Utc>`, DB `timestamptz`(Postgres UTC 고정), JSON RFC 3339 UTC. **화면 표시·날짜 경계는 KST**(`chrono_tz::Asia::Seoul` / `Intl … timeZone: 'Asia/Seoul'`). 서버 로컬 시간(`Local::now()`)에 의존하지 않는다 |
-| 에러 | 백엔드 `thiserror` 기반 `AppError` → `{error:{code,message,request_id}}`. `anyhow`는 `main`·스크립트에서만 |
+| 에러 | 백엔드 `thiserror` 기반 `AppError` → `{error:{code,message,requestId}}`. `anyhow`는 `main`·스크립트에서만 |
 | 외부 연동 trait | `LiveKitApi`·`TossApi`는 `async_trait` + `Arc<dyn …>`로 주입(테스트에서 fake로 교체) |
 | 공용 상태 | `Arc<AppState>`를 Axum `State`로. 전역 `static`·`lazy_static` 상태 금지 |
 | 프론트 서버 상태 | TanStack Query. 쿼리 키는 `['broadcast', id]`처럼 도메인부터 |
