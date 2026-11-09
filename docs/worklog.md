@@ -16,3 +16,6 @@
 | 2026-11-09 | T08a | 완료 | 2026-11-09 19:52 → 20:13 | 21분 | 195,633 | 55 | [#38](https://github.com/gasic37200/flutch/pull/38) | Opus·high. 로컬 LiveKit으로 토큰 권한·takeover·방 삭제 실측 |
 | 2026-11-09 | T08c | 완료 | 2026-11-09 20:15 → 20:33 | 18분 | 181,409 | 46 | [#41](https://github.com/gasic37200/flutch/pull/41) | Opus·high. tokio-tungstenite로 실제 WS 시나리오 5개 |
 | 2026-11-09 | T08d | 완료 | 2026-11-09 20:34 → 20:47 | 13분 | 129,827 | 46 | [#43](https://github.com/gasic37200/flutch/pull/43) | Sonnet·medium. 브라우저로 READY 대기→LIVE 구독→종료 확인, 미디어 트랙은 미확인(U1) |
+| 2026-11-09 | T11 | 완료 | 2026-11-09 20:49 → 21:03 | 14분 | 145,443 | 48 | [#45](https://github.com/gasic37200/flutch/pull/45) | Sonnet·medium. 실영상·소리는 U1 |
+| 2026-11-09 | T09 | 부분(U1) | 2026-11-09 20:49 → 21:09 | 20분 | 181,732 | 68 | [#46](https://github.com/gasic37200/flutch/pull/46) | Sonnet·medium. 합성 스트림으로 3트랙 구독·볼륨 반영 확인, 실장치는 U1 |
+| 2026-11-09 | T08b | 완료 | 2026-11-09 20:34 → 21:10 | 36분 | 276,948 | 100 | [#47](https://github.com/gasic37200/flutch/pull/47) | Opus·high. 로컬 LiveKit 실제 웹훅(참가·퇴장·방 종료) 서명 검증·유예 만료 종료 실측 |

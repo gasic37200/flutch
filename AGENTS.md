@@ -177,6 +177,7 @@ feat(broadcast): 송출 시작·종료 API 추가
 - 브랜치: <type>/<이름> (push는 이 브랜치만, main 직접 push 금지)
 - 포트·DB: BACKEND_PORT=<…>, VITE_PORT=<…>, DATABASE_URL=…/flutch_<task>
 - 임시 파일: `/tmp/<task>/` 아래에만 (WSL `/tmp`는 병렬 서브에이전트끼리 공유 — 같은 이름 스크립트가 덮어써져 다른 worktree를 건드린 사고, T04)
+- Browser 확인: 창을 다른 서브에이전트와 공유하므로 `tabs_create`로 새 탭을 열어 그 tabId로만 작업하고 끝나면 닫는다(T11에서 다른 task가 탭 주소를 바꾼 일)
 - 이전 시도·후속 할당이면: <이전 보고서의 위험·건너뛴 것>
 ```
 
