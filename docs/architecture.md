@@ -141,17 +141,17 @@ frontend/src/
 ## 7. 데이터 모델 (요약)
 | 테이블 | 핵심 컬럼 |
 |---|---|
-| users | login_id(유니크·영구), nickname(유니크), password_hash, kakao_id, nickname_changed_at, withdrawn_at |
-| sessions | token_hash(SHA-256, PK), user_id, expires_at, remember, last_seen_at |
-| broadcasts | owner_id, status, title, category, tags(text[]), record, pip_corner, **publisher_identity**(현재 송출 기기의 LiveKit 신원), started_at, ended_at, disconnected_at, peak_viewers, thumbnail_path, hidden_at |
-| chats | broadcast_id, streamer_id, user_id, body, edited_at, deleted_at |
-| bans / ban_events | streamer_id, user_id, until(NULL=영구) / 이력 |
-| follows | follower_id, streamer_id |
-| wallets / ledger_entries | user_id(PK), balance `CHECK (balance BETWEEN 0 AND 3000000)` / user_id, type, amount(+/-), balance_after, payment_order_id?, donation_id?, broadcast_id?, created_at |
-| payment_orders | order_id(유니크), payment_key(유니크), purpose, amount, broadcast_id, status, expires_at |
-| donations | broadcast_id, donor_id, amount, kind(donation/clutch/burst), anonymous, message, ledger_entry_id |
-| clutch_events / super_clutches | broadcast_id, user_id, points, paid, created_at / broadcast_id, triggered_at, expires_at(=+5분), rotation_order |
-| recordings / recording_views | broadcast_id, egress_id, status, object_key, **size_bytes**, duration, expires_at, views / (recording_id, viewer_key, date_kst) 유니크 |
+| users | login_id(`^[a-z0-9]{4,20}$`, 유니크·영구, 카카오 계정은 NULL), password_hash(카카오 NULL), kakao_id(유니크), nickname(**활성 사용자끼리 `lower()` 유니크** — 탈퇴 후 30일 보류는 앱이 확인), nickname_changed_at, failed_login_count, locked_until(5회 실패 잠금), withdrawn_at |
+| sessions | token_hash(SHA-256 32바이트 bytea, PK), user_id, expires_at, remember, last_seen_at |
+| broadcasts | owner_id, status(`READY`/`LIVE`/`ENDED`, 상태별 started_at·ended_at 유무 CHECK), title, category, tags(text[], 최대 3), record, pip_corner(`top_left`/`top_right`/`bottom_left`/`bottom_right`, 기본 `bottom_right`), **publisher_identity**(현재 송출 기기의 LiveKit 신원), started_at, ended_at, disconnected_at, peak_viewers, thumbnail_path, hidden_at(ENDED만). 부분 유니크 `broadcasts_one_live_per_owner`(owner_id WHERE LIVE) |
+| chats | broadcast_id, streamer_id(`(broadcast_id, streamer_id)` → broadcasts`(id, owner_id)` 복합 FK), user_id, body(원문), edited_at, deleted_at |
+| bans / ban_events | streamer_id, user_id, until(NULL=영구), `(streamer_id, user_id)` 유니크 = 현재 상태 / action(`timeout`/`ban`/`unban`), until — **추가만**(트리거) |
+| follows | follower_id, streamer_id, 유니크·자기 자신 금지 |
+| wallets / ledger_entries | user_id(PK), balance `CHECK (balance BETWEEN 0 AND 3000000)` / user_id, type, amount(charge만 +, 나머지 -), balance_after, payment_order_id(charge만, **유니크**), broadcast_id(donation·clutch·burst만), created_at — **추가만**(UPDATE·DELETE·TRUNCATE 트리거 거절) |
+| payment_orders | order_id(유니크), payment_key(유니크), user_id, purpose(`charge`/`donation`), amount(결제=충전 금액), broadcast_id·donation_amount·donation_anonymous·donation_message(donation 주문만), status(`pending`/`done`/`expired`/`failed`), expires_at, confirmed_at |
+| donations | broadcast_id, donor_id, amount, kind(donation/clutch/burst), anonymous, message, ledger_entry_id(유니크, 차감 원장을 가리킴 — 원장 쪽에 donation_id는 두지 않음) |
+| clutch_events / super_clutches | broadcast_id, user_id, source(`free`/`paid`/`burst`/`donation` — 게이지 점수 출처를 한 테이블에), points, created_at / broadcast_id, triggered_at, expires_at(=+5분), rotation_order |
+| recordings / recording_views | broadcast_id(유니크, 1:1), egress_id(유니크), status(`recording`/`ready`/`failed`/`deleted`), object_key, **size_bytes**, duration_sec, expires_at, views / (recording_id, viewer_key(`u:<id>`/`g:<익명id>`), date_kst(기본값 KST 오늘)) 유니크 |
 
 ### 7-1. 데이터 기본 규칙
 - **ID**: 모든 테이블 `BIGINT GENERATED ALWAYS AS IDENTITY`(채팅 커서 페이지네이션이 증가하는 id를 전제).
