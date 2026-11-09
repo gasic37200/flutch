@@ -7,4 +7,5 @@ mod auth;
 mod broadcast;
 mod csrf;
 mod health;
+mod live;
 mod schema;
