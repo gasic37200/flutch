@@ -1,5 +1,5 @@
 # LiveKit 토큰의 `canPublish`·`canPublishData`는 빠지면 true — 시청 토큰에 false를 명시
-- task: T08a · PR: (이 PR) · 날짜: 2026-11-09
+- task: T08a · PR: #38 · 날짜: 2026-11-09
 - 영역: backend/livekit
 
 ## 증상
