@@ -246,9 +246,12 @@ pub async fn update_me(
 
 pub async fn change_password(
     State(state): State<Arc<AppState>>,
+    Extension(limits): Extension<Arc<Limits>>,
     user: CurrentUser,
     JsonBody(req): JsonBody<ChangePasswordRequest>,
 ) -> Result<StatusCode, AppError> {
+    // 탈취한 세션으로 현재 비밀번호를 무한 대입하지 못하게 사용자별로 로그인과 같은 한도를 건다.
+    limits.login.hit(&format!("pw:{}", user.id))?;
     let creds = db::credentials(&state.db, user.id).await?;
     // 카카오 계정은 비밀번호가 없어 바꿀 수 없다.
     let (Some(login_id), Some(hash)) = (creds.login_id, creds.password_hash) else {
