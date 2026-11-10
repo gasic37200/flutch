@@ -48,3 +48,4 @@
 | 2026-11-10 | T09b | 완료 | 2026-11-10 14:14 → 14:56 | 42분 | 199,774 | 129 | [#91](https://github.com/gasic37200/flutch/pull/91) | Sonnet·medium. livekit-client TrackUnsubscribed 순서 버그 수정, 실장치는 U1 |
 | 2026-11-10 | T20b | 완료 | 2026-11-10 14:14 → 15:16 | 65분 | 250,099 | 133 | [#93](https://github.com/gasic37200/flutch/pull/93) | Opus·high. ponytail-review: 탈퇴 후 웹훅 충전 1건(nice) → T21b |
 | 2026-11-10 | T27 | 완료 | 2026-11-10 15:19 → 16:08 | 49분 | 169,298 | 75 | [#96](https://github.com/gasic37200/flutch/pull/96) | Sonnet·medium. 확장 단계 첫 task |
+| 2026-11-10 | T23 | 부분(토스 키) | 2026-11-10 14:52 → 16:17 | 86분 | 354,321 | 236 | [#95](https://github.com/gasic37200/flutch/pull/95) | Sonnet·medium. 실제 결제창·결제는 토스 키 받은 뒤, 공용 Postgres 메모리 부족 재시작 1회 |
