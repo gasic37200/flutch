@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE broadcasts SET thumbnail_path = $2 WHERE id = $1 AND status = 'LIVE'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "422138e940ab3255419daf5afd99df623605db3ec2101a4a8f109fb7893060b4"
+}

@@ -1,5 +1,5 @@
 # 운영(Oracle ARM 서버). 서버의 ~/flutch/ 에서 실행한다. .env는 서버에만 있다(.env.example 참고).
-# 모니터링(Prometheus·Loki·Grafana·Alloy)은 T13, 썸네일 볼륨은 T12에서 이 파일에 추가한다.
+# 모니터링(Prometheus·Loki·Grafana·Alloy)은 T13, 썸네일 볼륨(thumbs)은 backend가 쓰고 web(nginx)이 읽는다.
 name: flutch
 
 x-logging: &logging
@@ -40,6 +40,8 @@ services:
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:?}
       SEED_PASSWORD: ${SEED_PASSWORD:-}
       RUST_LOG: ${RUST_LOG:-info}
+    volumes:
+      - thumbs:/thumbs # THUMB_DIR(backend/Dockerfile 기본값)
     logging: *logging
 
   web:
@@ -52,6 +54,7 @@ services:
     volumes:
       - letsencrypt:/etc/letsencrypt:ro
       - certbot-www:/var/www/certbot:ro
+      - thumbs:/var/www/thumbs:ro
     logging: *logging
 
   certbot:
@@ -76,3 +79,4 @@ volumes:
   pgdata:
   letsencrypt:
   certbot-www:
+  thumbs:

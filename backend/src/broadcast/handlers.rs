@@ -2,8 +2,9 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use axum::Json;
+use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode, header};
 use serde::Deserialize;
 
 use super::db::{self, Filter, Patch};
@@ -16,6 +17,7 @@ use crate::AppState;
 use crate::auth::{contains_banned_word, contains_profanity};
 use crate::error::AppError;
 use crate::extract::{CurrentUser, JsonBody, OptionalUser};
+use crate::live::LiveError;
 use crate::realtime::{Event, WsEvent};
 
 const DEFAULT_LIMIT: i64 = 20;
@@ -337,6 +339,56 @@ pub async fn update(
     Ok(Json(d))
 }
 
+const MAX_THUMBNAIL_BYTES: usize = 512 * 1024;
+
+fn thumbnail_file(state: &AppState, id: i64) -> std::path::PathBuf {
+    state.config.broadcast.thumb_dir.join(format!("{id}.jpg"))
+}
+
+/// 송출 중 캡처 1장을 `{id}.jpg`로 덮어쓴다(임시 파일 → rename으로 nginx가 반쯤 쓴 파일을 읽지 않게).
+pub async fn put_thumbnail(
+    State(state): State<Arc<AppState>>,
+    user: CurrentUser,
+    Path(id): Path<i64>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Result<StatusCode, AppError> {
+    let row = load(&state, id).await?;
+    if row.owner_id != user.id {
+        return Err(BroadcastError::NotOwner.into());
+    }
+    if row.status != "LIVE" {
+        return Err(LiveError::NotLive.into());
+    }
+    let is_jpeg_type = headers
+        .get(header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| v.trim().eq_ignore_ascii_case("image/jpeg"));
+    if !is_jpeg_type || body.len() > MAX_THUMBNAIL_BYTES || !body.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        return Err(BroadcastError::ThumbnailInvalid.into());
+    }
+
+    let path = thumbnail_file(&state, id);
+    let tmp = path.with_extension("jpg.tmp");
+    let write = async {
+        tokio::fs::create_dir_all(&state.config.broadcast.thumb_dir).await?;
+        tokio::fs::write(&tmp, &body).await?;
+        tokio::fs::rename(&tmp, &path).await
+    };
+    write
+        .await
+        .map_err(|e| AppError::Internal(format!("thumbnail write failed: {e}")))?;
+
+    let version = chrono::Utc::now().timestamp_millis().to_string();
+    if !db::set_thumbnail(&state.db, id, &version).await? {
+        return Err(LiveError::NotLive.into());
+    }
+    let d = detail(&state, load(&state, id).await?, Some(&user))?;
+    let event = WsEvent::BroadcastUpdated(d.broadcast);
+    state.realtime.publish(id, Event::public(event));
+    Ok(StatusCode::NO_CONTENT)
+}
+
 pub async fn delete(
     State(state): State<Arc<AppState>>,
     user: CurrentUser,
@@ -363,6 +415,8 @@ pub async fn delete(
             }
         }
     }
+    // 숨김 처리된 방송의 썸네일 파일은 더 쓰이지 않는다. 실패해도 삭제는 성공(없으면 정상).
+    let _ = tokio::fs::remove_file(thumbnail_file(&state, id)).await;
     tracing::info!(broadcast_id = id, owner_id = user.id, "broadcast deleted");
     Ok(StatusCode::NO_CONTENT)
 }

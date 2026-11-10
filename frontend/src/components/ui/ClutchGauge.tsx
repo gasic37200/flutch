@@ -5,18 +5,27 @@ function stageOf(p: number) {
   return { logo: 'logo-clutch-time', fill: 'bg-brand', beat: '' }
 }
 
-export default function ClutchGauge({ percent, className = '' }: { percent: number; className?: string }) {
+// lg는 시청 화면용(모바일에서 한 단계 작게)
+export default function ClutchGauge({ percent, size = 'md', className = '' }: { percent: number; size?: 'md' | 'lg'; className?: string }) {
   const p = Math.round(Math.min(100, Math.max(0, percent)))
   const stage = stageOf(p)
+  const lg = size === 'lg'
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      <img src={`/brand/${stage.logo}.png`} alt='CLUTCH TIME' className='h-8 w-auto' />
+      <img src={`/brand/${stage.logo}.png`} alt='CLUTCH TIME' className={lg ? 'h-7 w-auto md:h-10' : 'h-8 w-auto'} />
       <div className={`grow ${stage.beat}`}>
-        <div role='progressbar' aria-label='클러치 게이지' aria-valuemin={0} aria-valuemax={100} aria-valuenow={p} className='chamfer h-3 bg-surface-2 [--c:6px]'>
+        <div
+          role='progressbar'
+          aria-label='클러치 게이지'
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={p}
+          className={`chamfer bg-surface-2 [--c:6px] ${lg ? 'h-2.5 md:h-3.5' : 'h-3'}`}
+        >
           <div className={`chamfer h-full transition-[width] duration-500 [--c:6px] ${stage.fill}`} style={{ width: `${p}%` }} />
         </div>
       </div>
-      <span className='w-12 text-right font-mono text-sm font-bold'>{p}%</span>
+      <span className={`w-12 text-right font-mono font-bold ${lg ? 'text-sm md:text-base' : 'text-sm'}`}>{p}%</span>
     </div>
   )
 }
