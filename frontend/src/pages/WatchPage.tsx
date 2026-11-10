@@ -1,4 +1,9 @@
+import { useState } from 'react'
 import { useParams } from 'react-router'
+import DonationAlert from '../features/donation/components/DonationAlert.tsx'
+import DonationPanel from '../features/donation/components/DonationPanel.tsx'
+import { useDonationAlerts } from '../features/donation/hooks/useDonationAlerts.ts'
+import { useDonationList } from '../features/donation/hooks/useDonationList.ts'
 import BurstButton from '../features/watch/components/BurstButton.tsx'
 import ClutchButton from '../features/watch/components/ClutchButton.tsx'
 import SuperClutchOverlay from '../features/watch/components/SuperClutchOverlay.tsx'
@@ -27,6 +32,9 @@ export default function WatchPage() {
   const clutch = useClutch(broadcast, events.onEvent)
   const burst = useBurst(broadcast, events.onEvent)
   const desktop = useMediaQuery('(min-width: 1280px)')
+  const alerts = useDonationAlerts(events.onEvent)
+  const donations = useDonationList(id, { onEvent: events.onEvent, live: broadcast?.status === 'LIVE' })
+  const [tab, setTab] = useState('chat')
 
   if (id === undefined) return <ErrorScreen kind='notFound' />
   // 재생 중 백그라운드 재조회가 실패해도 화면을 갈아엎지 않는다(삭제된 방송 404만 예외).
@@ -43,7 +51,10 @@ export default function WatchPage() {
       <SuperClutchOverlay superClutch={clutch.superClutch} />
       <ShellBody aside={desktop ? chatCard : undefined}>
         <div className='flex flex-col gap-3.5'>
-          <Player view={view} broadcast={broadcast} player={player} onUnmute={() => void viewer.unmute()} />
+          <div className='relative'>
+            <Player view={view} broadcast={broadcast} player={player} onUnmute={() => void viewer.unmute()} />
+            <DonationAlert alerts={alerts} owner={broadcast?.viewer?.isOwner} />
+          </div>
           {broadcast && (
             <>
               <Panel innerClassName='px-3 py-2.5 md:px-4 md:py-3'>
@@ -56,13 +67,22 @@ export default function WatchPage() {
                 </div>
               </Panel>
               <WatchInfo broadcast={broadcast} />
+              {desktop && <DonationPanel list={donations} />}
             </>
           )}
           {!desktop && (
             <div>
-              <Tabs label='채팅' tabs={[{ id: 'chat', label: '채팅' }]} value='chat' onChange={() => {}} />
+              <Tabs
+                label='채팅·후원'
+                tabs={[
+                  { id: 'chat', label: '채팅' },
+                  { id: 'donations', label: '후원' },
+                ]}
+                value={tab}
+                onChange={setTab}
+              />
               <div role='tabpanel' className='pt-3'>
-                {chatCard}
+                {tab === 'donations' ? <DonationPanel list={donations} /> : chatCard}
               </div>
             </div>
           )}

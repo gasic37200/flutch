@@ -7,6 +7,7 @@ import ExplorePage from './pages/ExplorePage.tsx'
 import HomePage from './pages/HomePage.tsx'
 import LegalPage from './pages/LegalPage.tsx'
 import MePage from './pages/MePage.tsx'
+import PaymentResultPage from './pages/PaymentResultPage.tsx'
 import ManagePage from './pages/ManagePage.tsx'
 import PulsePage from './pages/PulsePage.tsx'
 import ReplayListPage from './pages/ReplayListPage.tsx'
@@ -36,6 +37,8 @@ export const router = createBrowserRouter([
           { path: 'replay/:recordingId', element: <ReplayPage /> },
           { path: 'users/:userId', element: <StreamerPage /> },
           { path: 'wallet', element: <WalletPage /> },
+          { path: 'payments/success', element: <PaymentResultPage result='success' /> },
+          { path: 'payments/fail', element: <PaymentResultPage result='fail' /> },
           { path: 'login', element: <AuthPage mode="login" /> },
           { path: 'signup', element: <AuthPage mode="signup" /> },
           { path: 'me', element: <MePage /> },

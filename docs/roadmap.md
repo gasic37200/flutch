@@ -15,7 +15,7 @@
 | 내도메인 `flutch.kro.kr` 발급 → 인스턴스 IP 연결 (A 146.56.116.48 확인) | T07 | 11/10 | ✅ |
 | GHCR 이미지 pull용 토큰(`read:packages`) + 서버 SSH 키 → GitHub Secrets | T07 | 11/10 | ⬜ |
 | **GitHub Secrets 4개**: `DEPLOY_HOST`(146.56.116.48) · `DEPLOY_USER`(ubuntu) · `DEPLOY_SSH_KEY`(서버 개인키 전체) · `GHCR_READ_TOKEN`(read:packages PAT). 넣은 뒤 Actions › Deploy › Run workflow(main) | T07 완료 확인 | 11/10 | ⬜ |
-| **HTTPS 인증서**: Let's Encrypt가 `kro.kr` 전체 주간 50개 한도로 거절(11/09 18:30·18:46). 서버에서 `cd ~/flutch && ./init-cert.sh` 재시도(22:11 KST 이후). **서버 cron이 5분마다 자동 재시도**(11/10 09:4x 30분→5분, 사용자 승인)(`~/flutch/cert-retry.sh`, 로그 `backups/cert.log`, 성공 시 `.cert-ok` 남기고 멈춤 — 사용자 승인 11/09 19:3x) | T07 완료 확인 | 11/10 | ⬜ |
+| **HTTPS 인증서**: 11/10 14:55 KST **Let's Encrypt로 발급 완료**(5분 재시도 cron이 슬롯을 잡음, 2027-02-08까지 유효, 재시도 cron은 `.cert-ok`로 정지). ZeroSSL(EAB)은 대안으로 스크립트에 남겨 둠 | T07 완료 확인 | 11/10 | ✅ |
 | Oracle Object Storage 버킷 2개(`recordings` 공개 읽기·목록 비공개, `backups` 비공개) + Customer Secret Key(S3 호환) + namespace·region | T07 백업, T25 | 11/11 | ⬜ |
 | **녹화 저장소 연결(T25 이후)**: `recordings` 버킷 공개 읽기 + CORS(`https://flutch.kro.kr` GET·HEAD) → 서버 `.env`에 `RECORDING_S3_ENDPOINT`(`https://<ns>.compat.objectstorage.<region>.oraclecloud.com`)·`RECORDING_S3_BUCKET`·`RECORDING_S3_REGION`·`RECORDING_S3_ACCESS_KEY`·`RECORDING_S3_SECRET_KEY`·`RECORDING_PUBLIC_BASE_URL`(`https://objectstorage.<region>.oraclecloud.com/n/<ns>/b/<bucket>/o`). 하나라도 비면 녹화 꺼짐(방송은 정상). LiveKit Cloud Egress 한도 확인 | T25 운영 확인 | 배포 후 | ⬜ |
 | LiveKit Cloud 가입, API key/secret, **대시보드 Settings › Project에서 Build 플랜 한도(분·Egress) 확인** | T08a 운영 확인 | 11/11 | ⬜ |
@@ -93,6 +93,8 @@
 | 2026-11-10 | T22 | 후원 통계는 송출한 적 있는 방송만 id 최신순, last7Days는 KST 달력 기준 오늘 포함 7일, 스킵은 방송 상태와 무관, 목록에서 후원자 본인이라도 소유자가 아니면 익명 donor는 null | 문서에 기준 없음 | 집계 기준 | 대기 |
 | 2026-11-10 | T09b | PIP는 PC 화면 모드에서만(모바일 송출엔 없음), 웹캠 360p30, 모바일 시청은 PIP 탭으로 숨기고 컨트롤 바 카메라 버튼으로 다시 보이기, 웹캠만 모드로 바꾸면 PIP 자동 꺼짐 | 대역폭·화면 크기 | 컴포넌트 수정 | 대기 |
 | 2026-11-10 | T20b | 탈퇴 시 READY 방송은 삭제(채팅·후원이 생길 수 없음), 시드 계정은 탈퇴 메뉴를 숨기지 않고 403 문구, 성공 시 토스트 없이 홈 새로고침 | 데이터 정리·단순화 | handler·화면 | 대기 |
+| 2026-11-10 | T27 | "PULSE" 메뉴는 비로그인에게도 노출(페이지가 로그인 안내), 사이드바는 팔로우 1개 이상이면 라이브가 없어도 PULSE 패널("방송 중이 아니에요"), 0개면 인기 라이브 | decisions §10 해석 | 메뉴 조건 | 대기 |
+| 2026-11-10 | T23 | 결제 결과 경로 `/payments/success`·`/payments/fail`, 지갑 필터는 클러치·SUPER BURST 칩 분리(API가 type 하나), 영구 밴 사용자는 후원 버튼 대신 문구, 플레이어 전체화면에서는 후원 알림 오버레이 안 보임 | API 제약·Player 미수정 | 오버레이 위치 | 대기 |
 
 ## Task
 > task 1개 = 서브에이전트 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "(병렬)" 표시 task끼리 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
@@ -155,9 +157,9 @@ T15 이후 **채팅(T16~) · 지갑(T20~) · 녹화(T25~) 세 줄을 동시에**
 | T20 | 원장·지갑 핵심: 조건부 차감, 유형, 잔액 일치 + 시나리오 (병렬) | 06 | T15 | Opus · high | ✅ |
 | T20b | 회원 탈퇴: 잔액 소멸 원장 기록, LIVE 중 불가, **시드(테스트) 계정은 탈퇴 불가(`AUTH_SEED_ACCOUNT_LOCKED`)**, 탈퇴 모달 + `auth_withdraw_forfeits_balance` | 01 | T20, T06a | Opus · high | ✅ |
 | T21 | 토스 결제: 주문·승인·웹훅(조회 API 재확인)·만료·"충전하고 후원하기"(max(부족분, 1,000))·종료 시 충전 전환 + 시나리오 | 06 | T20 | Opus · high | ✅ |
-| T21b | 탈퇴한 주문자의 토스 웹훅 확정 거절 + ERROR 로그(수동 환불) — T20b 리뷰 nice-to-have, 작은 수정 | 06 | T20b | Sonnet · medium | ⬜ |
+| T21b | 탈퇴한 주문자의 토스 웹훅 확정 거절 + ERROR 로그(수동 환불) — T20b 리뷰 nice-to-have, 작은 수정 | 06 | T20b | Sonnet · medium | 🟨 |
 | T22 | 후원 백엔드: 잔액 후원·익명·알림 이벤트(10초·스킵)·내역/합계·후원자 배지 + 시나리오 | 06 | T21 | Opus · high | ✅ |
-| T23 | 후원 화면: 내 지갑·충전 창·후원 창·**후원 알림·후원자 배지·이 방송 후원 목록**·결제 결과·스트리머 후원 통계 | 06 | T22 | Sonnet · medium | 🟨 |
+| T23 | 후원 화면: 내 지갑·충전 창·후원 창·**후원 알림·후원자 배지·이 방송 후원 목록**·결제 결과·스트리머 후원 통계 | 06 | T22 | Sonnet · medium | ✅ |
 | T24 | 유료 클러치·SUPER BURST + 시나리오 + **T19의 `clutch.gauge` 묶음 상태를 전역 static에서 AppState로 이동**(conventions §1 위반 정리) | 07 | T19, T22 | Opus · high | 🟨 |
 | T25 | 녹화: Egress → Object Storage, 처리 중/실패, 보관 정리(30일·16GB, `size_bytes`), 방송 삭제 시 객체 삭제 + 시나리오 (병렬) | 08 | T15 | Sonnet · medium | ✅ |
 | T26 | 다시보기 목록·상세·플레이어·조회수·스트리머 페이지(다시보기 탭) | 08, 09 | T25 | Sonnet · medium | ✅ |
@@ -166,7 +168,7 @@ T15 이후 **채팅(T16~) · 지갑(T20~) · 녹화(T25~) 세 줄을 동시에**
 ### 6. 확장 — 11/18 (시간이 되는 만큼, 위에서부터)
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
 |---|---|---|---|---|---|
-| T27 | 팔로우·사이드바 PULSE·PULSE 페이지 | 09 | T26 | Sonnet · medium | 🟨 |
+| T27 | 팔로우·사이드바 PULSE·PULSE 페이지 | 09 | T26 | Sonnet · medium | ✅ |
 | T28 | 카카오 로그인 | 01 | T06a | Sonnet · medium | ⬜ |
 | T29 | SUPER CLUTCH 회전(30초·5분)·메인 히어로(`/home/hero`, 10초 폴링) + 시나리오 | 07 | T24 | Opus · high | ⬜ |
 | T30 | CLUTCH FEED 가상 클립 | 07 | T29, T25 | Sonnet · medium | ⬜ |

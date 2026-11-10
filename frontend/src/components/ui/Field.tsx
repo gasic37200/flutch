@@ -17,7 +17,7 @@ type AreaProps = Common & { multiline: true } & TextareaHTMLAttributes<HTMLTextA
 
 // 기본 = 은은한 라임 테두리, 포커스 = 라임 + 글로우, 에러 = 흰 테두리 + 흰 글자·아이콘(빨강 금지), 비활성 = 테두리 없이 어두운 배경.
 export default function Field(props: InputProps | AreaProps) {
-  const { label, hideLabel, hint, error, counter, className = '', ...rest } = props
+  const { label, hideLabel, hint, error, counter, multiline, className = '', ...rest } = props
   const id = useId()
   const noteId = `${id}-note`
   const note = error ?? hint
@@ -34,7 +34,7 @@ export default function Field(props: InputProps | AreaProps) {
       {/* 글로우는 clip-path 밖 래퍼에 건다 */}
       <div className='focus-within:drop-shadow-field'>
         <div className={`chamfer p-px [--c:6px] ${edge}`}>
-          {props.multiline ? (
+          {multiline ? (
             <textarea {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)} {...shared} className={`${control} min-h-24 py-2`} />
           ) : (
             <input {...(rest as InputHTMLAttributes<HTMLInputElement>)} {...shared} className={`${control} h-10`} />
