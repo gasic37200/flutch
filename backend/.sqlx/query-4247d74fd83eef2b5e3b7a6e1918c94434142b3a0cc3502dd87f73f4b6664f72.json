@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT until FROM bans\n          WHERE streamer_id = $1 AND user_id = $2 AND (until IS NULL OR until > now())",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "until",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "bans",
+            "name": "until"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "4247d74fd83eef2b5e3b7a6e1918c94434142b3a0cc3502dd87f73f4b6664f72"
+}
