@@ -5,9 +5,11 @@ mod common;
 
 mod auth;
 mod broadcast;
+mod chat;
 mod csrf;
 mod health;
 mod live;
 mod realtime;
 mod recording;
 mod schema;
+mod wallet;

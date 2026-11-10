@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE chats c SET body = $2, edited_at = now()\n          WHERE c.id = $1 AND c.deleted_at IS NULL\n            AND c.created_at > now() - interval '5 minutes'\n            AND EXISTS (SELECT 1 FROM broadcasts b WHERE b.id = c.broadcast_id AND b.status = 'LIVE')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ed360a426706ca172701e2fd7f276c215757143e547b9c2a39f2fb3b0d86123f"
+}

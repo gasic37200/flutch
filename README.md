@@ -100,7 +100,7 @@ main에 머지되면 `.github/workflows/deploy.yml`이 arm64 이미지(`ghcr.io/
 1. Docker·Compose 설치, 80/443 개방(서버 iptables + OCI Security List). 도메인 A 레코드가 서버 IP를 가리켜야 한다.
 2. `~/flutch/.env` 작성(`.env.example`의 "운영 서버 전용" 항목, 파일 권한 600). `POSTGRES_PASSWORD`는 `openssl rand -hex 24`.
 3. `deploy/compose.prod.yml`, `backup.sh`, `init-cert.sh`를 `~/flutch/`에 둔다(첫 배포 workflow가 올려 주므로 이후엔 자동).
-4. 최초 인증서: `cd ~/flutch && ./init-cert.sh` (이메일 없이 발급, 80번 포트가 비어 있을 때). 갱신은 `certbot` 컨테이너가 12시간마다 확인하고 `web`이 12시간마다 nginx를 reload 한다.
+4. 최초 인증서: `cd ~/flutch && ./init-cert.sh` (이메일 없이 발급, 80번 포트가 비어 있을 때). kro.kr은 Let's Encrypt 공유 한도로 거절이 잦아, 서버 `.env`에 `ZEROSSL_EAB_KID`·`ZEROSSL_EAB_HMAC_KEY`가 있으면 ZeroSSL로 발급한다. 갱신은 `certbot` 컨테이너가 12시간마다 확인하고 `web`이 12시간마다 nginx를 reload 한다.
 5. 모니터링용 `.env` 값 `GRAFANA_ADMIN_PASSWORD`(필수, `openssl rand -hex 16`). 없으면 `docker compose`가 실패한다.
 6. DB 백업 cron: `crontab -e` → `0 4 * * * /home/ubuntu/flutch/backup.sh >> /home/ubuntu/flutch/backups/backup.log 2>&1` (서버 시간대가 KST). 요일별 파일 7개가 돌아가며 덮어써져 7일 보관이 된다. Oracle Object Storage 업로드는 `.env`에 `BACKUP_S3_*`를 채우면 켜진다.
 
@@ -198,6 +198,13 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 1. `/signup`에서 아이디·비밀번호·닉네임·약관 동의로 가입 → 로그아웃 → 다시 로그인.
 2. 닉네임은 변경 후 30일간 다시 바꿀 수 없고, 비밀번호를 바꾸면 다른 기기의 로그인이 풀린다.
 
+**P13. 채팅**
+1. 방송 중인 방송을 B(스트리머2)로 열고 채팅을 보낸다 → A 화면에도 바로 보인다. 비로그인(시크릿 창)은 읽기만 되고 보내려면 로그인을 요구한다.
+2. 1초 안에 연달아 보내면 거절되고, 같은 말을 30초 안에 3번 보내면 거절된다. 201자 이상은 거절된다.
+3. 욕설(예: 일반 비속어)은 `***`로 가려 보이고, FLUTCH 금지어는 전송되지 않는다. 방송 전(READY)·종료 후에는 보낼 수 없지만 기록은 읽힌다.
+4. 내 채팅을 5분 안에 수정(수정됨 표시)하고, 삭제하면 "삭제된 메시지입니다"가 된다. 방송 소유자(A)는 남의 채팅도 지울 수 있다.
+5. 기대: 허용·거절이 서버 응답으로 구분되고, 차단된 사용자는 서버가 거절한다(T18 차단 화면 이후 확인).
+
 ### 시나리오 ↔ 절차 대응표
 시나리오 테스트는 `backend/tests/scenarios/`에 있고 `cd backend && cargo test`로 실행합니다(실제 Postgres, LiveKit은 가짜).
 
@@ -212,6 +219,11 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `auth_password_change_revokes_other_sessions` | 비밀번호 변경 시 다른 세션 만료 | P12 |
 | `auth_nickname_change_30day_limit` | 닉네임 30일 제한 | P12 |
 | `broadcast_owner_crud` | 등록 → 수정 → 삭제 | P2 |
+| `chat_live_only`, `chat_guest_read_only` | LIVE 중에만 작성, 비로그인은 읽기만 | P13 |
+| `chat_edit_author_only_within_5min`, `chat_delete_author_or_owner` | 수정(작성자·5분)·삭제(작성자·방송 소유자) | P13 |
+| `chat_rate_limit_and_repeat`, `chat_profanity_masked_banned_word_blocked` | 도배 제한, 욕설 가림·금지어 차단 | P13 |
+| `chat_banned_user_cannot_write` | 임시·영구 차단 사용자 작성·수정 거절 | P13 |
+| `chat_badges_streamer_and_donor`, `chat_events_published` | 배지, 실시간 이벤트 | P13 |
 | `broadcast_other_user_forbidden` | 다른 사용자 403, 비로그인 401 | P11 |
 | `broadcast_public_read` | 비로그인 목록·상세 200 | P4, P11 |
 | `broadcast_state_transitions` | 허용 전이만, LIVE·ENDED 수정 범위 | P5, P7, P8 |
