@@ -48,6 +48,7 @@ FLUTTER의 두근거림과 CLUTCH의 짜릿함을 결합한 이름처럼, 라이
 | `LIVEKIT_URL` / `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` | `ws://localhost:7880` / `devkey` / `secret` | 로컬 LiveKit(개발용 고정값). 운영은 LiveKit Cloud 값 |
 | `LIVE_GRACE_SECS` / `LIVE_MAX_DURATION_SECS` | (비움) | 재연결 유예 60초 / 최대 3시간 기본값. 수동 확인 때만 줄임 |
 | `RUST_LOG` | `info` | 로그 수준 |
+| `GRAFANA_ADMIN_PASSWORD` | (운영 서버에서만 설정) | Grafana 관리자 비밀번호. 로컬 개발에는 필요 없음 |
 
 ### 개발
 > Windows에서는 스마트 앱 컨트롤이 빌드한 실행 파일을 막으므로 **WSL2 Ubuntu**(`~/flutch`)에서 빌드·실행합니다. Docker는 Docker Desktop의 WSL 연동을 씁니다.
@@ -100,7 +101,14 @@ main에 머지되면 `.github/workflows/deploy.yml`이 arm64 이미지(`ghcr.io/
 2. `~/flutch/.env` 작성(`.env.example`의 "운영 서버 전용" 항목, 파일 권한 600). `POSTGRES_PASSWORD`는 `openssl rand -hex 24`.
 3. `deploy/compose.prod.yml`, `backup.sh`, `init-cert.sh`를 `~/flutch/`에 둔다(첫 배포 workflow가 올려 주므로 이후엔 자동).
 4. 최초 인증서: `cd ~/flutch && ./init-cert.sh` (이메일 없이 발급, 80번 포트가 비어 있을 때). 갱신은 `certbot` 컨테이너가 12시간마다 확인하고 `web`이 12시간마다 nginx를 reload 한다.
-5. DB 백업 cron: `crontab -e` → `0 4 * * * /home/ubuntu/flutch/backup.sh >> /home/ubuntu/flutch/backups/backup.log 2>&1` (서버 시간대가 KST). 요일별 파일 7개가 돌아가며 덮어써져 7일 보관이 된다. Oracle Object Storage 업로드는 `.env`에 `BACKUP_S3_*`를 채우면 켜진다.
+5. 모니터링용 `.env` 값 `GRAFANA_ADMIN_PASSWORD`(필수, `openssl rand -hex 16`). 없으면 `docker compose`가 실패한다.
+6. DB 백업 cron: `crontab -e` → `0 4 * * * /home/ubuntu/flutch/backup.sh >> /home/ubuntu/flutch/backups/backup.log 2>&1` (서버 시간대가 KST). 요일별 파일 7개가 돌아가며 덮어써져 7일 보관이 된다. Oracle Object Storage 업로드는 `.env`에 `BACKUP_S3_*`를 채우면 켜진다.
+
+**모니터링 (운영)**
+- 스택: Prometheus(15일)·Loki(7일)·Alloy(컨테이너 로그 수집)·node-exporter·Grafana. 모두 `compose.prod.yml`에 있고 외부 포트는 없다(`web`의 nginx가 `/grafana/`만 연다). 설정·대시보드는 `deploy/monitoring/`(workflow가 서버로 올린다). 스택 전체 메모리 상한은 약 1.7GB.
+- Grafana: `https://flutch.kro.kr/grafana/` → 사용자 `admin` / 서버 `.env`의 `GRAFANA_ADMIN_PASSWORD`로 로그인(익명 접근 꺼짐). 대시보드는 "서비스 개요"(요청량·에러율·p95·LIVE 수·WS 연결 수·후원·CPU/메모리/디스크)와 "로그 검색"(서비스·레벨 필터, 검색어에 에러 화면의 `request_id`를 넣으면 해당 요청 로그가 나온다).
+- `/metrics`는 백엔드가 Prometheus 형식으로 내보내며 nginx가 외부 요청을 404로 막는다. Prometheus가 도커 네트워크로 직접 수집한다. 알림은 없다.
+- 로그에는 비밀번호·세션 쿠키·LiveKit 토큰·토스 시크릿·채팅 본문을 남기지 않는다(요청 로그는 request_id·method·route·status·latency·user_id만).
 
 **수동 재배포** (Actions → Deploy → Run workflow, 또는 서버에서)
 ```bash

@@ -2,6 +2,7 @@ pub mod config;
 pub mod error;
 pub mod extract;
 pub mod livekit;
+pub mod metrics;
 pub mod middleware;
 pub mod realtime;
 pub mod routes;
@@ -41,7 +42,9 @@ pub struct AppState {
 
 /// 전체 앱 라우터. `main`과 시나리오 테스트가 같은 조립을 쓴다.
 pub fn app(state: Arc<AppState>) -> Router {
+    metrics::handle(); // recorder 설치(요청 미들웨어가 쓴다)
     Router::new()
+        .route("/metrics", axum::routing::get(metrics::scrape))
         .nest("/api/v1", routes::api())
         .fallback(|| async { error::AppError::NotFound })
         .layer(axum::middleware::from_fn_with_state(

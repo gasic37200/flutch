@@ -4,6 +4,7 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
+use tower::ServiceExt;
 
 use crate::common::{send, test_app};
 
@@ -56,4 +57,37 @@ async fn unknown_api_path_returns_not_found_error_format(db: PgPool) {
         res.json["error"]["requestId"],
         res.headers["x-request-id"].to_str().unwrap()
     );
+}
+
+#[sqlx::test]
+async fn metrics_endpoint_exposes_request_counter(db: PgPool) {
+    let app = test_app(db);
+    send(
+        &app,
+        Request::get("/api/v1/health").body(Body::empty()).unwrap(),
+    )
+    .await;
+
+    let res = app
+        .clone()
+        .oneshot(Request::get("/metrics").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+
+    // 경로 id가 아닌 route 템플릿으로 센다
+    assert!(
+        text.contains("http_requests_total{") && text.contains("route=\"/api/v1/health\""),
+        "{text}"
+    );
+    assert!(
+        text.contains("http_request_duration_seconds_bucket"),
+        "{text}"
+    );
+    assert!(text.contains("live_broadcasts 0"), "{text}");
+    assert!(text.contains("ws_connections 0"), "{text}");
 }
