@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE recordings SET status = 'deleted' WHERE id IN (\n            SELECT id FROM (\n                SELECT id, sum(size_bytes) OVER (ORDER BY created_at DESC, id DESC)::bigint AS running\n                FROM recordings WHERE status = 'ready') t\n            WHERE running > $1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9833399121329893493841398f9711810fc51d25748396d5816474ec33b61bd6"
+}

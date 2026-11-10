@@ -5,8 +5,4 @@ import type { RecordingRef } from "./RecordingRef";
 /**
  * `broadcast.ended` 이벤트 data (api.md §11).
  */
-export type BroadcastEnded = { endedAt: string, peakViewers: number, durationSec: number, reason: EndReason, 
-/**
- * shortcut: 항상 null, T25가 채운다.
- */
-recording: RecordingRef | null, };
+export type BroadcastEnded = { endedAt: string, peakViewers: number, durationSec: number, reason: EndReason, recording: RecordingRef | null, };

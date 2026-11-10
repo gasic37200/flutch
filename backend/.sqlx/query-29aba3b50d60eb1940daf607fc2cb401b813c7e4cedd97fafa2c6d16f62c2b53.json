@@ -1,0 +1,180 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT r.id, r.broadcast_id, b.owner_id,\n                  CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS \"owner_nickname!\",\n                  b.title, b.category, b.thumbnail_path, b.peak_viewers, r.views,\n                  COALESCE(b.started_at, b.created_at) AS \"started_at!\",\n                  r.status, r.duration_sec, r.object_key, r.expires_at\n           FROM recordings r\n           JOIN broadcasts b ON b.id = r.broadcast_id\n           JOIN users u ON u.id = b.owner_id\n           WHERE b.hidden_at IS NULL\n             AND ($1::bigint IS NULL OR r.id = $1)\n             AND ($2::bigint IS NULL OR b.owner_id = $2)\n             AND ($3::text IS NULL OR b.category = $3)\n             AND ($4::text IS NULL OR b.title ILIKE $4 OR u.nickname ILIKE $4\n                  OR EXISTS (SELECT 1 FROM unnest(b.tags) t WHERE t ILIKE $4))\n             AND ($5::bigint IS NULL OR r.id < $5)\n             AND (NOT $6 OR r.status = 'ready')\n           ORDER BY r.id DESC\n           LIMIT $7",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "recordings",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "broadcast_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "recordings",
+            "name": "broadcast_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "owner_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "broadcasts",
+            "name": "owner_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "owner_nickname!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 4,
+        "name": "title",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "broadcasts",
+            "name": "title"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "category",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "broadcasts",
+            "name": "category"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "thumbnail_path",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "broadcasts",
+            "name": "thumbnail_path"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "peak_viewers",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "broadcasts",
+            "name": "peak_viewers"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "views",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "recordings",
+            "name": "views"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "started_at!",
+        "type_info": "Timestamptz",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 10,
+        "name": "status",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recordings",
+            "name": "status"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "duration_sec",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "recordings",
+            "name": "duration_sec"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "object_key",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recordings",
+            "name": "object_key"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "expires_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "recordings",
+            "name": "expires_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Text",
+        "Text",
+        "Int8",
+        "Bool",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      null,
+      false,
+      false,
+      true,
+      false,
+      false,
+      null,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "29aba3b50d60eb1940daf607fc2cb401b813c7e4cedd97fafa2c6d16f62c2b53"
+}

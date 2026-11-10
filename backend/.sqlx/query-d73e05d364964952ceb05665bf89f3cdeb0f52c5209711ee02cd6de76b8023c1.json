@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT egress_id FROM recordings WHERE broadcast_id = $1 AND status = 'recording'",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "egress_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recordings",
+            "name": "egress_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "d73e05d364964952ceb05665bf89f3cdeb0f52c5209711ee02cd6de76b8023c1"
+}

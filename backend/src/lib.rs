@@ -35,6 +35,8 @@ pub struct AppState {
     pub db: PgPool,
     pub livekit: Arc<dyn LiveKitApi>,
     pub toss: Arc<dyn TossApi>,
+    /// 녹화 파일 저장소(S3 호환)
+    pub storage: Arc<dyn recording::ObjectStore>,
     pub realtime: realtime::Hub,
     /// 송출 메모리 상태(시청자 집합 등)
     pub live: live::LiveState,

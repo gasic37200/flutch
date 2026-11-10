@@ -77,7 +77,7 @@ pub async fn start(
                 state
                     .realtime
                     .publish(id, Event::public(WsEvent::BroadcastUpdated(live)));
-                // shortcut: 녹화 켜짐이면 Egress 시작(T25)이 여기 붙는다.
+                // 녹화(Egress)는 방이 생긴 뒤인 송출자 첫 접속 웹훅에서 시작한다(recording::start).
             }
             // 동시에 온 다른 시작 요청이 먼저 LIVE로 바꿨다 → 아래 claim_publisher가 판단
             Err(_)

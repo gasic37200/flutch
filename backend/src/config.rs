@@ -16,6 +16,72 @@ pub struct Config {
     pub auth: AuthConfig,
     pub live: LiveConfig,
     pub broadcast: BroadcastConfig,
+    pub recording: RecordingConfig,
+}
+
+/// Egress가 올리고 백엔드가 지우는 S3 호환 버킷(path-style).
+#[derive(Clone)]
+pub struct S3Config {
+    pub endpoint: String,
+    pub bucket: String,
+    pub region: String,
+    pub access_key: String,
+    pub secret_key: String,
+}
+
+impl fmt::Debug for S3Config {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("S3Config")
+            .field("endpoint", &self.endpoint)
+            .field("bucket", &self.bucket)
+            .field("access_key", &"***")
+            .field("secret_key", &"***")
+            .finish()
+    }
+}
+
+/// 녹화 설정(features/08). `s3`가 없으면 녹화를 끈다(방송은 정상).
+#[derive(Debug, Clone)]
+pub struct RecordingConfig {
+    pub s3: Option<S3Config>,
+    /// `RECORDING_PUBLIC_BASE_URL`: 객체 공개 읽기 URL의 앞부분. `videoUrl` = 이 값 + `/` + object_key
+    pub public_base_url: String,
+    pub retention_days: i64,
+    pub max_total_bytes: i64,
+}
+
+impl RecordingConfig {
+    pub fn from_env() -> Self {
+        let get = |n: &'static str| required(n).ok();
+        let s3 = match (
+            get("RECORDING_S3_ENDPOINT"),
+            get("RECORDING_S3_BUCKET"),
+            get("RECORDING_S3_ACCESS_KEY"),
+            get("RECORDING_S3_SECRET_KEY"),
+        ) {
+            (Some(endpoint), Some(bucket), Some(access_key), Some(secret_key)) => Some(S3Config {
+                endpoint: endpoint.trim_end_matches('/').to_owned(),
+                bucket,
+                region: get("RECORDING_S3_REGION").unwrap_or_else(|| "us-east-1".into()),
+                access_key,
+                secret_key,
+            }),
+            _ => None,
+        };
+        let public_base_url = get("RECORDING_PUBLIC_BASE_URL")
+            .unwrap_or_default()
+            .trim_end_matches('/')
+            .to_owned();
+        if s3.is_none() || public_base_url.is_empty() {
+            tracing::warn!("RECORDING_S3_* / RECORDING_PUBLIC_BASE_URL 미설정: 녹화를 끕니다");
+        }
+        Self {
+            s3: s3.filter(|_| !public_base_url.is_empty()),
+            public_base_url,
+            retention_days: 30,
+            max_total_bytes: 16 * 1024 * 1024 * 1024,
+        }
+    }
 }
 
 /// 송출 시간 규칙(features/03). 수동 확인용으로 환경변수로 줄일 수 있다.
@@ -110,6 +176,7 @@ impl Config {
             auth: AuthConfig::from_env(),
             live: LiveConfig::from_env()?,
             broadcast: BroadcastConfig::from_env(),
+            recording: RecordingConfig::from_env(),
         })
     }
 }
@@ -148,6 +215,7 @@ impl fmt::Debug for Config {
             .field("auth", &self.auth)
             .field("live", &self.live)
             .field("broadcast", &self.broadcast)
+            .field("recording", &self.recording)
             .finish()
     }
 }

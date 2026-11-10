@@ -179,7 +179,7 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 `POST /live`는 "시작 또는 이어서 송출"이다:
 | 현재 상태 | 동작 |
 |---|---|
-| READY | 내 다른 방송이 LIVE면 `BROADCAST_LIVE_LIMIT`. 아니면 LIVE 전이(`startedAt`) + 토큰 + 녹화 켜짐이면 Egress 시작 + `broadcast.updated`. 동시에 온 다른 시작 요청이 먼저 LIVE로 바꿨으면 409 대신 아래 LIVE 규칙으로 판단(T15a) |
+| READY | 내 다른 방송이 LIVE면 `BROADCAST_LIVE_LIMIT`. 아니면 LIVE 전이(`startedAt`) + 토큰 + 녹화 켜짐이면(송출자가 방에 처음 접속하는 웹훅에서, 방이 있어야 Egress가 시작된다) Egress 시작 + `broadcast.updated`. 동시에 온 다른 시작 요청이 먼저 LIVE로 바꿨으면 409 대신 아래 LIVE 규칙으로 판단(T15a) |
 | LIVE, 송출자 없음(유예 중 `reconnecting=true`) 또는 같은 `identity` | 새 토큰만 발급(복귀). 참가 웹훅이 오면 `disconnectedAt` 해제 + `broadcast.resumed` |
 | LIVE, 다른 기기(`identity` 다름)가 송출 중 | `takeover`가 아니면 409 `LIVE_PUBLISHER_ACTIVE` → `takeover: true`면 기존 참가자 제거 후 새 토큰, `publisherIdentity` 교체 |
 | ENDED | 409 `BROADCAST_INVALID_TRANSITION` |
@@ -312,6 +312,8 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 
 - 다시보기 화면의 채팅·후원은 `GET /broadcasts/{broadcastId}/chats`·`/donations`(전체 목록, 리플레이 없음).
 - 녹화 실패는 방송 상태와 무관(방송은 정상 ENDED). 소유자 관리 화면은 `Broadcast.recording.status=failed`로 "녹화에 실패했어요".
+- 영상은 방송당 `recordings/{broadcastId}.mp4`, `videoUrl`은 `RECORDING_PUBLIC_BASE_URL` + `/` + 객체 키. 저장소 설정이 없으면 녹화는 꺼지고 `Broadcast.recording`은 null.
+- 삭제(보관 기간·용량 초과·방송 숨김)는 상태를 `deleted`로 먼저 바꾼 뒤 파일을 지운다. 파일 삭제가 실패하면 표시가 남아 1시간 주기 작업이 다시 지운다(고아 파일·깨진 링크 둘 다 남지 않는 순서). 종료 후 4시간(방송 최대 길이+1시간) 안에 `egress_ended`가 없으면 `failed`.
 - 시나리오: `recording_saved_after_end_survives_restart` `recording_failure_does_not_break_broadcast` `recording_deleted_with_broadcast_hide` `recording_retention_cleanup`
 
 ## 9. 팔로우·스트리머 페이지 (f09)
@@ -329,7 +331,7 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 ## 10. 웹훅·운영
 | 메서드·경로 | 호출자 | 검증 | 처리 |
 |---|---|---|---|
-| POST `/livekit/webhook` | LiveKit (Origin 예외) | `Authorization` 헤더 JWT(API secret HS256, `iss`=API key, 만료 전) + `sha256` 클레임 = 본문 SHA-256의 표준 base64. 실패 401 `LIVE_WEBHOOK_INVALID_SIGNATURE`(WARN 로그). 본문(LiveKit `WebhookEvent` protojson)이 JSON이 아니면 422 | `participant_joined`/`participant_left`: 시청자 수 갱신(`sid` 비교), 송출 권한(`permission.canPublish`)의 송출자(`publisherIdentity`)면 유예 해제·시작, 송출 권한 `u:` 참가자인데 송출자가 아니거나 방송이 LIVE가 아니면 내보냄(§3-1). 웹훅 JSON은 camelCase이고 false는 생략된다(`canPublish`가 없으면 구독 전용) · `room_finished`: LIVE면 **유예 시작**(종료 아님 — LiveKit은 마지막 참가자가 나가고 약 20초 뒤 빈 방을 닫아 60초 유예보다 빠르다. 송출자가 돌아오면 방은 다시 생긴다) · `egress_ended`(T25, 지금은 무시): 녹화 `ready`(object_key·size·duration) 또는 `failed` + `recording.updated`. 그 외 이벤트는 200 무시 |
+| POST `/livekit/webhook` | LiveKit (Origin 예외) | `Authorization` 헤더 JWT(API secret HS256, `iss`=API key, 만료 전) + `sha256` 클레임 = 본문 SHA-256의 표준 base64. 실패 401 `LIVE_WEBHOOK_INVALID_SIGNATURE`(WARN 로그). 본문(LiveKit `WebhookEvent` protojson)이 JSON이 아니면 422 | `participant_joined`/`participant_left`: 시청자 수 갱신(`sid` 비교), 송출 권한(`permission.canPublish`)의 송출자(`publisherIdentity`)면 유예 해제·시작, 송출 권한 `u:` 참가자인데 송출자가 아니거나 방송이 LIVE가 아니면 내보냄(§3-1). 웹훅 JSON은 camelCase이고 false는 생략된다(`canPublish`가 없으면 구독 전용) · `room_finished`: LIVE면 **유예 시작**(종료 아님 — LiveKit은 마지막 참가자가 나가고 약 20초 뒤 빈 방을 닫아 60초 유예보다 빠르다. 송출자가 돌아오면 방은 다시 생긴다) · `egress_ended`(`room` 없이 `egressInfo`만 온다, `egressId`로 녹화를 찾는다. 같은 통보가 반복돼도 한 번만 반영): `EGRESS_COMPLETE`+파일 크기가 있으면 녹화 `ready`(size·duration·expiresAt=+30일), 아니면 `failed` + `recording.updated`. 그 외 이벤트는 200 무시 |
 | POST `/payments/webhook` | 토스 (Origin 예외) | 서명 대신 결제 조회 API 재확인(§6) | 확정 또는 무시 |
 | GET `/health` | 누구나 | — | 200 `{status: 'ok'}` / 503 `{status: 'unavailable'}` |
 - 로컬 웹훅 주소 `http://host.docker.internal:<BACKEND_PORT>/api/v1/livekit/webhook`. `/metrics`는 API 밖(외부 비공개).

@@ -222,6 +222,12 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `live_viewer_token_rules` | 시청 토큰은 누구나, subscribe 전용 | P4, P11 |
 | `live_end_closes_room` | 종료 시 ENDED + 방 닫기 | P5 |
 | `live_disconnect_grace_auto_end` | 퇴장 → 60초 유예 → 자동 종료 | P9 |
+| `recording_saved_after_end_survives_restart` | 녹화 완료 통보 후 재시작해도 다시보기 조회 | P5, P10 |
+| `recording_failure_does_not_break_broadcast` | 녹화 시작·진행 실패에도 방송은 정상 종료 | P5 |
+| `recording_deleted_with_broadcast_hide` | 방송 삭제 시 녹화 파일 삭제(실패 시 재시도) | P8 |
+| `recording_retention_cleanup` | 30일·16GB 초과 정리, 종료 통보 없는 녹화 실패 처리 | (서버 내부) |
+| `recording_off_without_record_flag` | 녹화 끄면 Egress 시작 안 함 | P2 |
+| `recording_views_once_per_day` | 다시보기 조회수 시청자당 하루 1회 | (서버 내부) |
 | `live_takeover_other_device` | 다른 기기로 전환 | P9 |
 | `live_max_duration_auto_end` | 3시간 자동 종료 | (수동 절차 없음) |
 | `live_webhook_signature_invalid_rejected` | 웹훅 서명 검증 | (서버 내부) |
