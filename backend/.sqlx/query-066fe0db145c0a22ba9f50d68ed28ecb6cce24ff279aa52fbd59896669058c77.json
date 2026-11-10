@@ -1,0 +1,140 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT c.id, c.broadcast_id, c.streamer_id, c.user_id,\n                  CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS \"nickname!\",\n                  c.body, c.edited_at, c.deleted_at, c.created_at,\n                  b.status AS broadcast_status,\n                  EXISTS (SELECT 1 FROM donations d\n                           WHERE d.broadcast_id = c.broadcast_id AND d.donor_id = c.user_id\n                             AND d.kind IN ('donation', 'burst')) AS \"donor!\"\n             FROM chats c\n             JOIN users u ON u.id = c.user_id\n             JOIN broadcasts b ON b.id = c.broadcast_id AND b.hidden_at IS NULL\n            WHERE c.broadcast_id = $1 AND ($2::bigint IS NULL OR c.id < $2)\n            ORDER BY c.id DESC\n            LIMIT $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "chats",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "broadcast_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "chats",
+            "name": "broadcast_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "streamer_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "chats",
+            "name": "streamer_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "user_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "chats",
+            "name": "user_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "nickname!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "body",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "chats",
+            "name": "body"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "edited_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "chats",
+            "name": "edited_at"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "deleted_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "chats",
+            "name": "deleted_at"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "chats",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "broadcast_status",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "broadcasts",
+            "name": "status"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "donor!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      null,
+      false,
+      true,
+      true,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "066fe0db145c0a22ba9f50d68ed28ecb6cce24ff279aa52fbd59896669058c77"
+}

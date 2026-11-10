@@ -206,6 +206,8 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 
 - `body` 1~200자. 1초 1개 초과 → `RATE_LIMITED`. 같은 사용자·같은 방송에서 같은 본문 30초 안 3번째 → `CHAT_REPEATED`.
 - 욕설은 원문 저장, **응답·이벤트에는 `***`로 가린 결과만**. FLUTCH 금지어 포함은 `CHAT_BANNED_WORD`로 저장 안 함. 수정에도 같은 검사.
+- 작성·수정 순서: 방송 상태(`BROADCAST_NOT_LIVE`) → 차단(`MODERATION_*`) → 본문 검사 → 도배 제한. 도배 제한은 서버 메모리(사용자·방송 단위)라 재시작하면 비워지고, `CHAT_REPEATED`는 DB의 최근 30초 같은 본문 기록으로 센다(삭제된 것 포함). 수정에는 도배 제한을 걸지 않는다. 본문은 앞뒤 공백을 잘라 저장한다.
+- `MODERATION_TIMED_OUT`은 `retryAfterSec`(남은 초)를 싣는다. 차단 사용자도 자기 글 삭제는 할 수 있다.
 - 입장 시 `GET …/chats`(before 없음) = 최근 50개, 위로 스크롤 시 `before=items[0].id`. ENDED·다시보기도 같은 API.
 - 채팅 기록에는 채팅만 있다. 후원 강조 줄·시스템 메시지(차단 알림)는 실시간 이벤트로만 그리고 저장하지 않는다.
 - 시나리오: `chat_live_only` `chat_guest_read_only` `chat_edit_author_only_within_5min` `chat_delete_author_or_owner` `chat_rate_limit_and_repeat` `chat_profanity_masked_banned_word_blocked`

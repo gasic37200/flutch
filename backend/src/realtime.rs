@@ -20,6 +20,7 @@ use ts_rs::TS;
 
 use crate::AppState;
 use crate::broadcast::{Broadcast, BroadcastEnded};
+use crate::chat::Chat;
 use crate::error::AppError;
 use crate::extract::OptionalUser;
 use crate::middleware::origin_allowed;
@@ -56,6 +57,12 @@ pub enum WsEvent {
     /// 시청자 수(사용자 단위, 소유자 제외)
     #[serde(rename = "viewer.count")]
     ViewerCount { count: i64 },
+    #[serde(rename = "chat.created")]
+    ChatCreated(Chat),
+    #[serde(rename = "chat.updated")]
+    ChatUpdated(Chat),
+    #[serde(rename = "chat.deleted")]
+    ChatDeleted { id: i64 },
     /// 서버 채널 지연으로 이벤트를 놓침 → 상세·채팅을 다시 조회
     #[serde(rename = "resync")]
     Resync {},

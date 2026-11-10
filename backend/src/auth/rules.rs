@@ -39,6 +39,38 @@ pub fn contains_profanity(text: &str) -> bool {
     contains_any(PROFANITY, text)
 }
 
+/// 욕설을 `***`로 가린다(대소문자 무시, 겹치면 가장 긴 항목). 채팅·후원 메시지의 응답·이벤트용.
+pub fn mask_profanity(text: &str) -> String {
+    fn fold(c: char) -> char {
+        c.to_lowercase().next().unwrap_or(c)
+    }
+    let words: Vec<Vec<char>> = entries(PROFANITY)
+        .map(|w| w.chars().map(fold).collect())
+        .collect();
+    let chars: Vec<char> = text.chars().collect();
+    let folded: Vec<char> = chars.iter().copied().map(fold).collect();
+    let mut out = String::with_capacity(text.len());
+    let mut i = 0;
+    while i < chars.len() {
+        match words
+            .iter()
+            .filter(|w| folded[i..].starts_with(w))
+            .map(|w| w.len())
+            .max()
+        {
+            Some(n) => {
+                out.push_str("***");
+                i += n;
+            }
+            None => {
+                out.push(chars[i]);
+                i += 1;
+            }
+        }
+    }
+    out
+}
+
 /// `login_id`는 이미 소문자로 바꾼 값.
 pub fn check_login_id(login_id: &str) -> Result<(), &'static str> {
     let len = login_id.chars().count();

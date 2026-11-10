@@ -16,11 +16,11 @@ use crate::scheduler::Scheduler;
 
 mod db;
 mod handlers;
-mod rate_limit;
+pub(crate) mod rate_limit;
 pub mod rules;
 pub(crate) mod session;
 
-pub use rules::{contains_banned_word, contains_profanity};
+pub use rules::{contains_banned_word, contains_profanity, mask_profanity};
 
 const DAY: Duration = Duration::from_secs(24 * 60 * 60);
 
