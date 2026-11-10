@@ -160,6 +160,8 @@ pub enum AuthError {
     NicknameChangeTooSoon(i64),
     #[error("현재 비밀번호가 올바르지 않아요.")]
     WrongPassword,
+    #[error("테스트 계정은 바꿀 수 없어요.")]
+    SeedAccountLocked,
 }
 
 impl From<AuthError> for AppError {
@@ -191,6 +193,9 @@ impl From<AuthError> for AppError {
                 "AUTH_WRONG_PASSWORD",
                 message,
             ),
+            AuthError::SeedAccountLocked => {
+                AppError::domain(StatusCode::FORBIDDEN, "AUTH_SEED_ACCOUNT_LOCKED", message)
+            }
         }
     }
 }

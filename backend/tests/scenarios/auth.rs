@@ -482,3 +482,47 @@ async fn auth_test_login_seed_accounts(db: PgPool) {
     assert_eq!(res.status, StatusCode::UNPROCESSABLE_ENTITY);
     assert!(res.json["error"]["fields"]["account"].is_string());
 }
+
+#[sqlx::test]
+async fn auth_seed_account_cannot_be_changed(db: PgPool) {
+    let app = test_app(db);
+    let (cookie, _) = login_as(&app, "streamer1").await;
+
+    let res = patch_nickname(&app, &cookie, "바꾸기시도").await;
+    assert_eq!(res.status, StatusCode::FORBIDDEN);
+    assert_eq!(res.json["error"]["code"], "AUTH_SEED_ACCOUNT_LOCKED");
+
+    let body = json!({ "currentPassword": SEED_PASSWORD, "newPassword": "Another1234" });
+    let res = send(
+        &app,
+        json_req("PUT", "/api/v1/me/password", Some(&cookie), body),
+    )
+    .await;
+    assert_eq!(res.status, StatusCode::FORBIDDEN);
+    assert_eq!(res.json["error"]["code"], "AUTH_SEED_ACCOUNT_LOCKED");
+
+    // 세션도 비밀번호도 그대로
+    assert_eq!(me(&app, &cookie).await.status, StatusCode::OK);
+    assert_eq!(
+        login(&app, "streamer1", SEED_PASSWORD, false).await.status,
+        StatusCode::OK
+    );
+}
+
+#[sqlx::test]
+async fn auth_test_login_is_rate_limited_by_ip(db: PgPool) {
+    let app = test_app(db);
+    let mut last = StatusCode::OK;
+    for _ in 0..21 {
+        let mut req = json_req(
+            "POST",
+            "/api/v1/auth/test-login",
+            None,
+            json!({ "account": "viewer" }),
+        );
+        req.headers_mut()
+            .insert("x-forwarded-for", "7.7.7.7, 10.0.0.1".parse().unwrap());
+        last = send(&app, req).await.status;
+    }
+    assert_eq!(last, StatusCode::TOO_MANY_REQUESTS);
+}

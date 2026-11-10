@@ -30,7 +30,12 @@ pub async fn request_context(req: Request, next: Next) -> Response {
         .get::<MatchedPath>()
         .map_or("unmatched", MatchedPath::as_str)
         .to_owned();
-    let req_method = req.method().clone();
+    // 임의 메서드 문자열이 메트릭 라벨(시리즈)이 되지 않게 표준 메서드만 쓴다.
+    let req_method = match req.method().as_str() {
+        m @ ("GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS") => m,
+        _ => "OTHER",
+    }
+    .to_owned();
     let span = tracing::info_span!(
         "request",
         request_id = %id,
@@ -44,7 +49,7 @@ pub async fn request_context(req: Request, next: Next) -> Response {
         .instrument(span.clone())
         .await;
     crate::metrics::record_request(
-        req_method.as_str(),
+        &req_method,
         &route,
         res.status().as_u16(),
         started.elapsed().as_secs_f64(),

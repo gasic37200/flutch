@@ -91,3 +91,28 @@ async fn metrics_endpoint_exposes_request_counter(db: PgPool) {
     assert!(text.contains("live_broadcasts 0"), "{text}");
     assert!(text.contains("ws_connections 0"), "{text}");
 }
+
+#[sqlx::test]
+async fn metrics_method_label_is_bounded(db: PgPool) {
+    let app = test_app(db);
+    send(
+        &app,
+        Request::builder()
+            .method("BREW")
+            .uri("/api/v1/health")
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    let res = app
+        .clone()
+        .oneshot(Request::get("/metrics").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(text.contains("method=\"OTHER\""), "{text}");
+    assert!(!text.contains("BREW"), "{text}");
+}

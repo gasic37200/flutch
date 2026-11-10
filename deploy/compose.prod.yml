@@ -111,7 +111,7 @@ services:
     depends_on: [loki]
     volumes:
       - ./monitoring/alloy.alloy:/etc/alloy/config.alloy:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro # 컨테이너 로그 수집(읽기 전용)
+      - /var/run/docker.sock:/var/run/docker.sock:ro # 컨테이너 로그 수집. :ro여도 Docker API 전체 접근이 가능하다 — 이 소켓은 Alloy에만 연결한다
       - alloy-data:/var/lib/alloy/data
     logging: *logging
 
@@ -133,6 +133,7 @@ services:
     environment:
       GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-https://flutch.kro.kr/grafana/}
       GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_SECURITY_COOKIE_SECURE: "true"
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?.env에 GRAFANA_ADMIN_PASSWORD 필요}
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_USERS_ALLOW_SIGN_UP: "false"

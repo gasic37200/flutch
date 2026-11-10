@@ -26,7 +26,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let db = connect_db(&config.database_url).await?;
     sqlx::migrate!().run(&db).await?;
 
-    let http = reqwest::Client::new();
+    // 외부(LiveKit·토스) 응답이 멈춰도 스케줄러 작업이 무한정 붙잡히지 않게 한다.
+    let http = reqwest::Client::builder()
+        .connect_timeout(std::time::Duration::from_secs(5))
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
     let port = config.backend_port;
     let state = Arc::new(AppState {
         livekit: Arc::new(LiveKitHttp::new(config.livekit.clone(), http.clone())),
