@@ -150,7 +150,7 @@ frontend/src/
 | wallets / ledger_entries | user_id(PK), balance `CHECK (balance BETWEEN 0 AND 3000000)` / user_id, type, amount(charge만 +, 나머지 -), balance_after, payment_order_id(charge만, **유니크**), broadcast_id(donation·clutch·burst만), created_at — **추가만**(UPDATE·DELETE·TRUNCATE 트리거 거절) |
 | payment_orders | order_id(유니크), payment_key(유니크), user_id, purpose(`charge`/`donation`), amount(결제=충전 금액), broadcast_id·donation_amount·donation_anonymous·donation_message(donation 주문만), status(`pending`/`done`/`expired`/`failed`), expires_at, confirmed_at |
 | donations | broadcast_id, donor_id, amount, kind(donation/clutch/burst), anonymous, message, ledger_entry_id(유니크, 차감 원장을 가리킴 — 원장 쪽에 donation_id는 두지 않음) |
-| clutch_events / super_clutches | broadcast_id, user_id, source(`free`/`paid`/`burst`/`donation` — 게이지 점수 출처를 한 테이블에), points, created_at / broadcast_id, triggered_at, expires_at(=+5분), rotation_order |
+| clutch_events / super_clutches | broadcast_id, user_id, source(`free`/`paid`/`burst`/`donation` — 게이지 점수 출처를 한 테이블에), points, created_at / broadcast_id, triggered_at, expires_at(=+5분), rotation_order, shown_at(히어로 회전 마지막 슬롯 시작, T29) |
 | recordings / recording_views | broadcast_id(유니크, 1:1), egress_id(유니크), status(`recording`/`ready`/`failed`/`deleted`), object_key, **size_bytes**, duration_sec, expires_at, views / (recording_id, viewer_key(`u:<id>`/`g:<익명id>`), date_kst(기본값 KST 오늘)) 유니크 |
 
 ### 7-1. 데이터 기본 규칙

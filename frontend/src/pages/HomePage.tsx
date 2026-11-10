@@ -2,14 +2,15 @@ import Button from '../components/ui/Button.tsx'
 import EmptyState from '../components/ui/EmptyState.tsx'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import BroadcastGrid, { BroadcastCard, CategoryChips, GridSkeleton, SectionTitle } from '../features/broadcast/components/BroadcastGrid.tsx'
-import { MainLive, RecommendedCard } from '../features/broadcast/components/HomeSections.tsx'
+import HomeHero from '../features/broadcast/components/HomeHero.tsx'
+import { RecommendedCard } from '../features/broadcast/components/HomeSections.tsx'
 import RecentReplays from '../features/replay/components/RecentReplays.tsx'
 import { useHome } from '../features/broadcast/hooks/useHome.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
 
-// 게이지 1위 히어로·CLUTCH TIME 패널(T29)은 이 위에, CLUTCH FEED(T30)는 "최근 다시보기" 자리에 붙는다.
+// CLUTCH FEED(T30)는 "최근 다시보기" 자리에 붙는다.
 export default function HomePage() {
-  const { category, setCategory, grid, main, recommended } = useHome()
+  const { category, setCategory, grid, hero, recommended } = useHome()
   const empty = (
     <EmptyState
       title='지금은 조용하네요'
@@ -22,11 +23,8 @@ export default function HomePage() {
     <div className='flex flex-col gap-8 lg:gap-10'>
       <h1 className='sr-only'>FLUTCH 홈</h1>
 
-      {main && (
-        <section aria-label='메인 라이브' className='max-w-4xl'>
-          <MainLive broadcast={main} />
-        </section>
-      )}
+      {/* LIVE가 없으면(empty) 히어로 없이 아래 그리드의 빈 화면(졸린 마스코트 + 방송하기)이 대신한다 */}
+      {hero && <HomeHero view={hero} />}
 
       {recommended.length > 0 && (
         <section aria-labelledby='home-recommended' className='flex flex-col gap-3 lg:gap-4'>

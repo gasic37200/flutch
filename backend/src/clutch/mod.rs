@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
 use axum::http::StatusCode;
-use axum::routing::post;
+use axum::routing::{get, post};
 use axum::{Extension, Router};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -22,16 +22,22 @@ use crate::wallet::Donation;
 
 mod db;
 mod handlers;
+mod rotation;
+
+pub use rotation::rotate;
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .route("/broadcasts/{id}/clutches", post(handlers::create))
         .route("/broadcasts/{id}/bursts", post(handlers::burst))
+        .route("/home/hero", get(rotation::hero))
         .layer(Extension(Arc::new(Limits::default())))
 }
 
-/// 주기 작업: SUPER CLUTCH 회전(1초) — T29가 채운다.
-pub fn register(_s: &mut Scheduler) {}
+/// 주기 작업: SUPER CLUTCH 회전(1초).
+pub fn register(s: &mut Scheduler) {
+    s.every("clutch_rotation", Duration::from_secs(1), rotate);
+}
 
 /// 사용자·방송 단위 초당 10회(메모리라 서버를 다시 띄우면 비워진다).
 pub(crate) struct Limits(RateLimiter);

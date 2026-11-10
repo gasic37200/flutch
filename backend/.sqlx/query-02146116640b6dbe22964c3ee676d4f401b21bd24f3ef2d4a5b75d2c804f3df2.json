@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE super_clutches SET shown_at = clock_timestamp() WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "02146116640b6dbe22964c3ee676d4f401b21bd24f3ef2d4a5b75d2c804f3df2"
+}

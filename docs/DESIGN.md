@@ -56,7 +56,7 @@
   | 기본 | `brand-line` 1px (은은한 네온) |
   | 호버·선택 | `brand` 1px |
   | **메인 히어로**(홈 라이브 영상 + CLUTCH TIME 패널), 후원 알림 | `brand` 1px + 글로우 `drop-shadow(0 0 12px rgba(176,246,18,.4))` |
-  | SUPER CLUTCH 카드 | `clutch` 그라데이션 1px |
+  | SUPER CLUTCH 카드 | `clutch` 그라데이션 1px (홈 히어로는 + 주황 글로우 `drop-shadow-clutch`) |
 - 구현: `clip-path`로 바깥 층(테두리색) + 1px 안쪽 층(배경). **글로우는 clip-path가 없는 바깥 래퍼에** 걸어야 잘리지 않는다. 공통 컴포넌트 `<Panel>`, `<Button>`, `<Chip>`만 이 모양을 만든다.
 - 장식: 큰 패널(히어로, CLUTCH TIME, 배너) 모서리에만 **하프톤 도트 + 꺾인 네온 라인**.
 

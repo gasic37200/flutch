@@ -38,6 +38,8 @@ pub struct ClutchConfig {
     pub cooldown_secs: i64,
     /// SUPER CLUTCH 진행 중 유지(초)
     pub super_secs: i64,
+    /// 히어로 회전 슬롯 길이(초)
+    pub rotation_secs: i64,
     /// 무료 클러치 창(초)·창당 횟수
     pub free_window_secs: i64,
     pub free_per_window: i64,
@@ -55,6 +57,7 @@ impl Default for ClutchConfig {
             imminent_percent: 80,
             cooldown_secs: 30 * 60,
             super_secs: 5 * 60,
+            rotation_secs: 30,
             free_window_secs: 30,
             free_per_window: 5,
             burst_price: 1_000,

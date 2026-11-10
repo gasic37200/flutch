@@ -321,7 +321,7 @@ type Hero = {
   broadcast: Broadcast | null          // 지금 히어로 방송(empty면 null)
   gauge: ClutchGauge | null
   slot: { startedAt: string; nextSwitchAt: string } | null   // super_clutch 회전 중일 때 30초 슬롯
-  active: { broadcast: Broadcast; expiresAt: string }[]       // 진행 중 SUPER CLUTCH, 최대 5, 회전 순서
+  active: { broadcast: Broadcast; expiresAt: string }[]       // 진행 중 SUPER CLUTCH, 최대 5, 회전 순서(첫 번째 = 지금 히어로)
 }
 type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: string; broadcast: Broadcast; startSec: number; durationSec: number; triggeredAt: string }
 ```
@@ -329,9 +329,10 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 - 버스트: 가격 `burstPrice`(설정값 1,000) 차감, 원장 `burst` + 후원 기록 kind `burst`(표시 이름은 `anonymous`). 검사 순서: 방송 404 → `CLUTCH_SELF` → 영구 밴 `MODERATION_BANNED`(임시차단은 허용) → `BROADCAST_NOT_LIVE` → `WALLET_INSUFFICIENT_BALANCE`. 한 트랜잭션: 방송 `FOR SHARE` → 조건부 차감 → 후원 기록 → 게이지 점수(가격 × `points_per_bit`, `clutch_events source=burst`). 커밋 뒤 `donation.created`(split, 익명이면 공개 쪽 `donor=null`)·`clutch.gauge`/`clutch.super`. 응답 `donation`은 실명, `balance`는 차감 후 잔액, `gauge`는 반영 후(발동했으면 0·cooldown).
 - 게이지는 최근 5분 슬라이딩 합계 / 10,000점. 100% 도달 시 쿨다운(진행 중이거나 마지막 발동 30분 이내)이 아니면 SUPER CLUTCH: 게이지 0, `super_clutches` 추가(5분, 회전 바로 다음 순서), `clutch.super` 발행. 쿨다운 중이면 게이지만 오르고 phase `cooldown`.
 - 점수는 마지막 SUPER CLUTCH 이후 이벤트만 센다. 시연용으로 환경변수 `CLUTCH_GAUGE_TARGET`·`CLUTCH_POINTS`가 기준·클러치 점수를 바꾼다. 감소(5분 창 밖으로 빠짐)는 이벤트가 없어 클라이언트가 20초마다 상세를 다시 받는다.
-- 히어로: 진행 중 SUPER CLUTCH가 있으면 30초씩 회전(`mode=super_clutch`, 서버 1초 스케줄러가 DB 기준으로 진행), 없으면 게이지 1위 LIVE(`top_gauge`), 모두 0이면 시청자 수 1위(`top_viewers`), LIVE가 없으면 `empty`. 홈은 10초 폴링하고 `slot.nextSwitchAt`이 더 이르면 그때 다시 조회.
+- 히어로: 진행 중 SUPER CLUTCH가 있으면 30초씩 회전(`mode=super_clutch`, 서버 1초 스케줄러가 DB 기준으로 진행), 없으면 게이지 1위 LIVE(`top_gauge`), 모두 0%면 시청자 수 1위(`top_viewers`, 동률은 최신 방송), LIVE가 없으면 `empty`. 홈은 10초 폴링하고 `slot.nextSwitchAt`이 더 이르면 그때 다시 조회.
+  - 회전(T29): 진행 중 = 미만료 + 방송 LIVE·미숨김(종료되면 바로 빠진다). 상태는 `super_clutches.shown_at`(마지막 슬롯 시작)뿐이다. 현재 = `shown_at`이 가장 늦은 것, 다음 = 아직 노출 전(`rotation_order`, 같으면 id — 동시 발동이면 같은 값일 수 있다) → 오래전에 노출된 순. 슬롯이 30초를 넘었거나 현재가 빠지면 다음의 `shown_at`을 지금으로 바꾼다(혼자면 같은 방송으로 새 슬롯). 1초 작업과 `GET /home/hero`(슬롯이 끝났을 때만, 잠금으로 직렬화)가 같은 규칙으로 진행한다.
 - 클립: 녹화 `ready`인 방송의 SUPER CLUTCH마다 `startSec = max(0, 발동시각 − startedAt − 30)`, `durationSec = 45`. 클립이 없으면 홈은 `GET /recordings`(최근 다시보기)를 보여준다.
-- 시나리오: `clutch_free_combo_then_paid` `clutch_gauge_decay_window` `super_clutch_trigger_reset_and_cooldown` `clutch_rotation` `clutch_banned_rules` `clutch_gauge_event_throttled` · 버스트(T24): `burst_debits_and_boosts_gauge` `burst_anonymous_hidden_from_public` `burst_rules` `burst_concurrent_only_balance_succeeds`
+- 시나리오: `clutch_free_combo_then_paid` `clutch_gauge_decay_window` `super_clutch_trigger_reset_and_cooldown` `clutch_rotation` `hero_modes` `rotation_survives_restart` `clutch_banned_rules` `clutch_gauge_event_throttled` · 버스트(T24): `burst_debits_and_boosts_gauge` `burst_anonymous_hidden_from_public` `burst_rules` `burst_concurrent_only_balance_succeeds`
 
 ## 8. 녹화·다시보기 (f08)
 | 메서드·경로 | 권한 | 요청 | 응답 | 에러 |
