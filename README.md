@@ -221,6 +221,11 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 4. A에서 "웹캠만"으로 바꾸거나 화면 공유가 끊기면 B에서 웹캠이 PIP 대신 화면 전체로 커진다.
 5. 기대: 화면과 웹캠이 별도 트랙으로 전송되어 A가 다른 창(게임)으로 전환해도 두 영상이 끊기지 않는다.
 
+**P16. 팔로우·PULSE**
+1. B에서 `/login` → **시청자**로 로그인 → 스트리머1의 스트리머 페이지(방송 카드나 이름을 눌러 이동) → **팔로우**.
+2. 기대: 버튼이 "팔로잉"으로 바뀌고 팔로워 수가 1 늘어난다. 다시 누르면 취소된다. 본인 페이지에는 팔로우 버튼이 없다.
+3. A에서 스트리머1이 방송을 시작하면 B의 사이드바 "PULSE"(팔로우한 채널 중 라이브)와 `/pulse`의 "지금 라이브"에 나타나고, 방송 중이 아니면 "오프라인"에 마지막 방송 시각과 함께 나온다. 비로그인은 사이드바가 "인기 라이브"이고 `/pulse`가 로그인을 안내한다.
+
 ### 시나리오 ↔ 절차 대응표
 시나리오 테스트는 `backend/tests/scenarios/`에 있고 `cd backend && cargo test`로 실행합니다(실제 Postgres, LiveKit·토스는 가짜).
 
@@ -230,6 +235,9 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `auth_signup_validation_and_duplicates` | 가입 입력 검증·중복 | P12 |
 | `auth_test_login_seed_accounts` | 시드 3계정 테스트 로그인 | P1 |
 | `auth_lockout` | 5회 실패 → 잠금 | P11 |
+| `follow_toggle_and_count` | 팔로우·중복 팔로우·언팔로우·탈퇴한 팔로워 제외 | P16 |
+| `follow_self_rejected` | 자기 자신 팔로우 거절 | P16 |
+| `pulse_live_first_limit_and_withdrawn` | PULSE 라이브 먼저·limit·비로그인 401·탈퇴 스트리머 제외 | P16 |
 | `auth_rate_limits_by_ip` | IP별 요청 제한 | (서버 내부) |
 | `auth_requires_login_and_acts_only_on_own_account` | 로그인 필수·본인 계정만 | P11 |
 | `auth_password_change_revokes_other_sessions` | 비밀번호 변경 시 다른 세션 만료 | P12 |

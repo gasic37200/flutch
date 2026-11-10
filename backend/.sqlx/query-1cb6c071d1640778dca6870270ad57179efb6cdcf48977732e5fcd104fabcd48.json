@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT COUNT(*) AS \"n!\" FROM follows WHERE streamer_id = $1",
+  "query": "SELECT COUNT(*) AS \"n!\" FROM follows f\n           JOIN users u ON u.id = f.follower_id AND u.withdrawn_at IS NULL\n           WHERE f.streamer_id = $1",
   "describe": {
     "columns": [
       {
@@ -19,5 +19,5 @@
       null
     ]
   },
-  "hash": "b5c62113f3ca3f02b539bacadfa37f645c2a7c079bf2e696cc17871916f9982d"
+  "hash": "1cb6c071d1640778dca6870270ad57179efb6cdcf48977732e5fcd104fabcd48"
 }

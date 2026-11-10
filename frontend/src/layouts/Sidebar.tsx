@@ -5,25 +5,26 @@ import Panel from '../components/ui/Panel.tsx'
 
 export type SidebarChannel = { broadcastId: number; userId: number; nickname: string; viewerCount: number }
 
-// 팔로잉·PULSE는 이후 단계에서 이 배열에 추가한다("준비 중" 메뉴는 노출하지 않는다).
+// "준비 중" 메뉴는 노출하지 않는다.
 const menu: { to: string; label: string; icon: IconName }[] = [
   { to: '/', label: '홈', icon: 'home' },
   { to: '/explore', label: '탐색', icon: 'compass' },
+  { to: '/pulse', label: 'PULSE', icon: 'pulse' },
   { to: '/replay', label: '다시보기', icon: 'video' },
 ]
 
-type Props = { channels: SidebarChannel[]; onNavigate?: () => void }
+type Props = { channels: SidebarChannel[]; /** 첫 패널 제목(기본 인기 라이브, 팔로우가 있으면 PULSE) */ title?: string; empty?: string; onNavigate?: () => void }
 
-export default function Sidebar({ channels, onNavigate }: Props) {
+export default function Sidebar({ channels, title = '인기 라이브', empty = '지금은 라이브 중인 방송이 없어요', onNavigate }: Props) {
   return (
     <nav aria-label='주 메뉴' className='flex h-full flex-col gap-5 overflow-y-auto bg-bg px-4 py-5'>
       <Panel innerClassName='flex flex-col gap-1.5 bg-bg p-3'>
         <h2 className='flex items-center gap-2 px-1 pb-1.5 text-[15px] font-black'>
           <Icon name='pulse' className='size-[18px] text-brand' />
-          인기 라이브
+          {title}
         </h2>
         {channels.length === 0 ? (
-          <p className='px-1 py-1 text-sm text-text-dim'>지금은 라이브 중인 방송이 없어요</p>
+          <p className='px-1 py-1 text-sm text-text-dim'>{empty}</p>
         ) : (
           <ul>
             {channels.map((c) => (

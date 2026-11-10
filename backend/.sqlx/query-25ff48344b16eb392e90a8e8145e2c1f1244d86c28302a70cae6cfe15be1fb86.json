@@ -1,0 +1,54 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT u.id, u.nickname,\n                  (SELECT COUNT(*) FROM follows f2\n                   JOIN users fu ON fu.id = f2.follower_id AND fu.withdrawn_at IS NULL\n                   WHERE f2.streamer_id = u.id) AS \"follower_count!\",\n                  (SELECT MAX(b.ended_at) FROM broadcasts b\n                   WHERE b.owner_id = u.id AND b.status = 'ENDED' AND b.hidden_at IS NULL) AS last_ended_at\n           FROM follows f JOIN users u ON u.id = f.streamer_id AND u.withdrawn_at IS NULL\n           WHERE f.follower_id = $1\n           ORDER BY last_ended_at DESC NULLS LAST, u.id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nickname",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "nickname"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "follower_count!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "last_ended_at",
+        "type_info": "Timestamptz",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "25ff48344b16eb392e90a8e8145e2c1f1244d86c28302a70cae6cfe15be1fb86"
+}

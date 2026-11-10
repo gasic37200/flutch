@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM follows WHERE follower_id = $1 AND streamer_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "20226d71271446cc15908a9c41c562c38e517f02289aa857a0baba3394bf307a"
+}
