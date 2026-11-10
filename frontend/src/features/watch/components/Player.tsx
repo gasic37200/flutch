@@ -141,7 +141,12 @@ export default function Player({ view, broadcast, player: p, onUnmute }: Props) 
       <audio ref={micRef} muted={p.muted} autoPlay />
       <audio ref={shareAudioRef} muted={p.muted} autoPlay />
       <Overlay view={view} broadcast={broadcast} />
-      {live && <Badge tone='live' className='absolute top-3 left-3 sm:top-3.5 sm:left-3.5' />}
+      {live && (
+        <div className='absolute top-3 left-3 flex gap-2 sm:top-3.5 sm:left-3.5'>
+          <Badge tone='live' />
+          {broadcast.superClutchUntil && <Badge tone='superClutch' />}
+        </div>
+      )}
       {playing && (
         <div className='absolute inset-x-0 bottom-0 flex h-12 items-center gap-1.5 bg-linear-to-t from-bg/90 to-bg/0 px-2.5'>
           {p.muted ? (

@@ -1,5 +1,5 @@
 //! 클러치 시나리오 (features/07, api.md §7). 끝에서 지갑 정합성(`mismatched_wallets`)이 비어야 한다.
-//! `clutch_rotation`은 T29(회전 스케줄러)에서 추가한다. SUPER BURST(T24)도 여기 둔다.
+//! SUPER BURST(T24)·회전·히어로(T29)도 여기 둔다.
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -766,4 +766,221 @@ async fn clutch_gauge_event_throttled(db: PgPool) {
     );
     let more = tokio::time::timeout(Duration::from_millis(700), next_of(&mut ws, "clutch.gauge"));
     assert!(more.await.is_err(), "묶인 값은 한 번만 보낸다");
+}
+
+// ---- SUPER CLUTCH 회전·홈 히어로 (T29) ----
+
+async fn hero(app: &Router) -> Value {
+    let res = send(app, empty_req("GET", "/api/v1/home/hero", None)).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    res.json
+}
+
+/// 진행 중 목록의 방송 id(회전 순서)
+fn active_ids(h: &Value) -> Vec<i64> {
+    h["active"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|a| a["broadcast"]["id"].as_i64().unwrap())
+        .collect()
+}
+
+fn ts(v: &Value) -> chrono::DateTime<chrono::FixedOffset> {
+    chrono::DateTime::parse_from_rfc3339(v.as_str().unwrap()).unwrap()
+}
+
+/// 1만 점 + 클러치 1번으로 SUPER CLUTCH 발동
+async fn trigger(app: &Router, db: &PgPool, viewer: (&str, i64), id: i64) {
+    seed_points(db, id, viewer.1, 10_000, 1).await;
+    let res = clutch(app, Some(viewer.0), id).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    assert_eq!(res.json["gauge"]["phase"], "cooldown", "발동해야 한다");
+}
+
+/// 시간 조작: 저장된 발동·노출·점수 시각을 `secs`초 과거로 민다(= `secs`초가 흐른 것과 같다).
+async fn travel(db: &PgPool, secs: i64) {
+    sqlx::query(
+        "UPDATE super_clutches SET triggered_at = triggered_at - $1 * interval '1 second',
+                expires_at = expires_at - $1 * interval '1 second',
+                shown_at = shown_at - $1 * interval '1 second'",
+    )
+    .bind(secs as f64)
+    .execute(db)
+    .await
+    .unwrap();
+    sqlx::query("UPDATE clutch_events SET created_at = created_at - $1 * interval '1 second'")
+        .bind(secs as f64)
+        .execute(db)
+        .await
+        .unwrap();
+}
+
+#[sqlx::test]
+async fn clutch_rotation(db: PgPool) {
+    let state = test_state(db.clone(), Arc::new(FakeLiveKit::default()));
+    let app = flutch::app(state.clone());
+    let (viewer, viewer_id) = login_as(&app, "viewer").await;
+    let v = (viewer.as_str(), viewer_id);
+    let a = live_broadcast(&app, &login_as(&app, "streamer1").await.0).await;
+    let b = live_broadcast(&app, &login_as(&app, "streamer2").await.0).await;
+    let c_owner = signup(&app, "rotator", "회전러").await;
+    let c = live_broadcast(&app, &c_owner).await;
+
+    // 발동 2개: 먼저 터진 a가 30초 슬롯으로 노출, 다음은 b
+    trigger(&app, &db, v, a).await;
+    trigger(&app, &db, v, b).await;
+    let h = hero(&app).await;
+    assert_eq!(h["mode"], "super_clutch");
+    assert_eq!(h["broadcast"]["id"], a);
+    assert_eq!(active_ids(&h), [a, b]);
+    let slot = &h["slot"];
+    assert_eq!(
+        (ts(&slot["nextSwitchAt"]) - ts(&slot["startedAt"])).num_seconds(),
+        30
+    );
+
+    // 30초 뒤: 1초 작업이 DB에서 b로 넘긴다
+    travel(&db, 30).await;
+    flutch::clutch::rotate(state.clone()).await.unwrap();
+    let shown: i64 = sqlx::query_scalar(
+        "SELECT broadcast_id FROM super_clutches ORDER BY shown_at DESC NULLS LAST LIMIT 1",
+    )
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    assert_eq!(shown, b);
+    assert_eq!(active_ids(&hero(&app).await), [b, a]);
+
+    // 새 발동 c는 맨 뒤가 아니라 바로 다음 순서
+    trigger(&app, &db, v, c).await;
+    assert_eq!(active_ids(&hero(&app).await), [b, c, a]);
+
+    // 진행 중인 a가 다시 100%가 돼도 재등록하지 않는다(쿨다운)
+    seed_points(&db, a, viewer_id, 10_000, 0).await;
+    let res = clutch(&app, Some(&viewer), a).await;
+    assert_eq!(res.json["gauge"]["phase"], "cooldown");
+    let supers = "SELECT count(*) FROM super_clutches WHERE broadcast_id = $1";
+    assert_eq!(count(&db, supers, a).await, 1);
+    assert_eq!(active_ids(&hero(&app).await), [b, c, a]);
+
+    travel(&db, 30).await;
+    flutch::clutch::rotate(state.clone()).await.unwrap();
+    assert_eq!(active_ids(&hero(&app).await), [c, a, b]);
+
+    // 노출 중인 c의 방송이 끝나면 즉시 빠지고 다음(a)이 새 슬롯으로 바로 나온다
+    let res = send(
+        &app,
+        empty_req("DELETE", &format!("{B}/{c}/live"), Some(&c_owner)),
+    )
+    .await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    let h = hero(&app).await;
+    assert_eq!(active_ids(&h), [a, b]);
+    let age = chrono::Utc::now().fixed_offset() - ts(&h["slot"]["startedAt"]);
+    assert!(age.num_seconds() < 5, "새 슬롯이어야 한다: {age}");
+
+    // 발동 5분이 지나면 회전에서 빠지고, 게이지가 모두 0이라 시청자 수 1위로
+    travel(&db, 300).await;
+    flutch::clutch::rotate(state.clone()).await.unwrap();
+    let h = hero(&app).await;
+    assert_eq!(
+        (h["mode"].clone(), h["slot"].clone()),
+        (json!("top_viewers"), Value::Null)
+    );
+    assert_eq!(active_ids(&h), Vec::<i64>::new());
+    assert_eq!(h["broadcast"]["superClutchUntil"], Value::Null);
+}
+
+#[sqlx::test]
+async fn hero_modes(db: PgPool) {
+    let app = test_app(db.clone());
+    let (viewer, viewer_id) = login_as(&app, "viewer").await;
+    let v = (viewer.as_str(), viewer_id);
+
+    // LIVE가 없으면 empty
+    let h = hero(&app).await;
+    assert_eq!(
+        h,
+        json!({ "mode": "empty", "broadcast": null, "gauge": null, "slot": null, "active": [] })
+    );
+
+    // 게이지가 모두 0이면 시청자 수 1위(동률은 최신 방송)
+    let a = live_broadcast(&app, &login_as(&app, "streamer1").await.0).await;
+    let b = live_broadcast(&app, &login_as(&app, "streamer2").await.0).await;
+    let h = hero(&app).await;
+    assert_eq!(
+        (h["mode"].clone(), h["broadcast"]["id"].clone()),
+        (json!("top_viewers"), json!(b))
+    );
+    assert_eq!(h["gauge"]["percent"], 0);
+
+    // 게이지가 있으면 게이지 1위
+    seed_points(&db, a, viewer_id, 500, 0).await;
+    let h = hero(&app).await;
+    assert_eq!(
+        (
+            h["mode"].clone(),
+            h["broadcast"]["id"].clone(),
+            h["gauge"]["percent"].clone()
+        ),
+        (json!("top_gauge"), json!(a), json!(5))
+    );
+    assert_eq!(
+        (h["slot"].clone(), h["active"].clone()),
+        (Value::Null, json!([]))
+    );
+
+    // 진행 중 6개 → super_clutch, 목록은 최대 5개(먼저 터진 순)
+    let mut ids = vec![a, b];
+    for n in 0..4 {
+        let owner = signup(&app, &format!("hero{n}"), &format!("히어로{n}")).await;
+        ids.push(live_broadcast(&app, &owner).await);
+    }
+    for &id in &ids {
+        trigger(&app, &db, v, id).await;
+    }
+    let h = hero(&app).await;
+    assert_eq!(h["mode"], "super_clutch");
+    assert_eq!(
+        (
+            h["broadcast"]["id"].as_i64(),
+            h["gauge"]["percent"].as_i64()
+        ),
+        (Some(a), Some(0))
+    );
+    assert!(h["broadcast"]["superClutchUntil"].is_string());
+    assert_eq!(active_ids(&h), ids[..5]);
+    assert!(h["active"][0]["expiresAt"].is_string());
+    let slot = &h["slot"];
+    assert_eq!(
+        (ts(&slot["nextSwitchAt"]) - ts(&slot["startedAt"])).num_seconds(),
+        30
+    );
+}
+
+#[sqlx::test]
+async fn rotation_survives_restart(db: PgPool) {
+    let app = test_app(db.clone());
+    let (viewer, viewer_id) = login_as(&app, "viewer").await;
+    let v = (viewer.as_str(), viewer_id);
+    let a = live_broadcast(&app, &login_as(&app, "streamer1").await.0).await;
+    let b = live_broadcast(&app, &login_as(&app, "streamer2").await.0).await;
+    trigger(&app, &db, v, a).await;
+    trigger(&app, &db, v, b).await;
+    let before = hero(&app).await;
+
+    // 서버를 새로 띄워도(새 앱 상태) 같은 슬롯이 이어진다
+    let restarted = test_app(db.clone());
+    let after = hero(&restarted).await;
+    assert_eq!(
+        (
+            &after["broadcast"]["id"],
+            &after["slot"],
+            active_ids(&after)
+        ),
+        (&json!(a), &before["slot"], vec![a, b])
+    );
+    travel(&db, 30).await;
+    assert_eq!(hero(&restarted).await["broadcast"]["id"], b);
 }

@@ -364,6 +364,20 @@ pub async fn live_of_owners(state: &AppState, owners: &[i64]) -> Result<Vec<Broa
         .collect()
 }
 
+/// 모든 LIVE·미숨김 방송(최신 id 순). 홈 히어로용.
+pub async fn live_all(state: &AppState) -> Result<Vec<Broadcast>, AppError> {
+    let f = db::Filter {
+        status: Some("LIVE"),
+        limit: i64::MAX,
+        ..db::Filter::default()
+    };
+    db::find(&state.db, &f)
+        .await?
+        .into_iter()
+        .map(|r| handlers::into_broadcast(state, r))
+        .collect()
+}
+
 /// 그 사용자의 LIVE·미숨김 방송(없으면 `None`). 스트리머 페이지용.
 pub async fn live_of_owner(state: &AppState, owner_id: i64) -> Result<Option<Broadcast>, AppError> {
     let f = db::Filter {

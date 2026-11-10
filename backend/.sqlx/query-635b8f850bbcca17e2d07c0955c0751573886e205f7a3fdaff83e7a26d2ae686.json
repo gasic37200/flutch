@@ -1,0 +1,81 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT s.id, s.broadcast_id, s.rotation_order, s.shown_at, s.expires_at,\n                  clock_timestamp() AS \"now!\"\n           FROM super_clutches s JOIN broadcasts b ON b.id = s.broadcast_id\n           WHERE s.expires_at > clock_timestamp() AND b.status = 'LIVE' AND b.hidden_at IS NULL",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "super_clutches",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "broadcast_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "super_clutches",
+            "name": "broadcast_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "rotation_order",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "super_clutches",
+            "name": "rotation_order"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "shown_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "super_clutches",
+            "name": "shown_at"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "expires_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "super_clutches",
+            "name": "expires_at"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "now!",
+        "type_info": "Timestamptz",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      null
+    ]
+  },
+  "hash": "635b8f850bbcca17e2d07c0955c0751573886e205f7a3fdaff83e7a26d2ae686"
+}

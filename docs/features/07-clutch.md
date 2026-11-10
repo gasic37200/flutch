@@ -57,4 +57,6 @@
 - `clutch_gauge_decay_window`
 - `super_clutch_trigger_reset_and_cooldown`
 - `clutch_rotation`: 30초 회전, 새 발동은 바로 다음 순서, 발동 5분 후 제외, 방송 종료 시 즉시 제외
+- `hero_modes`: 히어로 super_clutch·top_gauge·top_viewers·empty, 진행 중 목록 최대 5
+- `rotation_survives_restart`: 서버를 다시 띄워도 같은 슬롯
 - `clutch_banned_rules`: 영구 밴 무료 가능·유료 불가

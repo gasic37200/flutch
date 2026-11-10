@@ -246,6 +246,11 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 2. 기대: 버튼이 "팔로잉"으로 바뀌고 팔로워 수가 1 늘어난다. 다시 누르면 취소된다. 본인 페이지에는 팔로우 버튼이 없다.
 3. A에서 스트리머1이 방송을 시작하면 B의 사이드바 "PULSE"(팔로우한 채널 중 라이브)와 `/pulse`의 "지금 라이브"에 나타나고, 방송 중이 아니면 "오프라인"에 마지막 방송 시각과 함께 나온다. 비로그인은 사이드바가 "인기 라이브"이고 `/pulse`가 로그인을 안내한다.
 
+**P18. SUPER CLUTCH 회전·홈 히어로**
+1. 스트리머1·스트리머2로 각각 방송을 시작하고 시청자로 홈을 연다. 진행 중인 SUPER CLUTCH가 없으면 히어로는 게이지가 가장 높은 방송(모두 0%면 시청자 수 1위)이고 오른쪽 CLUTCH TIME 패널에 그 방송 게이지와 "지금, 클러치할 시간!"(80% 이상은 "곧 터져요!", 발동 후 쿨다운은 "다음 클러치까지 n분")이 보인다. 모바일은 영상 카드 아래 한 줄 패널.
+2. 두 방송에서 각각 SUPER BURST(1,000비트) 또는 클러치로 게이지를 100%로 만든다. 10초 안에 히어로가 SUPER CLUTCH 배지·그라데이션 테두리로 바뀌고, 패널에 "다음 방송까지" 카운트다운·30초 진행 바·"지금 보러 가기"·진행 중 목록(남은 시간)이 보인다. 시청 화면 영상 왼쪽 위에도 SUPER CLUTCH 배지가 붙는다.
+3. 기대: 30초마다 히어로가 두 방송을 번갈아 보여 주고, 새로 터진 방송은 바로 다음 차례에 나온다. 목록의 방송을 누르면 바로 시청 화면으로 간다. 발동 5분 뒤나 방송을 끝내면 회전에서 빠지고(노출 중이면 바로 다음 방송), 서버를 다시 띄워도 같은 순서·남은 시간이 이어진다.
+
 ### 시나리오 ↔ 절차 대응표
 시나리오 테스트는 `backend/tests/scenarios/`에 있고 `cd backend && cargo test`로 실행합니다(실제 Postgres, LiveKit·토스는 가짜).
 
@@ -317,6 +322,8 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `burst_debits_and_boosts_gauge` | SUPER BURST 1,000비트 차감·원장 burst·후원 기록, 혼자 1회로 SUPER CLUTCH 발동, 쿨다운 중엔 게이지만 상승, 잔액 부족 409 | (클러치 절차 추가 시) |
 | `burst_anonymous_hidden_from_public` | 익명 버스트는 공개 이벤트·목록에서 후원자 숨김, 소유자에게만 실명 | (클러치 절차 추가 시) |
 | `burst_rules`, `burst_concurrent_only_balance_succeeds` | 비로그인 401·내 방송 403·영구 밴 403·임시차단 허용·비LIVE 409, 동시 2건은 잔액만큼만 성공 | (클러치 절차 추가 시) |
+| `clutch_rotation` | 진행 중 SUPER CLUTCH 30초 교대, 새 발동은 바로 다음, 진행 중 재발동 없음, 방송 종료 즉시 제외(다음이 새 슬롯), 5분 뒤 제외 | P18 |
+| `hero_modes`, `rotation_survives_restart` | 히어로 empty·top_viewers·top_gauge·super_clutch, 진행 중 목록 최대 5, 30초 슬롯, 새 앱 인스턴스도 같은 슬롯 | P18 |
 | `donation_amount_mismatch_rejected` | 주문과 다른 금액 승인 거절(토스 호출 없음) | P17 |
 | `donation_after_end_becomes_charge`, `banned_user_cannot_donate` | 승인 시 방송 종료·영구 밴이면 충전만, 주문 단계 거절 | P17 |
 | `donation_live_only`, `donation_input_rules`, `banned_user_cannot_donate` | 잔액 후원: LIVE 중에만, 자기 방송·금지어·금액·잔액 부족·영구 밴 거절, 게이지 반영 | P17 |

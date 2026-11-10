@@ -22,12 +22,15 @@ export default function ClutchGauge({
   cooldown = false,
   boost = false,
   size = 'md',
+  logo = true,
   className = '',
 }: {
   percent: number
   cooldown?: boolean
   boost?: boolean
   size?: 'md' | 'lg'
+  /** false면 바만(로고를 따로 크게 두는 홈 히어로 패널) */
+  logo?: boolean
   className?: string
 }) {
   const p = Math.round(Math.min(100, Math.max(0, percent)))
@@ -35,7 +38,7 @@ export default function ClutchGauge({
   const lg = size === 'lg'
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      <img src={`/brand/${stage.logo}.png`} alt='CLUTCH TIME' className={lg ? 'h-7 w-auto md:h-10' : 'h-8 w-auto'} />
+      {logo && <img src={`/brand/${stage.logo}.png`} alt='CLUTCH TIME' className={lg ? 'h-7 w-auto md:h-10' : 'h-8 w-auto'} />}
       <div className={`grow ${boost ? 'motion-safe:animate-burst-boost' : stage.beat}`}>
         <div
           role='progressbar'

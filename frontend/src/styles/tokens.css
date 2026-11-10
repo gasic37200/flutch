@@ -31,6 +31,8 @@
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   --drop-shadow-glow: 0 0 12px rgba(176, 246, 18, 0.4);
+  /* SUPER CLUTCH 히어로 주황 글로우 */
+  --drop-shadow-clutch: 0 0 16px rgba(255, 122, 26, 0.45);
   --drop-shadow-focus: 0 0 2px var(--color-text);
   --drop-shadow-field: 0 0 3px rgba(176, 246, 18, 0.6);
 

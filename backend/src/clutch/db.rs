@@ -123,3 +123,38 @@ pub async fn broadcast_for_share(
     .await?;
     Ok(r.map(|r| (r.owner_id, r.status)))
 }
+
+/// 진행 중 SUPER CLUTCH 한 건(회전 대상).
+pub struct Active {
+    pub id: i64,
+    pub broadcast_id: i64,
+    pub rotation_order: i64,
+    /// 마지막 노출 슬롯 시작. `None`이면 아직 노출 전
+    pub shown_at: Option<DateTime<Utc>>,
+    pub expires_at: DateTime<Utc>,
+    pub now: DateTime<Utc>,
+}
+
+/// 진행 중(미만료 + 방송 LIVE·미숨김)인 발동. 종료된 방송은 여기서 바로 빠진다.
+pub async fn active<'e>(ex: impl PgExecutor<'e>) -> Result<Vec<Active>, sqlx::Error> {
+    sqlx::query_as!(
+        Active,
+        r#"SELECT s.id, s.broadcast_id, s.rotation_order, s.shown_at, s.expires_at,
+                  clock_timestamp() AS "now!"
+           FROM super_clutches s JOIN broadcasts b ON b.id = s.broadcast_id
+           WHERE s.expires_at > clock_timestamp() AND b.status = 'LIVE' AND b.hidden_at IS NULL"#
+    )
+    .fetch_all(ex)
+    .await
+}
+
+/// 이 발동의 노출 슬롯을 지금 시작한다.
+pub async fn mark_shown(conn: &mut PgConnection, id: i64) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "UPDATE super_clutches SET shown_at = clock_timestamp() WHERE id = $1",
+        id
+    )
+    .execute(conn)
+    .await?;
+    Ok(())
+}
