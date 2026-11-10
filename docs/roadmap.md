@@ -20,9 +20,9 @@
 | **녹화 저장소 연결(T25 이후)**: `recordings` 버킷 공개 읽기 + CORS(`https://flutch.kro.kr` GET·HEAD) → 서버 `.env`에 `RECORDING_S3_ENDPOINT`(`https://<ns>.compat.objectstorage.<region>.oraclecloud.com`)·`RECORDING_S3_BUCKET`·`RECORDING_S3_REGION`·`RECORDING_S3_ACCESS_KEY`·`RECORDING_S3_SECRET_KEY`·`RECORDING_PUBLIC_BASE_URL`(`https://objectstorage.<region>.oraclecloud.com/n/<ns>/b/<bucket>/o`). 하나라도 비면 녹화 꺼짐(방송은 정상). LiveKit Cloud Egress 한도 확인 | T25 운영 확인 | 배포 후 | ⬜ |
 | LiveKit Cloud 가입, API key/secret, **대시보드 Settings › Project에서 Build 플랜 한도(분·Egress) 확인** | T08a 운영 확인 | 11/11 | ⬜ |
 | LiveKit 대시보드에 웹훅 URL 등록 `https://flutch.kro.kr/api/v1/livekit/webhook` | T08b 운영 확인 | T07 배포 후 | ⬜ |
-| 토스페이먼츠 개발자센터 가입, **결제위젯** 테스트 키 → 서버 `.env`에 `TOSS_CLIENT_KEY=test_gck_…`·`TOSS_SECRET_KEY=test_gsk_…`, 웹훅 URL `https://flutch.kro.kr/api/v1/payments/webhook`(이벤트 `PAYMENT_STATUS_CHANGED`) 등록 | T21 운영 확인 | 11/14 | ⬜ |
+| 토스페이먼츠 개발자센터 가입, **결제위젯** 테스트 키(11/10 입력, 시크릿 키 인증 확인) → 서버 `.env`에 `TOSS_CLIENT_KEY=test_gck_…`·`TOSS_SECRET_KEY=test_gsk_…`, 웹훅 URL `https://flutch.kro.kr/api/v1/payments/webhook`(이벤트 `PAYMENT_STATUS_CHANGED`) 등록 | T21 운영 확인 | 11/14 | ✅ |
 | **수동 송출 확인 U1**: 배포 URL에서 PC 화면 공유(탭/시스템 소리) → 휴대폰 시청, 휴대폰 카메라 → PC 시청, 종료. 함께 볼 것: 송출 탭을 백그라운드로 두고 1~2분 뒤 홈 카드 썸네일 갱신(T12), 모바일 Wake Lock·후면 카메라(T10), 소리 켜기·볼륨·전체화면(T11) | T15 | 11/12~13 | ⬜ |
-| 카카오 개발자 앱(REST 키, Redirect URI `https://flutch.kro.kr/api/v1/auth/kakao/callback`) | T28 | 11/17 | ⬜ |
+| 카카오 개발자 앱: REST 키·Redirect URI·Client Secret → 서버 `.env` `KAKAO_REST_KEY`·`KAKAO_REDIRECT_URI`·`KAKAO_CLIENT_SECRET` **입력 완료(11/10, 인가 요청 302 정상 확인)**. 남은 것: 탈퇴 시 연결 해제용 `KAKAO_ADMIN_KEY`(선택), 배포 후 실제 로그인 확인(README P12-4) | T28 | 11/17 | 🟨 |
 - 키·비밀값은 채팅에 붙여 넣지 않고 `.env`·GitHub Secrets에 직접 넣는다.
 - 로컬 개발은 로컬 LiveKit 서버(compose.dev)로 진행하므로 LiveKit Cloud 키가 없어도 T08~T11 개발은 막히지 않는다.
 
@@ -96,6 +96,7 @@
 | 2026-11-10 | T27 | "PULSE" 메뉴는 비로그인에게도 노출(페이지가 로그인 안내), 사이드바는 팔로우 1개 이상이면 라이브가 없어도 PULSE 패널("방송 중이 아니에요"), 0개면 인기 라이브 | decisions §10 해석 | 메뉴 조건 | 대기 |
 | 2026-11-10 | T23 | 결제 결과 경로 `/payments/success`·`/payments/fail`, 지갑 필터는 클러치·SUPER BURST 칩 분리(API가 type 하나), 영구 밴 사용자는 후원 버튼 대신 문구, 플레이어 전체화면에서는 후원 알림 오버레이 안 보임 | API 제약·Player 미수정 | 오버레이 위치 | 대기 |
 | 2026-11-10 | T24 | SUPER BURST 영구 밴 문구는 후원과 같은 "이 채널에서는 후원할 수 없어요", 버튼은 로그인 시청자에게만, 버스트 요청 제한 없음(1,000비트라 스스로 제한) | 문서에 없음 | 문구·제한 | 대기 |
+| 2026-11-10 | T28 | 탈퇴한 카카오 계정은 `kakao_id`를 비우고(CHECK 완화 마이그레이션) 재로그인 시 새 가입으로, 연결 해제는 어드민 키 사용(없으면 건너뜀), 카카오 세션은 7일·로그인 후 항상 `/`로, 버튼 노출은 `/auth/kakao/start` 302 여부로 판단 | features/01 "재가입은 새 계정" | 마이그레이션·handler | 대기 |
 
 ## Task
 > task 1개 = 서브에이전트 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "(병렬)" 표시 task끼리 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
@@ -170,7 +171,7 @@ T15 이후 **채팅(T16~) · 지갑(T20~) · 녹화(T25~) 세 줄을 동시에**
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
 |---|---|---|---|---|---|
 | T27 | 팔로우·사이드바 PULSE·PULSE 페이지 | 09 | T26 | Sonnet · medium | ✅ |
-| T28 | 카카오 로그인 | 01 | T06a | Sonnet · medium | 🟨 |
+| T28 | 카카오 로그인 | 01 | T06a | Sonnet · medium | ✅ |
 | T29 | SUPER CLUTCH 회전(30초·5분)·메인 히어로(`/home/hero`, 10초 폴링) + 시나리오 | 07 | T24 | Opus · high | 🟨 |
 | T30 | CLUTCH FEED 가상 클립 | 07 | T29, T25 | Sonnet · medium | ⬜ |
 

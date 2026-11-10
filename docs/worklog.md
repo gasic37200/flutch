@@ -51,3 +51,4 @@
 | 2026-11-10 | T23 | 부분(토스 키) | 2026-11-10 14:52 → 16:17 | 86분 | 354,321 | 236 | [#95](https://github.com/gasic37200/flutch/pull/95) | Sonnet·medium. 실제 결제창·결제는 토스 키 받은 뒤, 공용 Postgres 메모리 부족 재시작 1회 |
 | 2026-11-10 | T21b | 완료 | 2026-11-10 16:10 → 16:30 | 20분 | 96,341 | 9 | [#100](https://github.com/gasic37200/flutch/pull/100) | Sonnet·medium. 메인 리뷰: 지적 없음 |
 | 2026-11-10 | T24 | 완료 | 2026-11-10 14:58 → 16:32 | 94분 | 273,513 | 144 | [#99](https://github.com/gasic37200/flutch/pull/99) | Opus·high. ponytail-review: 지적 없음, T19 전역 static → AppState |
+| 2026-11-10 | T28 | 완료 | 2026-11-10 16:32 → 17:05 | 33분 | 231,129 | 55 | [#103](https://github.com/gasic37200/flutch/pull/103) | Sonnet·medium. ponytail-review: 지적 없음, 실제 카카오 로그인은 배포 후 |
