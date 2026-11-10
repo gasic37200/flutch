@@ -42,19 +42,20 @@ export function useViewer(broadcastId: number | undefined, enabled = true) {
     if (!live) return
     let cancelled = false
     const room = new Room({ adaptiveStream: true, dynacast: true })
-    const sync = () => {
+    // TrackUnsubscribed는 pub.track이 비워지기 전에 발행되므로 떠나는 트랙은 직접 뺀다.
+    const sync = (gone?: RemoteTrack) => {
       const next: ViewerTracks = {}
       room.remoteParticipants.forEach((p) =>
         p.trackPublications.forEach((pub) => {
           const slot = pub.track && SLOT[pub.source as keyof typeof SLOT]
-          if (slot && pub.track) next[slot] = pub.track
+          if (slot && pub.track && pub.track !== gone) next[slot] = pub.track
         }),
       )
       setTracks(next)
     }
     room
-      .on(RoomEvent.TrackSubscribed, sync)
-      .on(RoomEvent.TrackUnsubscribed, sync)
+      .on(RoomEvent.TrackSubscribed, () => sync())
+      .on(RoomEvent.TrackUnsubscribed, (t) => sync(t))
       .on(RoomEvent.Reconnecting, () => setStatus('reconnecting'))
       .on(RoomEvent.Reconnected, () => setStatus('connected'))
       .on(RoomEvent.Disconnected, (reason) => {

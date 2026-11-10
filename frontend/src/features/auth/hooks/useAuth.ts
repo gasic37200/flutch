@@ -7,6 +7,7 @@ import type { LoginRequest } from '../../../api/generated/LoginRequest.ts'
 import type { Me } from '../../../api/generated/Me.ts'
 import type { SignupRequest } from '../../../api/generated/SignupRequest.ts'
 import type { TestLoginRequest } from '../../../api/generated/TestLoginRequest.ts'
+import type { WithdrawRequest } from '../../../api/generated/WithdrawRequest.ts'
 
 export const ME_KEY = ['me']
 
@@ -93,3 +94,7 @@ export function useRequireLogin() {
   }, [needLogin, navigate, pathname, search])
   return auth
 }
+
+/** 회원 탈퇴. 성공하면 홈을 새로 불러 모든 캐시를 비운다(화면 안 이동은 `me`가 먼저 비면 로그인 화면으로 튕긴다). */
+export const useWithdraw = () =>
+  useMutation({ mutationFn: (json: WithdrawRequest) => api<void>('/me', { method: 'DELETE', json }), onSuccess: () => window.location.replace('/') })

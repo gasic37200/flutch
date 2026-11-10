@@ -197,6 +197,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 **P12. 가입·계정**
 1. `/signup`에서 아이디·비밀번호·닉네임·약관 동의로 가입 → 로그아웃 → 다시 로그인.
 2. 닉네임은 변경 후 30일간 다시 바꿀 수 없고, 비밀번호를 바꾸면 다른 기기의 로그인이 풀린다.
+3. 직접 가입한 계정으로 `/me` 아래 "회원 탈퇴" → 비밀번호 입력(잔액이 있으면 "비트 소멸과 위 내용을 이해했어요" 체크) → "탈퇴" → 로그아웃 상태로 홈. 같은 아이디로 로그인·재가입이 안 된다. 방송 중에는 "방송을 먼저 종료해 주세요", 테스트 계정은 "테스트 계정은 탈퇴할 수 없어요"가 뜬다.
 
 **P13. 채팅**
 1. 방송 중인 방송을 B(스트리머2)로 열고 오른쪽 채팅 창(모바일은 영상 아래 "채팅" 탭)에서 메시지를 입력해 Enter → A 화면에도 바로 보인다. 비로그인(시크릿 창)은 읽기만 되고 입력창 자리에 "로그인하고 채팅하기" 버튼이 나온다. 방송 전(READY)·종료 후에는 입력창 대신 "방송 중에만 채팅할 수 있어요"가 보이고 기록은 계속 읽힌다.
@@ -213,7 +214,14 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 4. 스트리머 페이지(`/users/<id>`)의 "방송" 탭에서 지난 방송, "다시보기" 탭에서 다시보기를 본다. 본인에게만 "내 방송 관리" 버튼이 보인다. 홈의 "최근 다시보기"와 탐색 검색의 다시보기 결과도 같은 목록이다.
 5. 기대: 처리 중·녹화 실패·보관 기간 지남(30일 뒤) 상태가 각각 안내 문구로 구분된다.
 
-**P15. 지갑·충전·후원**
+**P15. 화면 + 웹캠 (PIP)**
+1. A의 송출 화면에서 화면 공유로 방송을 시작한 뒤 "웹캠 같이 보내기 (PIP)"를 켠다. 웹캠 위치(네 모서리)를 고르면 미리보기에도 같은 자리에 겹쳐 보인다.
+2. B의 시청 화면에서 화면 위 선택한 모서리에 웹캠이 작게 보이는지 확인한다. 위치를 바꾸면 새로고침 없이 따라 옮겨지고, 웹캠을 끄고 켜면 사라졌다 다시 나타난다.
+3. B에서 컨트롤 바의 카메라 버튼(또는 웹캠 화면 탭)으로 웹캠을 숨기고, 카메라 버튼으로 다시 보인다.
+4. A에서 "웹캠만"으로 바꾸거나 화면 공유가 끊기면 B에서 웹캠이 PIP 대신 화면 전체로 커진다.
+5. 기대: 화면과 웹캠이 별도 트랙으로 전송되어 A가 다른 창(게임)으로 전환해도 두 영상이 끊기지 않는다.
+
+**P16. 지갑·충전·후원**
 1. 로그인(시청자)한 뒤 헤더 비트 알약 또는 "내 지갑"(`/wallet`)에서 잔액과 내역을 본다. 유형(충전·후원·클러치·SUPER BURST·소멸)과 월 필터로 좁혀지고, 유료 클러치는 방송별로 묶여 한 줄로 나온다. "충전하기" → 금액(1,000/5,000/10,000/50,000 또는 직접 입력 1,000~1,000,000) → "결제하기"로 토스 결제위젯이 열린다. 결제를 마치면 `/payments/success`가 승인하고 "충전했어요!"와 잔액이 보인다. 결제창을 닫거나 실패하면 `/payments/fail`이 "비트는 빠져나가지 않았어요"를 보여 준다. 보유 한도(3,000,000)를 넘는 금액은 막힌다.
 2. 방송 중인 방송을 시청자로 열고 "후원하기": 프리셋(1,000/5,000/10,000) 또는 직접 입력, 메시지(100자), "익명으로 후원" 체크. 잔액이 충분하면 바로 후원되고 잔액 알약이 응답 값으로 줄어든다.
 3. 잔액이 모자라면 버튼이 "N비트 충전하고 후원하기"로 바뀌고, 누르면 결제위젯 → 승인 뒤 "후원했어요!"와 "방송으로 돌아가기"가 나온다. 결제 사이 방송이 끝났거나 차단됐으면 "후원 없이 충전만" 안내가 나온다.
@@ -233,6 +241,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `auth_requires_login_and_acts_only_on_own_account` | 로그인 필수·본인 계정만 | P11 |
 | `auth_password_change_revokes_other_sessions` | 비밀번호 변경 시 다른 세션 만료 | P12 |
 | `auth_nickname_change_30day_limit` | 닉네임 30일 제한 | P12 |
+| `auth_withdraw_forfeits_balance`, `auth_withdraw_rules` | 탈퇴: 잔액 소멸 원장·세션 전부 만료·재로그인·재가입 불가·닉네임 30일 보류, LIVE 중·확인 없음·테스트 계정 거절 | P12 |
 | `broadcast_owner_crud` | 등록 → 수정 → 삭제 | P2 |
 | `chat_live_only`, `chat_guest_read_only` | LIVE 중에만 작성, 비로그인은 읽기만 | P13 |
 | `chat_edit_author_only_within_5min`, `chat_delete_author_or_owner` | 수정(작성자·5분)·삭제(작성자·방송 소유자) | P13 |
@@ -273,21 +282,21 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `ws_lagged_sends_resync` | 지연 연결에 재동기화 | (서버 내부) |
 | `mutating_request_without_or_with_foreign_origin_is_forbidden`, `mutating_request_with_allowed_origin_passes`, `read_request_needs_no_origin`, `webhooks_skip_origin_check` | CSRF Origin 검사 | (서버 내부) |
 | `schema_one_live_per_user` | DB 제약: 사용자당 LIVE 1개 | P2 |
-| `schema_ledger_is_append_only`, `schema_payment_key_unique`, `schema_rejects_negative_balance` | DB 제약: 원장·결제·잔액 | P15 |
-| `donation_confirm_idempotent`, `payment_concurrent_confirm_credits_once` | 같은 승인·웹훅 반복·동시 승인 → 한 번만 적립, 같은 결과 | P15 |
+| `schema_ledger_is_append_only`, `schema_payment_key_unique`, `schema_rejects_negative_balance` | DB 제약: 원장·결제·잔액 | P16 |
+| `donation_confirm_idempotent`, `payment_concurrent_confirm_credits_once` | 같은 승인·웹훅 반복·동시 승인 → 한 번만 적립, 같은 결과 | P16 |
 | `clutch_access_rules` | 비로그인 401, 내 방송 403, 비LIVE 409 | (클러치 절차 추가 시) |
 | `clutch_free_combo_then_paid` | 30초 무료 5회(COMBO) → 6번째 1비트 차감·원장·후원 기록, 잔액 0이면 409 | (클러치 절차 추가 시) |
 | `clutch_gauge_decay_window` | 5분 지난 점수는 게이지에서 빠짐, 80% 임박 | (클러치 절차 추가 시) |
 | `super_clutch_trigger_reset_and_cooldown` | 100% 동시 요청에도 발동 1회, 게이지 0, 쿨다운 중 재발동 없음 | (클러치 절차 추가 시) |
 | `clutch_banned_rules`, `clutch_super_event_published` | 영구 밴은 무료만 허용·임시차단은 둘 다, `clutch.super` 이벤트 | (클러치 절차 추가 시) |
-| `donation_amount_mismatch_rejected` | 주문과 다른 금액 승인 거절(토스 호출 없음) | P15 |
-| `donation_after_end_becomes_charge`, `banned_user_cannot_donate` | 승인 시 방송 종료·영구 밴이면 충전만, 주문 단계 거절 | P15 |
-| `donation_live_only`, `donation_input_rules`, `banned_user_cannot_donate` | 잔액 후원: LIVE 중에만, 자기 방송·금지어·금액·잔액 부족·영구 밴 거절, 게이지 반영 | P15 |
+| `donation_amount_mismatch_rejected` | 주문과 다른 금액 승인 거절(토스 호출 없음) | P16 |
+| `donation_after_end_becomes_charge`, `banned_user_cannot_donate` | 승인 시 방송 종료·영구 밴이면 충전만, 주문 단계 거절 | P16 |
+| `donation_live_only`, `donation_input_rules`, `banned_user_cannot_donate` | 잔액 후원: LIVE 중에만, 자기 방송·금지어·금액·잔액 부족·영구 밴 거절, 게이지 반영 | P16 |
 | `donation_balance_conditional_debit` | 동시 잔액 후원 2건 → 잔액만큼만 성공, 음수 잔액 없음 | (서버 내부) |
-| `donation_anonymous_name_visibility` | 익명 후원: 공개 목록·비로그인·다른 사용자 이벤트는 익명, 소유자만 실명, 후원자 배지 | P15 |
-| `donation_skip_owner_only`, `donation_created_on_charge_and_donate` | 알림 스킵은 소유자만, 충전하고 후원하기도 알림 | P15 |
-| `donation_list_totals_and_pages`, `donation_stats_kst_7_days`, `donation_stats_only_mine` | 방송별 후원 내역·합계, 스트리머 통계(KST 최근 7일) | P15 |
-| `charge_limits_and_order_expiry` | 충전 1,000~1,000,000·보유 3,000,000, 30분 주문 만료 | P15 |
+| `donation_anonymous_name_visibility` | 익명 후원: 공개 목록·비로그인·다른 사용자 이벤트는 익명, 소유자만 실명, 후원자 배지 | P16 |
+| `donation_skip_owner_only`, `donation_created_on_charge_and_donate` | 알림 스킵은 소유자만, 충전하고 후원하기도 알림 | P16 |
+| `donation_list_totals_and_pages`, `donation_stats_kst_7_days`, `donation_stats_only_mine` | 방송별 후원 내역·합계, 스트리머 통계(KST 최근 7일) | P16 |
+| `charge_limits_and_order_expiry` | 충전 1,000~1,000,000·보유 3,000,000, 30분 주문 만료 | P16 |
 | `payment_toss_rejected_or_unavailable`, `payment_webhook_secret_mismatch_ignored`, `payment_confirm_owner_only` | 토스 거절·통신 실패 복구, 웹훅 재확인, 주문자만 확정 | (서버 내부) |
 | `health_check_reports_ok_with_request_id`, `health_check_reports_503_when_db_is_down` | 헬스체크 | 배포 후 `GET /api/v1/health` |
 | `unknown_api_path_returns_not_found_error_format` | 에러 응답 형식 | (서버 내부) |
@@ -298,6 +307,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 > 제출일에 `/ponytail-debt` 결과로 갱신합니다.
 - 토스페이먼츠 **테스트 모드**만 지원합니다. 충전한 비트의 환불은 지원하지 않습니다.
 - 이메일·휴대폰 본인 확인이 없어 탈퇴 후 새 아이디 재가입이 가능합니다(동일인 판별 불가).
+- 화면+웹캠(PIP) 방송의 녹화는 LiveKit 기본 배치(화면 크게 + 웹캠 옆)로 저장되어, 라이브에서 웹캠이 겹쳐 보이던 배치와 다릅니다.
 - 화면 공유 소리는 브라우저 기능에 따라 다릅니다(위 지원 환경 표). 화면 공유는 모바일에서 지원하지 않습니다.
 
 ## 문서

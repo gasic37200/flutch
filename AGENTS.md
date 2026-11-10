@@ -32,7 +32,7 @@
 docker compose --env-file .env -f deploy/compose.dev.yml up -d   # 로컬 Postgres(호스트 5433)·LiveKit, 모든 worktree 공유
 cd backend && cargo run                           # 백엔드
 cd backend && cargo fmt --check && cargo clippy --all-targets -- -D warnings
-cd backend && cargo sqlx prepare                  # 쿼리 변경 시 .sqlx 커밋
+cd backend && cargo sqlx prepare -- --all-targets # 쿼리 변경 시 .sqlx 커밋(옵션 없으면 테스트 전용 쿼리 캐시가 지워져 CI 실패, T20b)
 cd frontend && npm run dev                        # 프론트
 cd frontend && npm run lint && npm run typecheck && npm run build
 ```
@@ -127,6 +127,7 @@ feat(broadcast): 송출 시작·종료 API 추가
 
 **PR**
 - 기능 1개 = PR 1개. 제목은 커밋 제목과 같은 형식 (Squash 시 그대로 커밋이 됨).
+- 메인 세션은 `gh pr merge <n> --squash --subject "<PR 제목> (#<n>)"`로 머지한다(GitHub이 브랜치 첫 커밋 제목을 squash 제목으로 쓰는 경우가 있음 — T22에서 `wip(…)`이 main에 들어감). 서브에이전트는 커밋 제목에 `wip`을 쓰지 않는다.
 - `.github/pull_request_template.md` 채우기: 요약 / 처리 사항 / 테스트 / 충족 스펙 항목.
 - **CI 통과 + 메인 세션의 보고서·docs 변경 판단(§9-2) 후 Squash merge, 브랜치 삭제.** 코드 리뷰는 별도로 하지 않음.
 - 예외: `auth` `donation` `wallet` 범위 PR은 머지 전 `/ponytail-review branch` 1회.

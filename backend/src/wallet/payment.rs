@@ -136,7 +136,7 @@ impl From<PaymentError> for AppError {
 }
 
 /// 1234567 → "1,234,567"
-fn bits(n: i64) -> String {
+pub fn bits(n: i64) -> String {
     let s = n.to_string();
     let mut out = String::new();
     for (i, c) in s.chars().enumerate() {
