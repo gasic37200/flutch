@@ -41,6 +41,8 @@ pub struct ClutchConfig {
     /// 무료 클러치 창(초)·창당 횟수
     pub free_window_secs: i64,
     pub free_per_window: i64,
+    /// SUPER BURST 가격(비트)
+    pub burst_price: i64,
 }
 
 impl Default for ClutchConfig {
@@ -55,6 +57,7 @@ impl Default for ClutchConfig {
             super_secs: 5 * 60,
             free_window_secs: 30,
             free_per_window: 5,
+            burst_price: 1_000,
         }
     }
 }

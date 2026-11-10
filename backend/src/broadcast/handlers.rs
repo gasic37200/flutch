@@ -9,9 +9,9 @@ use serde::Deserialize;
 
 use super::db::{self, Filter, Patch};
 use super::{
-    BROADCAST_READY_LIMIT, BURST_PRICE, Broadcast, BroadcastDetail, BroadcastError,
-    BroadcastStatus, Category, CreateBroadcastRequest, EndReason, Page, UpdateBroadcastRequest,
-    ViewerState, end_live, enum_str, parse_enum,
+    BROADCAST_READY_LIMIT, Broadcast, BroadcastDetail, BroadcastError, BroadcastStatus, Category,
+    CreateBroadcastRequest, EndReason, Page, UpdateBroadcastRequest, ViewerState, end_live,
+    enum_str, parse_enum,
 };
 use crate::AppState;
 use crate::auth::{contains_banned_word, contains_profanity};
@@ -186,7 +186,7 @@ pub(super) async fn load(state: &AppState, id: i64) -> Result<db::Row, AppError>
         .ok_or(AppError::NotFound)
 }
 
-/// 상세 응답. shortcut: burstPrice는 기본값, T24가 이 함수에서 채운다.
+/// 상세 응답
 pub(super) async fn detail(
     state: &AppState,
     row: db::Row,
@@ -211,7 +211,7 @@ pub(super) async fn detail(
     Ok(BroadcastDetail {
         broadcast: into_broadcast(state, row)?,
         gauge,
-        burst_price: BURST_PRICE,
+        burst_price: cfg.burst_price,
         viewer: viewer.map(|_| ViewerState {
             is_owner,
             ban,

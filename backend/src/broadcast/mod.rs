@@ -24,8 +24,6 @@ mod handlers;
 
 /// 사용자당 READY 최대 개수.
 pub const BROADCAST_READY_LIMIT: i64 = 5;
-/// SUPER BURST 가격. shortcut: 상수, T24가 설정값으로 바꾼다.
-const BURST_PRICE: i64 = 1000;
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()

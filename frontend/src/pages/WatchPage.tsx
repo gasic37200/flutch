@@ -4,8 +4,10 @@ import DonationAlert from '../features/donation/components/DonationAlert.tsx'
 import DonationPanel from '../features/donation/components/DonationPanel.tsx'
 import { useDonationAlerts } from '../features/donation/hooks/useDonationAlerts.ts'
 import { useDonationList } from '../features/donation/hooks/useDonationList.ts'
+import BurstButton from '../features/watch/components/BurstButton.tsx'
 import ClutchButton from '../features/watch/components/ClutchButton.tsx'
 import SuperClutchOverlay from '../features/watch/components/SuperClutchOverlay.tsx'
+import { useBurst } from '../features/watch/hooks/useBurst.ts'
 import { useClutch } from '../features/watch/hooks/useClutch.ts'
 import ClutchGauge from '../components/ui/ClutchGauge.tsx'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
@@ -28,6 +30,7 @@ export default function WatchPage() {
   const chat = useChat(id, events)
   const player = usePlayer(viewer.tracks, viewer.muted)
   const clutch = useClutch(broadcast, events.onEvent)
+  const burst = useBurst(broadcast, events.onEvent)
   const desktop = useMediaQuery('(min-width: 1280px)')
   const alerts = useDonationAlerts(events.onEvent)
   const donations = useDonationList(id, { onEvent: events.onEvent, live: broadcast?.status === 'LIVE' })
@@ -57,9 +60,10 @@ export default function WatchPage() {
               <Panel innerClassName='px-3 py-2.5 md:px-4 md:py-3'>
                 <div className='flex items-center gap-3'>
                   <div className='min-w-0 grow'>
-                    <ClutchGauge percent={broadcast.gauge.percent} cooldown={broadcast.gauge.phase === 'cooldown'} size='lg' />
+                    <ClutchGauge percent={broadcast.gauge.percent} cooldown={broadcast.gauge.phase === 'cooldown'} boost={burst.boost} size='lg' />
                   </div>
                   <ClutchButton clutch={clutch} />
+                  <BurstButton burst={burst} mode={clutch.mode} />
                 </div>
               </Panel>
               <WatchInfo broadcast={broadcast} />

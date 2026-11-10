@@ -42,6 +42,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         storage,
         realtime: realtime::Hub::default(),
         live: Default::default(),
+        clutch: Default::default(),
         db,
         config,
     });

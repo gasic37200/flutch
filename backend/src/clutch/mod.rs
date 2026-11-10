@@ -1,14 +1,14 @@
 //! Clutch Time 도메인 — docs/features/07-clutch.md
 
 use std::collections::HashMap;
-use std::sync::{Arc, LazyLock, Mutex, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
 use axum::http::StatusCode;
 use axum::routing::post;
 use axum::{Extension, Router};
 use chrono::{DateTime, Utc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::{PgConnection, PgPool};
 use ts_rs::TS;
 
@@ -18,6 +18,7 @@ use crate::config::ClutchConfig;
 use crate::error::AppError;
 use crate::realtime::{Event, WsEvent};
 use crate::scheduler::Scheduler;
+use crate::wallet::Donation;
 
 mod db;
 mod handlers;
@@ -25,6 +26,7 @@ mod handlers;
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .route("/broadcasts/{id}/clutches", post(handlers::create))
+        .route("/broadcasts/{id}/bursts", post(handlers::burst))
         .layer(Extension(Arc::new(Limits::default())))
 }
 
@@ -85,6 +87,23 @@ pub struct ClutchResult {
     pub free_clutches_left: i32,
     /// 유료일 때만
     pub balance: Option<i64>,
+    pub gauge: ClutchGauge,
+}
+
+/// `POST /broadcasts/{id}/bursts` 요청
+#[derive(Deserialize, TS)]
+#[ts(export)]
+pub struct BurstRequest {
+    pub anonymous: bool,
+}
+
+/// `POST /broadcasts/{id}/bursts` 응답
+#[derive(Serialize, TS)]
+#[ts(export)]
+pub struct BurstResult {
+    /// 내 버스트라 실명
+    pub donation: Donation,
+    pub balance: i64,
     pub gauge: ClutchGauge,
 }
 
@@ -242,8 +261,19 @@ struct Slot {
     pending: Option<ClutchGauge>,
 }
 
-// shortcut: 프로세스 전역(서버 1대 가정). 서버를 여러 대로 늘리면 이벤트 허브와 함께 공유 저장소로 옮긴다.
-static SLOTS: LazyLock<Mutex<HashMap<i64, Slot>>> = LazyLock::new(Mutex::default);
+/// 클러치 메모리 상태(`AppState.clutch`): 방송별 `clutch.gauge` 묶음.
+// shortcut: 프로세스 메모리(서버 1대 가정). 서버를 여러 대로 늘리면 이벤트 허브와 함께 공유 저장소로 옮긴다.
+#[derive(Default)]
+pub struct ClutchState {
+    slots: Mutex<HashMap<i64, Slot>>,
+}
+
+impl ClutchState {
+    fn slots(&self) -> MutexGuard<'_, HashMap<i64, Slot>> {
+        // 잠금 중 패닉이 나도 맵은 일관적이다(필드 대입뿐).
+        self.slots.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+}
 
 /// 커밋 뒤 호출: 발동이면 `clutch.super`를 바로, 게이지는 방송당 초당 2회로 묶어서 보낸다.
 pub fn publish(state: &Arc<AppState>, broadcast_id: i64, o: &Outcome) {
@@ -262,7 +292,7 @@ pub fn publish(state: &Arc<AppState>, broadcast_id: i64, o: &Outcome) {
 
 fn publish_gauge(state: &Arc<AppState>, id: i64, g: ClutchGauge, force: bool) {
     let now = Instant::now();
-    let mut slots = SLOTS.lock().unwrap_or_else(PoisonError::into_inner);
+    let mut slots = state.clutch.slots();
     if slots.len() > 1000 {
         slots.retain(|_, s| {
             s.pending.is_some() || s.last.is_some_and(|l| now - l < Duration::from_secs(60))
@@ -287,7 +317,7 @@ fn publish_gauge(state: &Arc<AppState>, id: i64, g: ClutchGauge, force: bool) {
         let wait = wait.unwrap_or(GAUGE_GAP);
         tokio::spawn(async move {
             tokio::time::sleep(wait).await;
-            let mut slots = SLOTS.lock().unwrap_or_else(PoisonError::into_inner);
+            let mut slots = state.clutch.slots();
             let g = slots.get_mut(&id).and_then(|s| {
                 s.last = Some(Instant::now());
                 s.pending.take()

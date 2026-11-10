@@ -287,6 +287,7 @@ fn build_state(
         storage,
         realtime: realtime::Hub::default(),
         live: Default::default(),
+        clutch: Default::default(),
     })
 }
 

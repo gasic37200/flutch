@@ -1,19 +1,22 @@
 //! 클러치 시나리오 (features/07, api.md §7). 끝에서 지갑 정합성(`mismatched_wallets`)이 비어야 한다.
-//! `clutch_rotation`은 T29(회전 스케줄러)에서 추가한다.
+//! `clutch_rotation`은 T29(회전 스케줄러)에서 추가한다. SUPER BURST(T24)도 여기 둔다.
 
+use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use axum::Router;
 use axum::http::StatusCode;
+use flutch::clutch::{ClutchGauge, ClutchPhase, Outcome};
 use flutch::wallet;
 use serde_json::{Value, json};
-use sqlx::PgPool;
+use sqlx::{Connection, PgConnection, PgPool};
 
 use crate::common::{
     FakeLiveKit, ORIGIN, TestResponse, empty_req, json_req, login_as, send, signup, test_app,
     test_state,
 };
-use crate::realtime::{connect, next_event};
+use crate::realtime::{Ws, connect, next_event};
 
 const B: &str = "/api/v1/broadcasts";
 
@@ -409,4 +412,358 @@ async fn clutch_super_event_published(db: PgPool) {
     let ev = next_event(&mut ws).await;
     assert_eq!(ev["type"], "clutch.super");
     assert!(ev["data"]["triggeredAt"].is_string() && ev["data"]["expiresAt"].is_string());
+}
+
+// ---- SUPER BURST (T24) ----
+
+/// REST 앱 + 같은 상태의 WebSocket 서버 주소.
+async fn serve(db: &PgPool) -> (Router, SocketAddr) {
+    let state = test_state(db.clone(), Arc::new(FakeLiveKit::default()));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let server = flutch::app(state.clone());
+    tokio::spawn(async move { axum::serve(listener, server).await.unwrap() });
+    (flutch::app(state), addr)
+}
+
+async fn burst(app: &Router, cookie: Option<&str>, id: i64, anonymous: bool) -> TestResponse {
+    send(
+        app,
+        json_req(
+            "POST",
+            &format!("{B}/{id}/bursts"),
+            cookie,
+            json!({ "anonymous": anonymous }),
+        ),
+    )
+    .await
+}
+
+fn code(res: &TestResponse) -> (StatusCode, &str) {
+    (res.status, res.json["error"]["code"].as_str().unwrap_or(""))
+}
+
+/// 다음 `ty` 이벤트(다른 이벤트는 건너뛴다).
+async fn next_of(ws: &mut Ws, ty: &str) -> Value {
+    loop {
+        let ev = next_event(ws).await;
+        if ev["type"] == ty {
+            return ev;
+        }
+    }
+}
+
+async fn balance(db: &PgPool, user_id: i64) -> i64 {
+    count(
+        db,
+        "SELECT COALESCE((SELECT balance FROM wallets WHERE user_id = $1), 0)",
+        user_id,
+    )
+    .await
+}
+
+#[sqlx::test]
+async fn burst_debits_and_boosts_gauge(db: PgPool) {
+    let app = test_app(db.clone());
+    let (owner, _) = login_as(&app, "streamer1").await;
+    let (viewer, viewer_id) = login_as(&app, "viewer").await;
+    let id = live_broadcast(&app, &owner).await;
+    assert_eq!(detail(&app, &viewer, id).await["burstPrice"], 1000);
+    charge(&db, viewer_id, 2500).await;
+
+    // 1,000비트 = 10,000점 → 혼자서 SUPER CLUTCH 발동(게이지 0, 쿨다운)
+    let res = burst(&app, Some(&viewer), id, false).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    assert_eq!(res.json["balance"], 1500);
+    let d = &res.json["donation"];
+    assert_eq!(
+        (
+            d["kind"].clone(),
+            d["amount"].clone(),
+            d["donor"]["id"].clone()
+        ),
+        (json!("burst"), json!(1000), json!(viewer_id))
+    );
+    assert_eq!(
+        (
+            res.json["gauge"]["percent"].clone(),
+            res.json["gauge"]["phase"].clone()
+        ),
+        (json!(0), json!("cooldown"))
+    );
+    let supers = "SELECT count(*) FROM super_clutches WHERE broadcast_id = $1";
+    assert_eq!(count(&db, supers, id).await, 1);
+    assert_eq!(count(&db, "SELECT count(*) FROM ledger_entries WHERE broadcast_id = $1 AND type = 'burst' AND amount = -1000", id).await, 1);
+    assert_eq!(count(&db, "SELECT count(*) FROM donations d JOIN ledger_entries l ON l.id = d.ledger_entry_id WHERE d.broadcast_id = $1 AND d.kind = 'burst' AND d.amount = 1000 AND NOT d.anonymous", id).await, 1);
+    assert_eq!(count(&db, "SELECT count(*) FROM clutch_events WHERE broadcast_id = $1 AND source = 'burst' AND points = 10000", id).await, 1);
+
+    // 쿨다운 중 버스트: 게이지만 크게 오른다(재발동 없음)
+    let res = burst(&app, Some(&viewer), id, true).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    assert_eq!(
+        (
+            res.json["balance"].clone(),
+            res.json["gauge"]["percent"].clone(),
+            res.json["gauge"]["phase"].clone()
+        ),
+        (json!(500), json!(100), json!("cooldown"))
+    );
+    assert_eq!(count(&db, supers, id).await, 1);
+
+    // 잔액 부족: 409, 아무것도 남지 않는다
+    let res = burst(&app, Some(&viewer), id, false).await;
+    assert_eq!(
+        code(&res),
+        (StatusCode::CONFLICT, "WALLET_INSUFFICIENT_BALANCE")
+    );
+    assert_eq!(balance(&db, viewer_id).await, 500);
+    assert_eq!(
+        count(
+            &db,
+            "SELECT count(*) FROM donations WHERE broadcast_id = $1",
+            id
+        )
+        .await,
+        2
+    );
+    assert_eq!(
+        count(
+            &db,
+            "SELECT count(*) FROM clutch_events WHERE broadcast_id = $1",
+            id
+        )
+        .await,
+        2
+    );
+    assert_consistent(&db).await;
+}
+
+#[sqlx::test]
+async fn burst_anonymous_hidden_from_public(db: PgPool) {
+    let (app, addr) = serve(&db).await;
+    let (owner, _) = login_as(&app, "streamer1").await;
+    let (viewer, viewer_id) = login_as(&app, "viewer").await;
+    let id = live_broadcast(&app, &owner).await;
+    charge(&db, viewer_id, 1000).await;
+    let mut public_ws = connect(addr, id, Some(ORIGIN), None).await.unwrap();
+    let mut owner_ws = connect(addr, id, Some(ORIGIN), Some(&owner)).await.unwrap();
+
+    let res = burst(&app, Some(&viewer), id, true).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    assert_eq!(res.json["donation"]["donor"]["id"], viewer_id); // 내 버스트는 실명
+    assert_eq!(res.json["donation"]["anonymous"], true);
+
+    let ev = next_of(&mut public_ws, "donation.created").await;
+    assert_eq!(ev["data"]["donation"]["kind"], "burst");
+    assert_eq!(ev["data"]["donation"]["donor"], Value::Null);
+    assert_eq!(ev["data"]["total"], 1000);
+    let ev = next_of(&mut owner_ws, "donation.created").await;
+    assert_eq!(ev["data"]["donation"]["donor"]["id"], viewer_id);
+    next_of(&mut public_ws, "clutch.super").await;
+
+    let list = |cookie: Option<String>| {
+        let app = app.clone();
+        async move {
+            let path = format!("{B}/{id}/donations");
+            let res = send(&app, empty_req("GET", &path, cookie.as_deref())).await;
+            assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+            res.json["items"][0]["donor"].clone()
+        }
+    };
+    assert_eq!(list(None).await, Value::Null);
+    assert_eq!(list(Some(viewer.clone())).await, Value::Null);
+    assert_eq!(list(Some(owner.clone())).await["id"], viewer_id);
+    assert_consistent(&db).await;
+}
+
+#[sqlx::test]
+async fn burst_rules(db: PgPool) {
+    let app = test_app(db.clone());
+    let (owner, owner_id) = login_as(&app, "streamer1").await;
+    let (viewer, viewer_id) = login_as(&app, "viewer").await;
+    let id = live_broadcast(&app, &owner).await;
+    charge(&db, viewer_id, 5000).await;
+    charge(&db, owner_id, 5000).await;
+
+    assert_eq!(
+        burst(&app, None, id, false).await.status,
+        StatusCode::UNAUTHORIZED
+    );
+    assert_eq!(
+        burst(&app, Some(&viewer), 999_999, false).await.status,
+        StatusCode::NOT_FOUND
+    );
+    let res = burst(&app, Some(&owner), id, false).await;
+    assert_eq!(code(&res), (StatusCode::FORBIDDEN, "CLUTCH_SELF"));
+
+    // READY 방송 409
+    let body = json!({ "title": "준비중", "category": "game" });
+    let res = send(&app, json_req("POST", B, Some(&owner), body)).await;
+    let ready = res.json["id"].as_i64().unwrap();
+    let res = burst(&app, Some(&viewer), ready, false).await;
+    assert_eq!(code(&res), (StatusCode::CONFLICT, "BROADCAST_NOT_LIVE"));
+
+    // 잔액 0인 사용자 409
+    let poor = signup(&app, "poorburst", "빈지갑").await;
+    let res = burst(&app, Some(&poor), id, false).await;
+    assert_eq!(
+        code(&res),
+        (StatusCode::CONFLICT, "WALLET_INSUFFICIENT_BALANCE")
+    );
+
+    let ban = |secs: Option<i64>| {
+        let db = db.clone();
+        async move {
+            sqlx::query(
+                "INSERT INTO bans (streamer_id, user_id, until)
+                 VALUES ($1, $2, now() + $3::bigint * interval '1 second')
+                 ON CONFLICT (streamer_id, user_id) DO UPDATE SET until = EXCLUDED.until",
+            )
+            .bind(owner_id)
+            .bind(viewer_id)
+            .bind(secs)
+            .execute(&db)
+            .await
+            .unwrap();
+        }
+    };
+    ban(None).await;
+    let res = burst(&app, Some(&viewer), id, false).await;
+    assert_eq!(code(&res), (StatusCode::FORBIDDEN, "MODERATION_BANNED"));
+    // 실패한 요청은 원장·후원·게이지에 아무것도 남기지 않는다
+    assert_eq!(balance(&db, viewer_id).await, 5000);
+    let donations = "SELECT count(*) FROM donations WHERE donor_id = $1";
+    assert_eq!(count(&db, donations, viewer_id).await, 0);
+    let events = "SELECT count(*) FROM clutch_events WHERE user_id = $1";
+    assert_eq!(count(&db, events, viewer_id).await, 0);
+
+    // 임시차단은 허용
+    ban(Some(600)).await;
+    let res = burst(&app, Some(&viewer), id, false).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    assert_eq!(balance(&db, viewer_id).await, 4000);
+    assert_consistent(&db).await;
+}
+
+#[sqlx::test]
+async fn burst_concurrent_only_balance_succeeds(db: PgPool) {
+    let app = test_app(db.clone());
+    let (owner, _) = login_as(&app, "streamer1").await;
+    let (viewer, viewer_id) = login_as(&app, "viewer").await;
+    let id = live_broadcast(&app, &owner).await;
+    charge(&db, viewer_id, 1000).await;
+
+    // 지갑 행을 잠가 두 요청이 모두 차감 UPDATE에서 기다리게 한 뒤(=실제로 겹침) 함께 풀어 준다.
+    // 잠금·확인은 테스트 풀 밖의 별도 커넥션으로(T22 트러블슈팅).
+    let mut locker = PgConnection::connect_with(&db.connect_options())
+        .await
+        .unwrap();
+    sqlx::query("BEGIN").execute(&mut locker).await.unwrap();
+    sqlx::query("SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE")
+        .bind(viewer_id)
+        .execute(&mut locker)
+        .await
+        .unwrap();
+    let release = async {
+        let mut waited = 0;
+        loop {
+            sqlx::query("SELECT pg_stat_clear_snapshot()")
+                .execute(&mut locker)
+                .await
+                .unwrap();
+            let n: i64 = sqlx::query_scalar(
+                "SELECT count(*) FROM pg_stat_activity
+                 WHERE datname = current_database() AND wait_event_type = 'Lock'",
+            )
+            .fetch_one(&mut locker)
+            .await
+            .unwrap();
+            if n == 2 {
+                break;
+            }
+            waited += 1;
+            assert!(waited < 1200, "두 요청이 잠금에서 겹치지 않음");
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        sqlx::query("COMMIT").execute(&mut locker).await.unwrap();
+    };
+    let (r1, r2, ()) = tokio::join!(
+        burst(&app, Some(&viewer), id, false),
+        burst(&app, Some(&viewer), id, true),
+        release
+    );
+    let mut results = [code(&r1), code(&r2)];
+    results.sort();
+    assert_eq!(
+        results,
+        [
+            (StatusCode::OK, ""),
+            (StatusCode::CONFLICT, "WALLET_INSUFFICIENT_BALANCE")
+        ],
+        "{} {}",
+        r1.json,
+        r2.json
+    );
+    assert_eq!(balance(&db, viewer_id).await, 0);
+    let donations = "SELECT count(*) FROM donations WHERE donor_id = $1";
+    assert_eq!(count(&db, donations, viewer_id).await, 1);
+    let events = "SELECT count(*) FROM clutch_events WHERE broadcast_id = $1";
+    assert_eq!(count(&db, events, id).await, 1);
+    let ledger = "SELECT count(*) FROM ledger_entries WHERE user_id = $1";
+    assert_eq!(count(&db, ledger, viewer_id).await, 2); // 충전 1 + 버스트 1
+    assert_consistent(&db).await;
+}
+
+/// 게이지 이벤트는 방송당 0.5초에 한 번, 간격 안의 것은 마지막 값만. 묶음 상태는 앱 인스턴스(AppState)마다 따로다.
+#[sqlx::test]
+async fn clutch_gauge_event_throttled(db: PgPool) {
+    let state = test_state(db.clone(), Arc::new(FakeLiveKit::default()));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let server = flutch::app(state.clone());
+    tokio::spawn(async move { axum::serve(listener, server).await.unwrap() });
+    let app = flutch::app(state.clone());
+    let (other, other_addr) = serve(&db).await;
+    let (owner, _) = login_as(&app, "streamer1").await;
+    let (viewer, _) = login_as(&app, "viewer").await;
+    let id = live_broadcast(&app, &owner).await;
+    let mut ws = connect(addr, id, Some(ORIGIN), None).await.unwrap();
+    let mut other_ws = connect(other_addr, id, Some(ORIGIN), None).await.unwrap();
+
+    // 클러치(실제 경로) → 바로 보낸다. 곧이어 간격 안의 게이지 두 개는 묶여 마지막 값만 0.5초 뒤에.
+    let t0 = Instant::now();
+    assert_eq!(clutch(&app, Some(&viewer), id).await.status, StatusCode::OK);
+    for percent in [20, 30] {
+        let o = Outcome {
+            gauge: ClutchGauge {
+                percent,
+                phase: ClutchPhase::Charging,
+                cooldown_until: None,
+            },
+            super_clutch: None,
+        };
+        flutch::clutch::publish(&state, id, &o);
+    }
+
+    // 다른 앱 인스턴스는 묶음을 공유하지 않는다: 같은 방송이어도 바로 보낸다
+    // (전역 static이면 위 묶음에 막혀 이 값이 첫 앱의 연결로 나간다)
+    assert_eq!(
+        clutch(&other, Some(&viewer), id).await.status,
+        StatusCode::OK
+    );
+    assert_eq!(
+        next_of(&mut other_ws, "clutch.gauge").await["data"]["percent"],
+        1
+    );
+
+    assert_eq!(next_of(&mut ws, "clutch.gauge").await["data"]["percent"], 0);
+    let second = next_of(&mut ws, "clutch.gauge").await;
+    assert_eq!(second["data"]["percent"], 30);
+    assert!(
+        t0.elapsed() >= Duration::from_millis(490),
+        "{:?}",
+        t0.elapsed()
+    );
+    let more = tokio::time::timeout(Duration::from_millis(700), next_of(&mut ws, "clutch.gauge"));
+    assert!(more.await.is_err(), "묶인 값은 한 번만 보낸다");
 }
