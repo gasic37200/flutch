@@ -21,8 +21,8 @@ const NICKNAME_COOLDOWN_DAYS: i64 = 30;
 
 /// IP별 요청 제한(api.md §2): 가입 1시간 5회, 로그인 1분 20회.
 pub struct Limits {
-    signup: RateLimiter,
-    login: RateLimiter,
+    pub(super) signup: RateLimiter,
+    pub(super) login: RateLimiter,
 }
 
 impl Default for Limits {
@@ -34,19 +34,19 @@ impl Default for Limits {
     }
 }
 
-type Fields = BTreeMap<String, String>;
+pub(super) type Fields = BTreeMap<String, String>;
 
-fn check(fields: &mut Fields, name: &str, result: Result<(), &'static str>) {
+pub(super) fn check(fields: &mut Fields, name: &str, result: Result<(), &'static str>) {
     if let Err(reason) = result {
         fields.insert(name.to_owned(), reason.to_owned());
     }
 }
 
-fn require(fields: &mut Fields, name: &str, ok: bool, reason: &'static str) {
+pub(super) fn require(fields: &mut Fields, name: &str, ok: bool, reason: &'static str) {
     check(fields, name, if ok { Ok(()) } else { Err(reason) });
 }
 
-fn validated(fields: Fields) -> Result<(), AppError> {
+pub(super) fn validated(fields: Fields) -> Result<(), AppError> {
     if fields.is_empty() {
         Ok(())
     } else {
@@ -59,7 +59,7 @@ fn remaining_secs(until: Option<DateTime<Utc>>) -> Option<i64> {
     (left > 0).then_some(left)
 }
 
-async fn load_me(state: &AppState, user_id: i64) -> Result<Me, AppError> {
+pub(super) async fn load_me(state: &AppState, user_id: i64) -> Result<Me, AppError> {
     let row = db::me(&state.db, user_id).await?;
     Ok(Me {
         id: row.id,
@@ -303,15 +303,22 @@ pub async fn withdraw(
     }
     // 비밀번호 변경과 같은 사용자별 한도(탈취한 세션으로 비밀번호 대입 방지).
     limits.login.hit(&format!("pw:{}", user.id))?;
-    // shortcut: 카카오 계정(비밀번호 없음)은 거절, T28에서 password 없이 confirmForfeit만 받게 바꾼다.
-    let Some(hash) = creds.password_hash else {
-        return Err(AppError::Forbidden);
-    };
-    if !session::verify_password(req.password, hash).await? {
-        return Err(AuthError::WrongPassword.into());
+    // 카카오 계정은 비밀번호가 없다 — confirmForfeit만으로 탈퇴한다.
+    if let Some(hash) = creds.password_hash {
+        let password = req.password.unwrap_or_default();
+        if !session::verify_password(password, hash).await? {
+            return Err(AuthError::WrongPassword.into());
+        }
     }
     let forfeited = db::withdraw(&state.db, user.id, req.confirm_forfeit).await?;
     tracing::info!(user_id = user.id, forfeited, "user withdrew");
+    // 커밋 뒤에 끊는다. 실패해도 탈퇴는 이미 끝났다(카카오 설정의 연결 목록에 남을 뿐).
+    if let Some(kakao_id) = creds.kakao_id {
+        match state.kakao.unlink(kakao_id).await {
+            Ok(()) => tracing::info!(user_id = user.id, "kakao unlinked"),
+            Err(e) => tracing::warn!(user_id = user.id, error = %e, "kakao unlink failed"),
+        }
+    }
     Ok((
         StatusCode::NO_CONTENT,
         [(header::SET_COOKIE, session::cookie("", Duration::zero())?)],

@@ -216,12 +216,49 @@ fn secs_or(name: &'static str, default: i64) -> Result<i64, ConfigError> {
 pub struct AuthConfig {
     /// `SEED_PASSWORD`: 테스트 계정 3개의 비밀번호. 비우면 테스트 로그인 버튼으로만 들어간다.
     pub seed_password: Option<String>,
+    /// 카카오 로그인 설정. `KAKAO_REST_KEY`·`KAKAO_REDIRECT_URI`가 없으면 None → 카카오 로그인 꺼짐(start 404).
+    pub kakao: Option<KakaoConfig>,
+}
+
+#[derive(Clone)]
+pub struct KakaoConfig {
+    /// `KAKAO_REST_KEY`: 카카오 개발자 콘솔 앱의 REST API 키(client_id)
+    pub rest_key: String,
+    /// `KAKAO_CLIENT_SECRET`: 콘솔에서 Client Secret을 켠 경우만
+    pub client_secret: Option<String>,
+    /// `KAKAO_REDIRECT_URI`: 콘솔에 등록한 주소와 같아야 한다(예: https://flutch.kro.kr/api/v1/auth/kakao/callback)
+    pub redirect_uri: String,
+    /// `KAKAO_ADMIN_KEY`: 탈퇴 시 연결 끊기(unlink)용 앱 어드민 키. 없으면 unlink만 건너뛴다.
+    pub admin_key: Option<String>,
+}
+
+impl KakaoConfig {
+    fn from_env() -> Option<Self> {
+        Some(Self {
+            rest_key: required("KAKAO_REST_KEY").ok()?,
+            redirect_uri: required("KAKAO_REDIRECT_URI").ok()?,
+            client_secret: required("KAKAO_CLIENT_SECRET").ok(),
+            admin_key: required("KAKAO_ADMIN_KEY").ok(),
+        })
+    }
+}
+
+impl fmt::Debug for KakaoConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("KakaoConfig")
+            .field("rest_key", &"***")
+            .field("client_secret", &self.client_secret.as_ref().map(|_| "***"))
+            .field("redirect_uri", &self.redirect_uri)
+            .field("admin_key", &self.admin_key.as_ref().map(|_| "***"))
+            .finish()
+    }
 }
 
 impl AuthConfig {
     pub fn from_env() -> Self {
         Self {
             seed_password: required("SEED_PASSWORD").ok(),
+            kakao: KakaoConfig::from_env(),
         }
     }
 }
@@ -230,6 +267,7 @@ impl fmt::Debug for AuthConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AuthConfig")
             .field("seed_password", &self.seed_password.as_ref().map(|_| "***"))
+            .field("kakao", &self.kakao)
             .finish()
     }
 }

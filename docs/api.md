@@ -125,7 +125,7 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 | GET `/me` | 로그인 | — | 200 `Me` + 쿠키 만료 갱신(7일/30일) | 401 |
 | PATCH `/me` | 로그인 | `{nickname}` | 200 `Me` (지금과 같은 닉네임이면 변경 없이 200) | 401, 403 `AUTH_SEED_ACCOUNT_LOCKED`(테스트 계정), 422, 409 `AUTH_NICKNAME_TAKEN`·`AUTH_NICKNAME_CHANGE_TOO_SOON` |
 | PUT `/me/password` | 로그인·비밀번호 계정 | `{currentPassword, newPassword}` | 204, **현재 세션 외 전부 삭제** | 401, 403 `FORBIDDEN`(카카오 계정), 403 `AUTH_SEED_ACCOUNT_LOCKED`(테스트 계정), 422 `VALIDATION_FAILED`·`AUTH_WRONG_PASSWORD` |
-| DELETE `/me` | 로그인 | `{password, confirmForfeit: boolean}` | 204, 세션 전부 삭제·쿠키 만료 | 401, 403 `AUTH_SEED_ACCOUNT_LOCKED`(테스트 계정), 422 `VALIDATION_FAILED`·`AUTH_WRONG_PASSWORD`, 409 `AUTH_WITHDRAW_WHILE_LIVE`·`AUTH_WITHDRAW_CONFIRM_FORFEIT`, 429 `RATE_LIMITED` |
+| DELETE `/me` | 로그인 | `{password?, confirmForfeit: boolean}`(`password`는 비밀번호 계정만 필수, 없으면 422 `AUTH_WRONG_PASSWORD`) | 204, 세션 전부 삭제·쿠키 만료 | 401, 403 `AUTH_SEED_ACCOUNT_LOCKED`(테스트 계정), 422 `VALIDATION_FAILED`·`AUTH_WRONG_PASSWORD`, 409 `AUTH_WITHDRAW_WHILE_LIVE`·`AUTH_WITHDRAW_CONFIRM_FORFEIT`, 429 `RATE_LIMITED` |
 
 검증 규칙 (실패 시 `fields.<이름>`에 이유):
 - `loginId`: `^[a-z0-9]{4,20}$`(서버가 소문자로 바꾼 뒤 검사). 탈퇴한 아이디 포함 영구 중복 불가 → `AUTH_LOGIN_ID_TAKEN`.
@@ -136,12 +136,22 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 - 요청 제한 IP는 `X-Forwarded-For` 첫 값(nginx가 `$remote_addr`로 덮어씀). 가입 제한은 검증(422)을 통과한 시도만 센다.
 - 세션: 7일(사용 시 연장) / remember 30일. LIVE 송출 중인 사용자의 세션은 만료되지 않는다. 쿠키 `HttpOnly; Secure; SameSite=Lax; Path=/`(로컬 `http://localhost`도 브라우저가 Secure 쿠키를 받는다).
 - 닉네임 변경: `nicknameChangedAt + 30일` 전이면 `AUTH_NICKNAME_CHANGE_TOO_SOON`(message에 남은 일수). 가입 시 설정은 기록하지 않는다.
-- 탈퇴: 내 방송이 LIVE면 `AUTH_WITHDRAW_WHILE_LIVE`. 잔액 > 0이고 `confirmForfeit=false`면 `AUTH_WITHDRAW_CONFIRM_FORFEIT`(message "남은 N비트는 사라지고 되돌릴 수 없어요") → 확인 후 원장 `withdraw_forfeit -N` 추가하고 탈퇴. 카카오 계정은 `password` 없이 `confirmForfeit`만(T28).
+- 탈퇴: 내 방송이 LIVE면 `AUTH_WITHDRAW_WHILE_LIVE`. 잔액 > 0이고 `confirmForfeit=false`면 `AUTH_WITHDRAW_CONFIRM_FORFEIT`(message "남은 N비트는 사라지고 되돌릴 수 없어요") → 확인 후 원장 `withdraw_forfeit -N` 추가하고 탈퇴. 카카오 계정은 `password` 없이 `confirmForfeit`만.
   - 구현(T20b): 확인 순서 테스트 계정 403 → 비밀번호 422(비밀번호 변경과 같은 사용자별 1분 20회 한도) → 한 트랜잭션에서 지갑 `FOR UPDATE` → **내 READY 방송 삭제** → LIVE 409 → 잔액 확인 409 → 소멸 원장(잔액 0이면 없음) → `withdrawn_at` → 세션 전부 삭제. 409면 롤백(READY 방송도 그대로). READY 삭제가 그 행을 잠그므로 동시에 온 송출 시작은 기다렸다가 행이 없어 실패하고, 먼저 LIVE가 됐으면 409가 된다. ENDED 방송·채팅·후원·원장은 남고 이름은 "탈퇴한 사용자", 스트리머 페이지(`GET /users/{id}`)는 404.
 - 테스트 로그인: 시드 계정 3개(서버 시작 시 없으면 생성, 비밀번호 `SEED_PASSWORD`)만. 다른 값은 422 `fields.account`. 쿠키는 7일.
 - 시나리오: `auth_signup_login_logout` `auth_lockout` `auth_password_change_revokes_other_sessions` `auth_nickname_change_30day_limit` `auth_withdraw_forfeits_balance`
 
-**카카오 로그인 (T28, 윤곽만 — T28에서 이 절 확정)**: GET `/auth/kakao/start` → 302 카카오(`state` 쿠키) · GET `/auth/kakao/callback?code&state` → 기존 계정이면 세션 발급 후 302 `/`, 처음이면 302 `/signup/kakao`(임시 서명 쿠키) · POST `/auth/kakao/signup {nickname, agreeTerms, agreePrivacy, over14}` → 201 `Me`.
+**카카오 로그인 (T28)** — 브라우저 이동용 라우트라 `/api/v1` 아래에 있고, 실패도 JSON이 아니라 화면으로 보낸다.
+| 메서드·경로 | 권한 | 요청 | 응답 | 에러 |
+|---|---|---|---|---|
+| GET `/auth/kakao/start` | 누구나 | — | 302 카카오 인가 화면(`scope=profile_nickname`만, `redirect_uri`는 설정값) + `flutch_kakao_state` 쿠키(10분) | 404(`KAKAO_REST_KEY`·`KAKAO_REDIRECT_URI` 미설정 — 화면이 이것으로 버튼을 숨김) |
+| GET `/auth/kakao/callback?code&state` | 누구나 | 카카오가 보냄 | 기존 계정이면 세션 쿠키(7일) 발급 후 302 `/`, 처음이면 302 `/signup/kakao` + `flutch_kakao_signup` 쿠키(10분) | **모든 실패는 302 `/login?kakao=error`**: state 쿠키 없음·불일치, `code` 없음(동의 취소), 카카오 응답 실패, IP 한도(로그인과 같은 1분 20회) |
+| GET `/auth/kakao/signup` | 임시 쿠키 | — | 200 `{nickname}`(닉네임 설정 화면에 미리 채울 후보. 한글·영문·숫자만 남겨 12자까지, 비어 있을 수 있음) | 401 `AUTH_KAKAO_SIGNUP_EXPIRED`(쿠키 없음·만료·위조) |
+| POST `/auth/kakao/signup` | 임시 쿠키 | `{nickname, agreeTerms: true, agreePrivacy: true, over14: true}` | 201 `Me`(`loginId` null, `hasPassword` false) + 세션 쿠키, 지갑 행 생성, 임시 쿠키 삭제 | 401 `AUTH_KAKAO_SIGNUP_EXPIRED`, 422 `VALIDATION_FAILED`(닉네임 규칙·동의), 409 `AUTH_NICKNAME_TAKEN`·`AUTH_KAKAO_ALREADY_REGISTERED`, 429 `RATE_LIMITED`(가입과 같은 IP 1시간 5회) |
+- `flutch_kakao_state`: 32바이트 랜덤, `Path=/api/v1/auth/kakao; HttpOnly; Secure; SameSite=Lax`(카카오에서 돌아오는 이동에 실려야 해서 Lax). 콜백이 쿠키와 쿼리 `state`를 대조한다.
+- `flutch_kakao_signup`: `<카카오 id>.<만료>.<닉네임 후보>.<HMAC-SHA256>`, 서버 메모리 키로 서명(재시작하면 무효). 가입이 끝나기 전에는 DB에 아무것도 만들지 않는다.
+- 카카오 계정은 FLUTCH 세션을 똑같이 쓴다(`PUT /me/password`는 403 `FORBIDDEN`). 탈퇴 시 `DELETE /me`에 `password` 없이 `{confirmForfeit}`만 보내고(카카오 계정에서 `password`는 무시), 커밋 뒤 카카오 연결 끊기(unlink)를 호출한다(`KAKAO_ADMIN_KEY` 없거나 실패해도 탈퇴는 유지, 로그만). 탈퇴하면 `kakao_id`를 비워 같은 카카오 계정으로 새 계정을 다시 만들 수 있다(닉네임은 30일 보류).
+- 시나리오: `auth_kakao_new_user_signup` `auth_kakao_existing_user_login` `auth_kakao_state_mismatch_rejected` `auth_kakao_signup_rules_and_forged_cookie` `auth_kakao_withdraw_unlinks`
 
 ## 3. 방송 (f02, f03)
 | 메서드·경로 | 권한 | 요청 | 응답 | 에러 |

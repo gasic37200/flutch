@@ -22,7 +22,7 @@ export default function LoginForm() {
         <CheckRow checked={f.values.remember} onChange={f.set.remember}>
           로그인 상태 유지 (30일)
         </CheckRow>
-        <FormAlert message={f.error?.message} />
+        <FormAlert message={f.error?.message ?? (f.kakaoFailed ? '카카오 로그인에 실패했어요. 다시 시도해 주세요.' : undefined)} />
         <Button type='submit' size='lg' loading={f.pending} className='w-full'>
           로그인
         </Button>
@@ -34,6 +34,14 @@ export default function LoginForm() {
           · 비밀번호를 잊으면 복구할 수 없어요.
         </p>
       </form>
+      {f.kakaoEnabled && (
+        // 카카오 인증은 서버가 리다이렉트하는 페이지 이동이라 <Link>가 아니라 일반 링크
+        <span className='flex has-[:focus-visible]:drop-shadow-focus'>
+          <a href='/api/v1/auth/kakao/start' className='chamfer flex h-[42px] grow items-center justify-center bg-surface-2 text-[15px] font-bold [--c:6px] hover:brightness-125'>
+            카카오로 로그인
+          </a>
+        </span>
+      )}
       <div className='flex items-center gap-3 text-[13px] text-text-dim'>
         <span className='h-px grow bg-surface-2' />
         심사·체험용
