@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE broadcasts SET publisher_identity = $2,\n                disconnected_at = CASE WHEN publisher_identity IS DISTINCT FROM $2\n                                       THEN COALESCE(disconnected_at, now()) ELSE disconnected_at END\n         WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4b98b76a1a3dbd22030e33ed3ba32324ed542381271630405e7d836a76ebe591"
+}

@@ -40,3 +40,4 @@
 | [T05d-tailwind-class-order-bg-override.md](T05d-tailwind-class-order-bg-override.md) | T05d | Tailwind는 CSS 순서가 이겨서 기본 배경 + 덮어쓰기 클래스가 안 먹음 → 덮어쓸 속성은 조건부로 뺀다 |
 | [T13-loki-allvalue-empty-matcher.md](T13-loki-allvalue-empty-matcher.md) | T13 | Grafana 변수 All(`.*`)이 Loki의 빈 매처 거절로 오류 → service 변수 allValue를 `.+`로 |
 | [T09c-localhost-cookie-shared-across-ports.md](T09c-localhost-cookie-shared-across-ports.md) | T09c | localhost 쿠키는 포트를 안 가려 다른 worktree 로그인이 내 세션을 덮어씀 → 401이면 다시 로그인 |
+| [T15a-livekit-webhook-probe.md](T15a-livekit-webhook-probe.md) | T15a | 공용 LiveKit 웹훅이 WSL에 안 닿아 별도 LiveKit 컨테이너(WSL IP 웹훅)로 실측: hidden도 웹훅 옴, 서버 API는 snake_case |

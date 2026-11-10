@@ -307,8 +307,17 @@ pub async fn start_live(db: &PgPool, id: i64) -> Result<(), AppError> {
 
 /// 종료 공통 절차: `LIVE → ENDED` → LiveKit 방 삭제 → `broadcast.ended`.
 /// LiveKit 실패는 종료를 되돌리지 않는다(종료가 우선, 로그만).
+/// `Disconnect`는 유예 중일 때만 끝낸다(만료 판정과 종료 사이에 송출자가 돌아왔으면 그대로 두고 `Ok`).
 pub async fn end_live(state: &AppState, id: i64, reason: EndReason) -> Result<(), AppError> {
-    if !db::mark_ended(&state.db, id).await? {
+    let disconnect = matches!(reason, EndReason::Disconnect);
+    if !db::mark_ended(&state.db, id, disconnect).await? {
+        if disconnect {
+            tracing::info!(
+                broadcast_id = id,
+                "publisher back before grace end, not ending"
+            );
+            return Ok(());
+        }
         return Err(missing_or_invalid(&state.db, id).await);
     }
     if let Err(e) = state.livekit.delete_room(&room_name(id)).await {
