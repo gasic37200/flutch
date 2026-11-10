@@ -44,3 +44,4 @@
 | 2026-11-10 | T18 | 완료 | 2026-11-10 13:17 → 13:36 | 19분 | 156,036 | 43 | [#84](https://github.com/gasic37200/flutch/pull/84) | Sonnet·medium |
 | 2026-11-10 | T19 | 완료 | 2026-11-10 13:23 → 14:09 | 46분 | 241,214 | 92 | [#86](https://github.com/gasic37200/flutch/pull/86) | Sonnet·medium. 동시 발동 advisory lock, 게이지 묶음 static은 T24에서 정리 |
 | 2026-11-10 | T18u | 완료 | 2026-11-10 13:37 → 14:12 | 35분 | 185,131 | 120 | [#87](https://github.com/gasic37200/flutch/pull/87) | Sonnet·medium. 두 사용자로 차단·해제·영구 밴 확인 |
+| 2026-11-10 | T22 | 완료 | 2026-11-10 13:17 → 14:47 | 90분 | 266,866 | 85 | [#89](https://github.com/gasic37200/flutch/pull/89) | Opus·high. ponytail-review: 지적 없음. **main squash 제목이 `wip(donation)`으로 들어감**(되돌리지 않음, AGENTS §8 보강) |
