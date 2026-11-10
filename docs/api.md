@@ -274,9 +274,10 @@ type DonationStats = Page<{ broadcast: BroadcastRef & { startedAt: string }; tot
 - **멱등**: 이미 `done`인 주문에 같은 `paymentKey`로 다시 confirm → 200 같은 `PaymentResult`(재적립 없음). 다른 `paymentKey` → `PAYMENT_ALREADY_CONFIRMED`. 웹훅은 본문 `paymentKey`로 토스 결제 조회 API를 다시 불러 상태·금액·`secret`을 확인한 뒤 같은 확정 함수를 탄다(`payment_key`·`ledger_entries.payment_order_id` 유니크).
 - 잔액 후원: `UPDATE wallets … WHERE balance >= $amount` 조건부 차감, 0행이면 `WALLET_INSUFFICIENT_BALANCE` → 화면은 "N비트 충전하고 후원하기"(후원 주문)로 전환.
 - 지갑 `type` 필터는 원장 유형 5개 중 하나, `month`는 KST 기준 월. **유료 클러치는 같은 방송의 연속된 원장을 한 줄로 묶어**(`count`, 합계 `amount`) 내려준다. 숨긴 방송은 `broadcast.hidden=true`.
+  - 구현(T20): "연속"은 필터를 적용한 뒤의 순서 기준(다른 유형이 끼면 묶음이 끊김). 묶음의 `balanceAfter`·`createdAt`은 마지막 원장 값. 숨긴 방송의 `title`은 `"삭제된 방송"`으로 내려준다. `type`·`month`·`cursor`·`limit` 형식이 틀리면 422 + 해당 `fields`. 지갑 행이 없으면 `balance` 0.
 - 후원 목록: kind `donation`·`burst`만 최신순. 공개 응답은 익명 후원의 `donor=null`, **방송 소유자 요청에만 실제 `donor`**. 숨긴 방송이면 404.
 - 스킵: 소유자가 현재 표시 중인 알림을 넘김 → 모든 연결에 `donation.skipped`.
-- 시나리오: `donation_confirm_idempotent` `donation_amount_mismatch_rejected` `donation_balance_conditional_debit` `donation_live_only` `donation_after_end_becomes_charge` `donation_anonymous_name_visibility` `charge_limits_and_order_expiry` `banned_user_cannot_donate`
+- 시나리오: `donation_confirm_idempotent` `donation_amount_mismatch_rejected` `donation_balance_conditional_debit` `donation_live_only` `donation_after_end_becomes_charge` `donation_anonymous_name_visibility` `charge_limits_and_order_expiry` `banned_user_cannot_donate` · 지갑·원장(T20): `wallet_concurrent_debit_only_one_succeeds` `wallet_charge_limit_and_idempotent` `wallet_list_filters_and_clutch_grouping` `wallet_month_filter_kst_boundary` `wallet_requires_login_and_hides_others`
 
 ## 7. Clutch (f07)
 | 메서드·경로 | 권한 | 요청 | 응답 | 에러 |

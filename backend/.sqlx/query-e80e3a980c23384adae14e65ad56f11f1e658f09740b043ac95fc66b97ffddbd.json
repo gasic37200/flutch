@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT w.user_id FROM wallets w\n           WHERE w.balance <> COALESCE((SELECT l.balance_after FROM ledger_entries l\n                                        WHERE l.user_id = w.user_id ORDER BY l.id DESC LIMIT 1), 0)\n              OR w.balance <> (SELECT COALESCE(SUM(l.amount), 0) FROM ledger_entries l\n                               WHERE l.user_id = w.user_id)\n           ORDER BY w.user_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "wallets",
+            "name": "user_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "e80e3a980c23384adae14e65ad56f11f1e658f09740b043ac95fc66b97ffddbd"
+}

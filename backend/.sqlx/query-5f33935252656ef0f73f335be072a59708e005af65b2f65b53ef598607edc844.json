@@ -1,0 +1,91 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH e AS (\n               SELECT l.id, l.type, l.amount, l.balance_after, l.broadcast_id, l.created_at,\n                      CASE WHEN l.type = 'clutch'\n                                AND lag(l.type) OVER w = 'clutch'\n                                AND lag(l.broadcast_id) OVER w = l.broadcast_id\n                           THEN 0 ELSE 1 END AS starts\n               FROM ledger_entries l\n               WHERE l.user_id = $1\n                 AND ($2::text IS NULL OR l.type = $2)\n                 AND ($3::timestamptz IS NULL OR l.created_at >= $3)\n                 AND ($4::timestamptz IS NULL OR l.created_at < $4)\n                 AND ($5::bigint IS NULL OR l.id < $5)\n               WINDOW w AS (ORDER BY l.id)\n           ), g AS (\n               SELECT max(id) AS id, min(id) AS first_id, min(type) AS ty,\n                      sum(amount)::bigint AS amount,\n                      (array_agg(balance_after ORDER BY id DESC))[1] AS balance_after,\n                      count(*) AS count, max(created_at) AS created_at,\n                      min(broadcast_id) AS broadcast_id\n               FROM (SELECT *, sum(starts) OVER (ORDER BY id) AS grp FROM e) s\n               GROUP BY grp\n               ORDER BY max(id) DESC\n               LIMIT $6\n           )\n           SELECT g.id AS \"id!\", g.first_id AS \"first_id!\", g.ty AS \"ty!\", g.amount AS \"amount!\",\n                  g.balance_after AS \"balance_after!\", g.count AS \"count!\",\n                  g.created_at AS \"created_at!\", g.broadcast_id,\n                  CASE WHEN b.hidden_at IS NULL THEN b.title ELSE '삭제된 방송' END AS broadcast_title,\n                  b.hidden_at IS NOT NULL AS broadcast_hidden\n           FROM g LEFT JOIN broadcasts b ON b.id = g.broadcast_id\n           ORDER BY g.id DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "first_id!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "ty!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "amount!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 4,
+        "name": "balance_after!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "count!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at!",
+        "type_info": "Timestamptz",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 7,
+        "name": "broadcast_id",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 8,
+        "name": "broadcast_title",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 9,
+        "name": "broadcast_hidden",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "5f33935252656ef0f73f335be072a59708e005af65b2f65b53ef598607edc844"
+}
