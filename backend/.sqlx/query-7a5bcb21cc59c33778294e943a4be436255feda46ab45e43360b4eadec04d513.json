@@ -1,0 +1,42 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH w AS (\n               INSERT INTO wallets (user_id, balance) VALUES ($1, $2::bigint)\n               ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance\n               WHERE wallets.balance + EXCLUDED.balance <= 3000000\n               RETURNING balance\n           )\n           INSERT INTO ledger_entries (user_id, type, amount, balance_after, payment_order_id)\n           SELECT $1, 'charge', $2::bigint, w.balance, $3 FROM w\n           RETURNING id AS ledger_entry_id, balance_after",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "ledger_entry_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "ledger_entries",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "balance_after",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "ledger_entries",
+            "name": "balance_after"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "7a5bcb21cc59c33778294e943a4be436255feda46ab45e43360b4eadec04d513"
+}

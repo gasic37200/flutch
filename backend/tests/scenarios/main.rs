@@ -10,3 +10,4 @@ mod health;
 mod live;
 mod realtime;
 mod schema;
+mod wallet;
