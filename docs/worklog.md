@@ -52,3 +52,4 @@
 | 2026-11-10 | T21b | 완료 | 2026-11-10 16:10 → 16:30 | 20분 | 96,341 | 9 | [#100](https://github.com/gasic37200/flutch/pull/100) | Sonnet·medium. 메인 리뷰: 지적 없음 |
 | 2026-11-10 | T24 | 완료 | 2026-11-10 14:58 → 16:32 | 94분 | 273,513 | 144 | [#99](https://github.com/gasic37200/flutch/pull/99) | Opus·high. ponytail-review: 지적 없음, T19 전역 static → AppState |
 | 2026-11-10 | T28 | 완료 | 2026-11-10 16:32 → 17:05 | 33분 | 231,129 | 55 | [#103](https://github.com/gasic37200/flutch/pull/103) | Sonnet·medium. ponytail-review: 지적 없음, 실제 카카오 로그인은 배포 후 |
+| 2026-11-10 | T29 | 완료 | 2026-11-10 16:38 → 17:31 | 53분 | 270,671 | 114 | [#105](https://github.com/gasic37200/flutch/pull/105) | Opus·high. 회전 상태 DB(shown_at), 마이그레이션 순서 T28 뒤로 |
