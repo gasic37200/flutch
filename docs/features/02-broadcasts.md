@@ -52,3 +52,4 @@
 - `broadcast_limits`: 동시 LIVE 2개 거절, READY 6개째 거절
 - `broadcast_delete_live_ends_first`
 - `broadcast_persists_after_restart`: 저장 후 앱 상태를 새로 만들어도(서버 재시작 가정) 목록·상세 조회
+- `broadcast_thumbnail_owner_live_only`: 썸네일 업로드 — 비로그인 401·타인 403·READY 409·소유자 LIVE 204·512KB 초과/JPEG 아님 422·`thumbnailUrl` 갱신·삭제 시 파일 정리

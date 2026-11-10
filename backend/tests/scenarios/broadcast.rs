@@ -435,3 +435,73 @@ async fn broadcast_persists_after_restart(db: PgPool) {
     assert_eq!(res.json["status"], "LIVE");
     assert_eq!(res.json["viewer"]["isOwner"], true);
 }
+
+fn put_thumb(
+    path: &str,
+    cookie: Option<&str>,
+    ctype: &str,
+    body: Vec<u8>,
+) -> axum::http::Request<axum::body::Body> {
+    let mut req = axum::http::Request::builder()
+        .method("PUT")
+        .uri(path)
+        .header("origin", crate::common::ORIGIN)
+        .header("content-type", ctype);
+    if let Some(c) = cookie {
+        req = req.header("cookie", c);
+    }
+    req.body(axum::body::Body::from(body)).unwrap()
+}
+
+#[sqlx::test]
+async fn broadcast_thumbnail_owner_live_only(db: PgPool) {
+    let (app, state, _) = setup(db);
+    let (owner, _) = login_as(&app, "streamer1").await;
+    let (other, _) = login_as(&app, "streamer2").await;
+    let id = create(&app, &owner, "썸네일 방송").await;
+    let path = format!("{B}/{id}/thumbnail");
+    let jpeg = || [vec![0xFF, 0xD8, 0xFF, 0xE0], vec![0; 100]].concat();
+
+    let res = send(&app, put_thumb(&path, None, "image/jpeg", jpeg())).await;
+    assert_eq!(res.status, StatusCode::UNAUTHORIZED);
+    let res = send(&app, put_thumb(&path, Some(&other), "image/jpeg", jpeg())).await;
+    assert_eq!(res.status, StatusCode::FORBIDDEN);
+    let res = send(&app, put_thumb(&path, Some(&owner), "image/jpeg", jpeg())).await;
+    assert_eq!(
+        (res.status, code(&res)),
+        (StatusCode::CONFLICT, "BROADCAST_NOT_LIVE")
+    );
+
+    start_live(&state.db, id).await.unwrap();
+    let big = [vec![0xFF, 0xD8, 0xFF], vec![0; 512 * 1024]].concat();
+    for (ctype, body) in [
+        ("image/jpeg", big),
+        ("image/jpeg", b"not an image".to_vec()),
+        ("image/png", jpeg()),
+    ] {
+        let res = send(&app, put_thumb(&path, Some(&owner), ctype, body)).await;
+        assert_eq!(res.status, StatusCode::UNPROCESSABLE_ENTITY, "{}", res.json);
+        assert_eq!(code(&res), "BROADCAST_THUMBNAIL_INVALID");
+    }
+    assert!(get(&app, &format!("{B}/{id}"), None).await.json["thumbnailUrl"].is_null());
+
+    let res = send(&app, put_thumb(&path, Some(&owner), "image/jpeg", jpeg())).await;
+    assert_eq!(res.status, StatusCode::NO_CONTENT);
+    let url = get(&app, &format!("{B}/{id}"), None).await.json["thumbnailUrl"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    assert!(
+        url.starts_with(&format!("/media/thumbs/{id}.jpg?v=")),
+        "{url}"
+    );
+    let file = state.config.broadcast.thumb_dir.join(format!("{id}.jpg"));
+    assert_eq!(std::fs::read(&file).unwrap(), jpeg());
+
+    // 삭제(숨김)하면 파일도 정리한다
+    assert_eq!(
+        delete(&app, Some(&owner), id).await.status,
+        StatusCode::NO_CONTENT
+    );
+    assert!(!file.exists());
+}

@@ -251,3 +251,15 @@ pub async fn hide_ended(db: &PgPool, id: i64) -> Result<bool, sqlx::Error> {
     tx.commit().await?;
     Ok(true)
 }
+
+/// LIVE인 방송의 썸네일 버전 갱신. LIVE가 아니면 `false`.
+pub async fn set_thumbnail(db: &PgPool, id: i64, version: &str) -> Result<bool, sqlx::Error> {
+    let res = sqlx::query!(
+        "UPDATE broadcasts SET thumbnail_path = $2 WHERE id = $1 AND status = 'LIVE'",
+        id,
+        version
+    )
+    .execute(db)
+    .await?;
+    Ok(res.rows_affected() == 1)
+}

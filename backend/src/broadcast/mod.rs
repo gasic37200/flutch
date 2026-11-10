@@ -3,8 +3,9 @@
 use std::sync::Arc;
 
 use axum::Router;
+use axum::extract::DefaultBodyLimit;
 use axum::http::StatusCode;
-use axum::routing::get;
+use axum::routing::{get, put};
 use chrono::{DateTime, Utc};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -36,6 +37,10 @@ pub fn routes() -> Router<Arc<AppState>> {
             get(handlers::get_one)
                 .patch(handlers::update)
                 .delete(handlers::delete),
+        )
+        .route(
+            "/broadcasts/{id}/thumbnail",
+            put(handlers::put_thumbnail).layer(DefaultBodyLimit::max(1024 * 1024)),
         )
         .route("/me/broadcasts", get(handlers::list_mine))
         .route("/users/{id}/broadcasts", get(handlers::list_by_user))
@@ -245,6 +250,8 @@ pub enum BroadcastError {
     ReadyLimit,
     #[error("지금 방송 상태에서는 이 항목을 바꿀 수 없어요.")]
     FieldLocked,
+    #[error("썸네일은 512KB 이하 JPEG만 올릴 수 있어요.")]
+    ThumbnailInvalid,
 }
 
 impl From<BroadcastError> for AppError {
@@ -257,6 +264,10 @@ impl From<BroadcastError> for AppError {
             BroadcastError::LiveLimit => (StatusCode::CONFLICT, "BROADCAST_LIVE_LIMIT"),
             BroadcastError::ReadyLimit => (StatusCode::CONFLICT, "BROADCAST_READY_LIMIT"),
             BroadcastError::FieldLocked => (StatusCode::CONFLICT, "BROADCAST_FIELD_LOCKED"),
+            BroadcastError::ThumbnailInvalid => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "BROADCAST_THUMBNAIL_INVALID",
+            ),
         };
         AppError::domain(status, code, e.to_string())
     }
