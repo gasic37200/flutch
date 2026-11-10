@@ -186,7 +186,7 @@ pub(super) async fn load(state: &AppState, id: i64) -> Result<db::Row, AppError>
         .ok_or(AppError::NotFound)
 }
 
-/// 상세 응답. shortcut: burstPrice·ban은 기본값, T24·T18이 이 함수에서 채운다.
+/// 상세 응답. shortcut: burstPrice는 기본값, T24가 이 함수에서 채운다.
 pub(super) async fn detail(
     state: &AppState,
     row: db::Row,
@@ -204,13 +204,17 @@ pub(super) async fn detail(
         Some(u) => clutch::free_left(&state.db, cfg, u.id, id).await?,
         None => 0,
     };
+    let ban = match viewer {
+        Some(u) => crate::chat::ban_state(&state.db, row.owner_id, u.id).await?,
+        None => None,
+    };
     Ok(BroadcastDetail {
         broadcast: into_broadcast(state, row)?,
         gauge,
         burst_price: BURST_PRICE,
         viewer: viewer.map(|_| ViewerState {
             is_owner,
-            ban: None,
+            ban,
             free_clutches_left,
         }),
     })

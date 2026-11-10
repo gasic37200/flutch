@@ -236,6 +236,7 @@ type Ban = { user: UserSummary; permanent: boolean; until: string | null; create
   | 무료 클러치 (§7) | 가능 | 가능 |
   | 유료 클러치·SUPER BURST (§7) | 가능 | 403 `MODERATION_BANNED` |
   | 후원·후원 주문 (§6) | 가능 | 403 `MODERATION_BANNED` |
+- 차단은 새 `bans` 행으로 덮어써서 다시 차단하면 목록에서 맨 위로 온다(커서 = 행 id). 해제는 차단이 있었을 때만 `unban` 이력을 남긴다. 시청자 채팅 기록은 숨긴 방송을 제외하고 오래된→최신(`Chat` 목록과 같음).
 - 입력창 표시는 `BroadcastDetail.viewer.ban`으로("n분 후 채팅할 수 있어요" / "이 채널에서 채팅이 제한되었어요").
 - 시나리오: `ban_blocks_chat_across_broadcasts` `timeout_expires_automatically` `ban_effects_matrix` `ban_only_by_owner` `permanent_ban_hides_current_messages`
 

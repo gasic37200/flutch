@@ -231,6 +231,10 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `chat_edit_author_only_within_5min`, `chat_delete_author_or_owner` | 수정(작성자·5분)·삭제(작성자·방송 소유자) | P13 |
 | `chat_rate_limit_and_repeat`, `chat_profanity_masked_banned_word_blocked` | 도배 제한, 욕설 가림·금지어 차단 | P13 |
 | `chat_banned_user_cannot_write` | 임시·영구 차단 사용자 작성·수정 거절 | P13 |
+| `ban_blocks_chat_across_broadcasts`, `timeout_expires_automatically` | 차단은 그 스트리머의 모든 방송에 적용, 임시차단은 시간이 지나면 자동 해제 | P13 |
+| `ban_effects_matrix`, `ban_only_by_owner` | 차단 효과 표(작성·수정 불가, 시청 가능), 본인만 차단 가능 | P13 |
+| `permanent_ban_hides_current_messages` | 영구 밴 시 현재 방송 글 삭제 표시 + 시스템 알림 | P13 |
+| `ban_history_unban_and_validation`, `viewer_chat_history` | 이력 추가만·해제·자기 자신 거절, 시청자 채팅 기록 | P13 |
 | `chat_badges_streamer_and_donor`, `chat_events_published` | 배지, 실시간 이벤트 | P13 |
 | `broadcast_other_user_forbidden` | 다른 사용자 403, 비로그인 401 | P11 |
 | `broadcast_public_read` | 비로그인 목록·상세 200 | P4, P11 |

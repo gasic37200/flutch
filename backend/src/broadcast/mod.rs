@@ -177,7 +177,7 @@ pub struct BroadcastDetail {
 #[ts(export)]
 pub struct ViewerState {
     pub is_owner: bool,
-    /// shortcut: 항상 null, T18이 채운다.
+    /// 이 스트리머에게 차단된 상태(풀린 임시차단은 null)
     pub ban: Option<BanState>,
     /// 최근 30초 창에서 남은 무료 클러치(0~5)
     pub free_clutches_left: i32,
