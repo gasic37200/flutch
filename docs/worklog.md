@@ -27,3 +27,4 @@
 | 2026-11-10 | T11b | 부분(U1) | 2026-11-10 09:57 → 10:16 | 19분 | 178,458 | 50 | [#57](https://github.com/gasic37200/flutch/pull/57) | Sonnet·medium. 재생 중·스트리머 재연결 화면은 U1 |
 | 2026-11-10 | T06c | 완료 | 2026-11-10 09:57 → 10:23 | 26분 | 230,804 | 101 | [#58](https://github.com/gasic37200/flutch/pull/58) | Sonnet·medium. 약관·방송 수정 화면은 눈으로 미확인 |
 | 2026-11-10 | T09c | 완료 | 2026-11-10 10:02 → 10:35 | 33분 | 211,172 | 129 | [#60](https://github.com/gasic37200/flutch/pull/60) | Sonnet·medium. 이어하기·기기 전환 모달 화면은 미확인 |
+| 2026-11-10 | T13 | 완료 | 2026-11-10 10:17 → 10:52 | 35분 | 165,314 | 63 | [#62](https://github.com/gasic37200/flutch/pull/62) | Sonnet·medium. 보고서가 짚은 nginx `/api/` XFF 미상속 버그(T07)를 메인이 같은 PR에서 수정, 서버 .env에 GRAFANA_ADMIN_PASSWORD 추가 |
