@@ -632,3 +632,39 @@ async fn payment_concurrent_confirm_credits_once(db: PgPool) {
     assert_eq!(r1.json["balance"], 0);
     assert_consistent(&db).await;
 }
+
+#[sqlx::test]
+async fn payment_webhook_withdrawn_user_not_credited(db: PgPool) {
+    let (app, toss) = setup(&db);
+    let (viewer_c, viewer) = login_as(&app, "viewer").await;
+    let (order_id, n) = created(
+        &order(
+            &app,
+            &viewer_c,
+            json!({ "purpose": "charge", "amount": 3000 }),
+        )
+        .await,
+    );
+    toss.payments.lock().unwrap().insert(
+        "pk_wd".into(),
+        TossPayment {
+            payment_key: "pk_wd".into(),
+            order_id: order_id.clone(),
+            status: "DONE".into(),
+            total_amount: n,
+            secret: Some(FakeToss::secret("pk_wd")),
+        },
+    );
+    sqlx::query("UPDATE users SET withdrawn_at = now() WHERE id = $1")
+        .bind(viewer)
+        .execute(&db)
+        .await
+        .unwrap();
+
+    // 탈퇴한 주문자의 웹훅: 200(재시도 불필요), 적립 없음, 주문은 pending 유지
+    let res = webhook(&app, "pk_wd", &FakeToss::secret("pk_wd")).await;
+    assert_eq!(res.status, StatusCode::OK);
+    assert_eq!(ledger_count(&db, viewer).await, 0);
+    assert_eq!(order_status(&db, &order_id).await, "pending");
+    assert_consistent(&db).await;
+}

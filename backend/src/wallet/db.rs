@@ -171,6 +171,16 @@ pub async fn lock_order(
     .await
 }
 
+/// 주문자가 탈퇴했는지(확정 트랜잭션용).
+pub async fn user_withdrawn(conn: &mut PgConnection, user_id: i64) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar!(
+        r#"SELECT withdrawn_at IS NOT NULL AS "withdrawn!" FROM users WHERE id = $1"#,
+        user_id
+    )
+    .fetch_one(conn)
+    .await
+}
+
 pub async fn mark_done(
     conn: &mut PgConnection,
     id: i64,
