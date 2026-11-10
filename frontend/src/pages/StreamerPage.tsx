@@ -10,6 +10,7 @@ import DonationHistory from '../features/donation/components/DonationHistory.tsx
 import DonationStatsPanel from '../features/donation/components/DonationStatsPanel.tsx'
 import BanList from '../features/moderation/components/BanList.tsx'
 import ReplayGrid from '../features/replay/components/ReplayGrid.tsx'
+import FollowButton from '../features/follow/components/FollowButton.tsx'
 import { count } from '../features/replay/format.ts'
 import PastBroadcasts from '../features/streamer/components/PastBroadcasts.tsx'
 import { useStreamer, type StreamerTab } from '../features/streamer/hooks/useStreamer.ts'
@@ -50,10 +51,12 @@ export default function StreamerPage() {
             {liveBroadcast && ' · 지금 방송 중'}
           </span>
         </div>
-        {s.isSelf && (
+        {s.isSelf ? (
           <Button size='lg' to='/manage'>
             내 방송 관리
           </Button>
+        ) : (
+          <FollowButton userId={user.id} size='lg' />
         )}
       </div>
 

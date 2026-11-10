@@ -9,11 +9,13 @@ type Props = {
   user?: ShellUser | null
   /** 사이드바 "인기 라이브" 목록 */
   channels?: SidebarChannel[]
+  panelTitle?: string
+  panelEmpty?: string
   onLogout?: () => void
 }
 
 // 헤더 + 왼쪽 사이드바 + 본문(Outlet). lg 미만에서는 사이드바가 햄버거로 여는 서랍이 된다.
-export default function AppShell({ user = null, channels = [], onLogout }: Props) {
+export default function AppShell({ user = null, channels = [], panelTitle, panelEmpty, onLogout }: Props) {
   const [drawer, setDrawer] = useState(false)
 
   useEffect(() => {
@@ -31,13 +33,13 @@ export default function AppShell({ user = null, channels = [], onLogout }: Props
       <Header user={user} onMenu={() => setDrawer(true)} onLogout={onLogout} />
       <div className='flex'>
         <div className='sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-60 shrink-0 border-r border-surface-2 md:top-16 md:h-[calc(100dvh-4rem)] lg:block'>
-          <Sidebar channels={channels} />
+          <Sidebar channels={channels} title={panelTitle} empty={panelEmpty} />
         </div>
         {drawer && (
           <div className='fixed inset-0 z-40 lg:hidden'>
             <button type='button' aria-label='메뉴 닫기' onClick={() => setDrawer(false)} className='absolute inset-0 bg-bg/80' />
             <div className='relative h-full w-64 max-w-[80vw] border-r border-surface-2'>
-              <Sidebar channels={channels} onNavigate={() => setDrawer(false)} />
+              <Sidebar channels={channels} title={panelTitle} empty={panelEmpty} onNavigate={() => setDrawer(false)} />
             </div>
           </div>
         )}

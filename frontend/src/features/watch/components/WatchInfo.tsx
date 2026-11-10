@@ -2,11 +2,12 @@ import type { BroadcastDetail } from '../../../api/generated/BroadcastDetail.ts'
 import Avatar from '../../../components/ui/Avatar.tsx'
 import { Chip } from '../../../components/ui/Chip.tsx'
 import Icon from '../../../components/ui/Icon.tsx'
+import FollowButton from '../../follow/components/FollowButton.tsx'
 import { CATEGORY_LABEL } from '../../broadcast/categories.ts'
 import DonateButton from '../../donation/components/DonateButton.tsx'
 import { formatDuration, useNow } from '../hooks/useWatch.ts'
 
-// 방송 정보: broadcast.updated가 캐시를 바꾸면 그대로 다시 그려진다. 팔로우(T27)·후원하기(T23)는 마지막 div(오른쪽 끝)에 붙인다.
+// 방송 정보: broadcast.updated가 캐시를 바꾸면 그대로 다시 그려진다. 후원하기(T23)는 마지막 div(오른쪽 끝)의 팔로우 버튼 옆에 붙인다.
 export default function WatchInfo({ broadcast: b }: { broadcast: BroadcastDetail }) {
   const live = b.status === 'LIVE'
   const now = useNow(live)
@@ -29,6 +30,7 @@ export default function WatchInfo({ broadcast: b }: { broadcast: BroadcastDetail
         </div>
       </div>
       <div className='flex flex-wrap items-center gap-2.5'>
+        <FollowButton userId={b.owner.id} />
         {live && (
           <>
             <span className='inline-flex items-center gap-1.5 font-mono text-[15px] font-bold text-live'>

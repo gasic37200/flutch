@@ -9,6 +9,7 @@ import LegalPage from './pages/LegalPage.tsx'
 import MePage from './pages/MePage.tsx'
 import PaymentResultPage from './pages/PaymentResultPage.tsx'
 import ManagePage from './pages/ManagePage.tsx'
+import PulsePage from './pages/PulsePage.tsx'
 import ReplayListPage from './pages/ReplayListPage.tsx'
 import ReplayPage from './pages/ReplayPage.tsx'
 import StreamerPage from './pages/StreamerPage.tsx'
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
           { path: 'broadcasts/new', element: <BroadcastFormPage /> },
           { path: 'broadcasts/:broadcastId/edit', element: <BroadcastFormPage /> },
           { path: 'studio', element: <StudioPage /> },
+          { path: 'pulse', element: <PulsePage /> },
           { path: 'replay', element: <ReplayListPage /> },
           { path: 'replay/:recordingId', element: <ReplayPage /> },
           { path: 'users/:userId', element: <StreamerPage /> },
