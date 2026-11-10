@@ -307,6 +307,12 @@ async fn finalize(state: &Arc<AppState>, p: &TossPayment) -> Result<PaymentResul
             Err(PaymentError::AlreadyConfirmed.into())
         };
     }
+    // 결제 직후 탈퇴: 탈퇴 지갑에 적립하지 않는다. 주문은 pending으로 남고 운영자가 수동 환불한다.
+    if db::user_withdrawn(&mut tx, order.user_id).await? {
+        tx.rollback().await?;
+        tracing::error!(order_id = %order.order_id, amount = order.amount, "payment for withdrawn user: manual refund needed");
+        return Err(PaymentError::OrderNotFound.into());
+    }
     if p.total_amount != order.amount {
         tracing::error!(order_id = %order.order_id, toss_amount = p.total_amount, amount = order.amount, "toss amount mismatch");
         return Err(PaymentError::AmountMismatch.into());

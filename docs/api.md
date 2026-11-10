@@ -247,7 +247,7 @@ type Ban = { user: UserSummary; permanent: boolean; until: string | null; create
 | GET `/me/wallet` | 로그인 | `?type=&month=YYYY-MM&cursor=&limit=` | 200 `{balance, items: LedgerEntry[], nextCursor}` 최신순 | 401, 422 |
 | POST `/payments/orders` | 로그인 | 충전 `{purpose: 'charge', amount}` / 후원 `{purpose: 'donation', broadcastId, donation: {amount, message?, anonymous}}` | 201 `PaymentOrder` | 401, 404, 403 `MODERATION_BANNED`·`DONATION_SELF`, 422, 409 `WALLET_BALANCE_LIMIT`·`BROADCAST_NOT_LIVE`·`PAYMENT_NOT_NEEDED` |
 | POST `/payments/confirm` | 로그인·주문자 | `{paymentKey, orderId, amount}` (토스 성공 리다이렉트 쿼리 그대로) | 200 `PaymentResult` | 401, 404 `PAYMENT_ORDER_NOT_FOUND`, 403 `PAYMENT_NOT_OWNER`, 409 `PAYMENT_AMOUNT_MISMATCH`·`PAYMENT_ORDER_EXPIRED`·`PAYMENT_ALREADY_CONFIRMED`·`PAYMENT_APPROVAL_FAILED`·`WALLET_BALANCE_LIMIT`, 502 `PAYMENT_PROVIDER_UNAVAILABLE` |
-| POST `/payments/webhook` | 토스(Origin 예외) | 토스 `PAYMENT_STATUS_CHANGED` 본문 | 200 (처리·무시 모두) | 500만(토스가 재시도) |
+| POST `/payments/webhook` | 토스(Origin 예외) | 토스 `PAYMENT_STATUS_CHANGED` 본문 | 200 (처리·무시 모두) | 500만(토스가 재시도). 탈퇴한 주문자의 결제는 적립하지 않고 200 + ERROR 로그(수동 환불), confirm이면 404 `PAYMENT_ORDER_NOT_FOUND` |
 | POST `/broadcasts/{id}/donations` | 로그인·LIVE·미밴·소유자 아님 | `{amount, message?, anonymous}` | 201 `{donation: Donation /* 내 후원이라 실명 */, balance}`, `donation.created` | 401, 404, 403 `MODERATION_BANNED`·`DONATION_SELF`, 422 `VALIDATION_FAILED`·`DONATION_BANNED_WORD`, 409 `BROADCAST_NOT_LIVE`·`WALLET_INSUFFICIENT_BALANCE` |
 | GET `/broadcasts/{id}/donations` | 누구나(소유자는 실명) | `?cursor=&limit=` | 200 `DonationList` | 404 |
 | POST `/donations/{id}/skip` | 그 방송 소유자 | — | 204, `donation.skipped` | 401, 404, 403 `BROADCAST_NOT_OWNER` |
