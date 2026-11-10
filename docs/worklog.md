@@ -46,3 +46,4 @@
 | 2026-11-10 | T18u | 완료 | 2026-11-10 13:37 → 14:12 | 35분 | 185,131 | 120 | [#87](https://github.com/gasic37200/flutch/pull/87) | Sonnet·medium. 두 사용자로 차단·해제·영구 밴 확인 |
 | 2026-11-10 | T22 | 완료 | 2026-11-10 13:17 → 14:47 | 90분 | 266,866 | 85 | [#89](https://github.com/gasic37200/flutch/pull/89) | Opus·high. ponytail-review: 지적 없음. **main squash 제목이 `wip(donation)`으로 들어감**(되돌리지 않음, AGENTS §8 보강) |
 | 2026-11-10 | T09b | 완료 | 2026-11-10 14:14 → 14:56 | 42분 | 199,774 | 129 | [#91](https://github.com/gasic37200/flutch/pull/91) | Sonnet·medium. livekit-client TrackUnsubscribed 순서 버그 수정, 실장치는 U1 |
+| 2026-11-10 | T20b | 완료 | 2026-11-10 14:14 → 15:16 | 65분 | 250,099 | 133 | [#93](https://github.com/gasic37200/flutch/pull/93) | Opus·high. ponytail-review: 탈퇴 후 웹훅 충전 1건(nice) → T21b |

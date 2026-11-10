@@ -32,7 +32,7 @@
 docker compose --env-file .env -f deploy/compose.dev.yml up -d   # 로컬 Postgres(호스트 5433)·LiveKit, 모든 worktree 공유
 cd backend && cargo run                           # 백엔드
 cd backend && cargo fmt --check && cargo clippy --all-targets -- -D warnings
-cd backend && cargo sqlx prepare                  # 쿼리 변경 시 .sqlx 커밋
+cd backend && cargo sqlx prepare -- --all-targets # 쿼리 변경 시 .sqlx 커밋(옵션 없으면 테스트 전용 쿼리 캐시가 지워져 CI 실패, T20b)
 cd frontend && npm run dev                        # 프론트
 cd frontend && npm run lint && npm run typecheck && npm run build
 ```
