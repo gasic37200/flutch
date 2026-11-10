@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM broadcasts WHERE owner_id = $1 AND status = 'READY'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0826996cd2f6b3fde2739283f54f512da5b22c36f40b0ed524b66c7f7c24819c"
+}

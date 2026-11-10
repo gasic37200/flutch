@@ -1,10 +1,13 @@
 import type { Me } from '../../../api/generated/Me.ts'
 import Button from '../../../components/ui/Button.tsx'
 import Avatar from '../../../components/ui/Avatar.tsx'
+import BeatAmount from '../../../components/ui/BeatAmount.tsx'
 import Field from '../../../components/ui/Field.tsx'
+import Modal from '../../../components/ui/Modal.tsx'
 import Panel from '../../../components/ui/Panel.tsx'
-import { useNicknameForm, usePasswordForm } from '../hooks/useAuthForms.ts'
-import { FormAlert } from './FormParts.tsx'
+import { faceSrc } from '../../../components/ui/mascot.ts'
+import { useNicknameForm, usePasswordForm, useWithdrawForm } from '../hooks/useAuthForms.ts'
+import { CheckRow, FormAlert } from './FormParts.tsx'
 
 function NicknameSection() {
   const f = useNicknameForm()
@@ -46,6 +49,62 @@ function PasswordSection() {
   )
 }
 
+// 위험 확인은 빨강 대신 흰 테두리 버튼(DESIGN). 남는 쪽(라임)이 기본 선택.
+function WithdrawSection({ me }: { me: Me }) {
+  const f = useWithdrawForm(me.balance)
+  return (
+    <>
+      <button type='button' onClick={f.show} className='self-start text-[13px] text-text-muted underline hover:text-text'>
+        회원 탈퇴
+      </button>
+      <Modal
+        open={f.open}
+        onClose={f.close}
+        title='정말 탈퇴할까요?'
+        footer={
+          <>
+            <Button onClick={f.close} disabled={f.pending}>
+              남아 있을게요
+            </Button>
+            <Button type='submit' form='withdraw-form' variant='outline' loading={f.pending} disabled={!f.canSubmit}>
+              탈퇴
+            </Button>
+          </>
+        }
+      >
+        <form id='withdraw-form' onSubmit={f.submit} className='flex flex-col gap-3.5'>
+          <img src={faceSrc('calm')} alt='' className='size-14 rounded-full' />
+          <div className='chamfer flex flex-col gap-1.5 bg-surface-2 px-3.5 py-3 text-[13px] leading-relaxed [--c:6px]'>
+            {f.needsAgree && (
+              <span>
+                남은 <BeatAmount amount={me.balance} unit />는 탈퇴하면 <b>사라지고 되돌릴 수 없어요.</b>
+              </span>
+            )}
+            <span className='text-text-muted'>채팅·후원 기록은 "탈퇴한 사용자"로 남아요. 아이디는 다시 쓸 수 없고, 닉네임은 30일 뒤 풀려요.</span>
+          </div>
+          <Field
+            label='비밀번호 확인'
+            type='password'
+            placeholder='비밀번호를 다시 입력해 주세요'
+            value={f.values.password}
+            onChange={(e) => f.set.password(e.target.value)}
+            error={f.passwordError}
+            autoComplete='current-password'
+            required
+          />
+          {f.needsAgree && (
+            <CheckRow checked={f.values.agreed} onChange={f.set.agreed}>
+              비트 소멸과 위 내용을 이해했어요
+            </CheckRow>
+          )}
+          <FormAlert message={f.message} />
+          <span className='text-xs text-text-dim'>방송 중이면 먼저 방송을 종료해야 탈퇴할 수 있어요.</span>
+        </form>
+      </Modal>
+    </>
+  )
+}
+
 type Props = { me: Me; onLogout: () => void }
 
 export default function AccountSettings({ me, onLogout }: Props) {
@@ -66,6 +125,8 @@ export default function AccountSettings({ me, onLogout }: Props) {
             <PasswordSection />
           </>
         )}
+        {/* shortcut: 카카오 계정 탈퇴(비밀번호 없이)는 T28에서 연다 */}
+        {me.hasPassword && <WithdrawSection me={me} />}
       </Panel>
       <Button variant='outline' onClick={onLogout}>
         로그아웃

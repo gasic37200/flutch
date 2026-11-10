@@ -29,7 +29,7 @@ mod payment;
 
 pub use payment::{
     ConfirmPaymentRequest, CreateOrderRequest, DonationInput, PaymentError, PaymentOrder,
-    PaymentPurpose, PaymentResult,
+    PaymentPurpose, PaymentResult, bits,
 };
 
 /// 보유 상한(비트). DB `wallets.balance` CHECK와 같은 값.

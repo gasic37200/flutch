@@ -526,3 +526,207 @@ async fn auth_test_login_is_rate_limited_by_ip(db: PgPool) {
     }
     assert_eq!(last, StatusCode::TOO_MANY_REQUESTS);
 }
+
+fn withdraw_req(
+    cookie: Option<&str>,
+    password: &str,
+    confirm: bool,
+) -> axum::http::Request<axum::body::Body> {
+    let body = json!({ "password": password, "confirmForfeit": confirm });
+    json_req("DELETE", "/api/v1/me", cookie, body)
+}
+
+async fn user_id(db: &PgPool, login_id: &str) -> i64 {
+    sqlx::query_scalar("SELECT id FROM users WHERE login_id = $1")
+        .bind(login_id)
+        .fetch_one(db)
+        .await
+        .unwrap()
+}
+
+/// 충전 주문을 만들어 `amount`비트를 적립한다.
+async fn fund(db: &PgPool, user_id: i64, amount: i64) {
+    let order: i64 = sqlx::query_scalar(
+        "INSERT INTO payment_orders (order_id, user_id, purpose, amount, expires_at)
+         VALUES (gen_random_uuid()::text, $1, 'charge', $2, now() + interval '30 minutes') RETURNING id",
+    )
+    .bind(user_id)
+    .bind(amount)
+    .fetch_one(db)
+    .await
+    .unwrap();
+    let mut tx = db.begin().await.unwrap();
+    flutch::wallet::credit_charge(&mut tx, user_id, amount, order)
+        .await
+        .unwrap();
+    tx.commit().await.unwrap();
+}
+
+async fn insert_broadcast(db: &PgPool, owner_id: i64, status: &str) -> i64 {
+    sqlx::query_scalar(
+        "INSERT INTO broadcasts (owner_id, status, title, category, started_at)
+         VALUES ($1, $2, '방송', 'game', CASE WHEN $2 = 'READY' THEN NULL ELSE now() END) RETURNING id",
+    )
+    .bind(owner_id)
+    .bind(status)
+    .fetch_one(db)
+    .await
+    .unwrap()
+}
+
+#[sqlx::test]
+async fn auth_withdraw_forfeits_balance(db: PgPool) {
+    let app = test_app(db.clone());
+    let current = signup(&app, "quit01", "떠날사람").await;
+    let other = session_cookie(&login(&app, "quit01", PASSWORD, true).await);
+    let uid = user_id(&db, "quit01").await;
+    fund(&db, uid, 5000).await;
+    let ready = insert_broadcast(&db, uid, "READY").await;
+
+    let res = send(&app, withdraw_req(Some(&current), "wrongpass1", true)).await;
+    assert_eq!(res.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(res.json["error"]["code"], "AUTH_WRONG_PASSWORD");
+
+    // 잔액이 있으면 확인 없이는 거절, 아무것도 바뀌지 않는다
+    let res = send(&app, withdraw_req(Some(&current), PASSWORD, false)).await;
+    assert_eq!(res.status, StatusCode::CONFLICT);
+    assert_eq!(res.json["error"]["code"], "AUTH_WITHDRAW_CONFIRM_FORFEIT");
+    assert_eq!(
+        res.json["error"]["message"],
+        "남은 5,000비트는 사라지고 되돌릴 수 없어요."
+    );
+    let res = me(&app, &current).await;
+    assert_eq!(res.json["balance"], 5000);
+    let exists: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM broadcasts WHERE id = $1)")
+        .bind(ready)
+        .fetch_one(&db)
+        .await
+        .unwrap();
+    assert!(exists, "rejected withdraw must keep READY broadcast");
+
+    let res = send(&app, withdraw_req(Some(&current), PASSWORD, true)).await;
+    assert_eq!(res.status, StatusCode::NO_CONTENT, "{}", res.json);
+    assert!(set_cookie(&res).contains("Max-Age=0"));
+
+    // 원장: 소멸 1행(-5000, 잔액 0), 지갑 0, 정합성 유지
+    let rows: Vec<(String, i64, i64)> = sqlx::query_as(
+        "SELECT type::text, amount, balance_after FROM ledger_entries WHERE user_id = $1 ORDER BY id",
+    )
+    .bind(uid)
+    .fetch_all(&db)
+    .await
+    .unwrap();
+    assert_eq!(
+        rows,
+        vec![
+            ("charge".to_owned(), 5000, 5000),
+            ("withdraw_forfeit".to_owned(), -5000, 0)
+        ]
+    );
+    let balance: i64 = sqlx::query_scalar("SELECT balance FROM wallets WHERE user_id = $1")
+        .bind(uid)
+        .fetch_one(&db)
+        .await
+        .unwrap();
+    assert_eq!(balance, 0);
+    assert_eq!(
+        flutch::wallet::mismatched_wallets(&db).await.unwrap(),
+        Vec::<i64>::new()
+    );
+
+    // 세션 전부 무효, 로그인 불가, 아이디 재가입 불가, READY 방송 삭제, 스트리머 페이지 404
+    for cookie in [&current, &other] {
+        assert_eq!(me(&app, cookie).await.status, StatusCode::UNAUTHORIZED);
+    }
+    let sessions: i64 = sqlx::query_scalar("SELECT count(*) FROM sessions WHERE user_id = $1")
+        .bind(uid)
+        .fetch_one(&db)
+        .await
+        .unwrap();
+    assert_eq!(sessions, 0);
+    let res = login(&app, "quit01", PASSWORD, false).await;
+    assert_eq!(res.json["error"]["code"], "AUTH_INVALID_CREDENTIALS");
+    let signup_body = |login_id: &str, nickname: &str| {
+        json_req(
+            "POST",
+            "/api/v1/auth/signup",
+            None,
+            json!({
+                "loginId": login_id, "password": PASSWORD, "nickname": nickname,
+                "agreeTerms": true, "agreePrivacy": true, "over14": true,
+            }),
+        )
+    };
+    let res = send(&app, signup_body("quit01", "새사람")).await;
+    assert_eq!(res.json["error"]["code"], "AUTH_LOGIN_ID_TAKEN");
+    let res = send(
+        &app,
+        empty_req("GET", &format!("/api/v1/broadcasts/{ready}"), None),
+    )
+    .await;
+    assert_eq!(res.status, StatusCode::NOT_FOUND);
+    let res = send(
+        &app,
+        empty_req("GET", &format!("/api/v1/users/{uid}"), None),
+    )
+    .await;
+    assert_eq!(res.status, StatusCode::NOT_FOUND);
+
+    // 닉네임은 탈퇴 30일 동안 보류, 그 뒤 해제
+    let res = send(&app, signup_body("quit02", "떠날사람")).await;
+    assert_eq!(res.json["error"]["code"], "AUTH_NICKNAME_TAKEN");
+    sqlx::query("UPDATE users SET withdrawn_at = now() - interval '31 days' WHERE id = $1")
+        .bind(uid)
+        .execute(&db)
+        .await
+        .unwrap();
+    signup(&app, "quit02", "떠날사람").await;
+}
+
+#[sqlx::test]
+async fn auth_withdraw_rules(db: PgPool) {
+    let app = test_app(db.clone());
+
+    // 비로그인 401
+    let res = send(&app, withdraw_req(None, PASSWORD, true)).await;
+    assert_eq!(res.status, StatusCode::UNAUTHORIZED);
+
+    // 테스트 계정은 비밀번호가 맞아도 403
+    let (seed, _) = login_as(&app, "viewer").await;
+    let res = send(&app, withdraw_req(Some(&seed), SEED_PASSWORD, true)).await;
+    assert_eq!(res.status, StatusCode::FORBIDDEN);
+    assert_eq!(res.json["error"]["code"], "AUTH_SEED_ACCOUNT_LOCKED");
+    assert_eq!(me(&app, &seed).await.status, StatusCode::OK);
+
+    // LIVE 중이면 409(확인했어도), 끝나면 탈퇴 가능. 잔액 0이면 원장 없이 탈퇴.
+    let cookie = signup(&app, "live01", "방송중").await;
+    let uid = user_id(&db, "live01").await;
+    let live = insert_broadcast(&db, uid, "LIVE").await;
+    let res = send(&app, withdraw_req(Some(&cookie), PASSWORD, true)).await;
+    assert_eq!(res.status, StatusCode::CONFLICT);
+    assert_eq!(res.json["error"]["code"], "AUTH_WITHDRAW_WHILE_LIVE");
+    assert_eq!(me(&app, &cookie).await.status, StatusCode::OK);
+
+    sqlx::query("UPDATE broadcasts SET status = 'ENDED', ended_at = now() WHERE id = $1")
+        .bind(live)
+        .execute(&db)
+        .await
+        .unwrap();
+    let res = send(&app, withdraw_req(Some(&cookie), PASSWORD, false)).await;
+    assert_eq!(res.status, StatusCode::NO_CONTENT, "{}", res.json);
+    let ledger: i64 = sqlx::query_scalar("SELECT count(*) FROM ledger_entries WHERE user_id = $1")
+        .bind(uid)
+        .fetch_one(&db)
+        .await
+        .unwrap();
+    assert_eq!(ledger, 0);
+    assert_eq!(me(&app, &cookie).await.status, StatusCode::UNAUTHORIZED);
+    // 끝난 방송은 남고 소유자는 "탈퇴한 사용자"
+    let res = send(
+        &app,
+        empty_req("GET", &format!("/api/v1/broadcasts/{live}"), None),
+    )
+    .await;
+    assert_eq!(res.status, StatusCode::OK);
+    assert_eq!(res.json["owner"]["nickname"], "탈퇴한 사용자");
+}

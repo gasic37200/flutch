@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "balance",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "wallets",
+            "name": "balance"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "2cc486139191a1860f8c59fb383729d8ce16a476c111ed3edc4308c1b6d90325"
+}

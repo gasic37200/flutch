@@ -37,7 +37,12 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/auth/login", post(handlers::login))
         .route("/auth/test-login", post(handlers::test_login))
         .route("/auth/logout", post(handlers::logout))
-        .route("/me", get(handlers::me).patch(handlers::update_me))
+        .route(
+            "/me",
+            get(handlers::me)
+                .patch(handlers::update_me)
+                .delete(handlers::withdraw),
+        )
         .route("/me/password", put(handlers::change_password))
         .layer(Extension(Arc::new(handlers::Limits::default())))
 }
@@ -144,6 +149,15 @@ pub struct ChangePasswordRequest {
     pub new_password: String,
 }
 
+#[derive(Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct WithdrawRequest {
+    pub password: String,
+    /// 잔액이 있으면 true여야 탈퇴(잔액 소멸 확인)
+    pub confirm_forfeit: bool,
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum AuthError {
     #[error("이미 사용 중인 아이디예요.")]
@@ -162,6 +176,11 @@ pub enum AuthError {
     WrongPassword,
     #[error("테스트 계정은 바꿀 수 없어요.")]
     SeedAccountLocked,
+    #[error("방송을 먼저 종료해 주세요.")]
+    WithdrawWhileLive,
+    /// 남은 잔액("1,000" 형식)
+    #[error("남은 {0}비트는 사라지고 되돌릴 수 없어요.")]
+    WithdrawConfirmForfeit(String),
 }
 
 impl From<AuthError> for AppError {
@@ -196,6 +215,14 @@ impl From<AuthError> for AppError {
             AuthError::SeedAccountLocked => {
                 AppError::domain(StatusCode::FORBIDDEN, "AUTH_SEED_ACCOUNT_LOCKED", message)
             }
+            AuthError::WithdrawWhileLive => {
+                AppError::domain(StatusCode::CONFLICT, "AUTH_WITHDRAW_WHILE_LIVE", message)
+            }
+            AuthError::WithdrawConfirmForfeit(_) => AppError::domain(
+                StatusCode::CONFLICT,
+                "AUTH_WITHDRAW_CONFIRM_FORFEIT",
+                message,
+            ),
         }
     }
 }

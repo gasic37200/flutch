@@ -197,6 +197,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 **P12. 가입·계정**
 1. `/signup`에서 아이디·비밀번호·닉네임·약관 동의로 가입 → 로그아웃 → 다시 로그인.
 2. 닉네임은 변경 후 30일간 다시 바꿀 수 없고, 비밀번호를 바꾸면 다른 기기의 로그인이 풀린다.
+3. 직접 가입한 계정으로 `/me` 아래 "회원 탈퇴" → 비밀번호 입력(잔액이 있으면 "비트 소멸과 위 내용을 이해했어요" 체크) → "탈퇴" → 로그아웃 상태로 홈. 같은 아이디로 로그인·재가입이 안 된다. 방송 중에는 "방송을 먼저 종료해 주세요", 테스트 계정은 "테스트 계정은 탈퇴할 수 없어요"가 뜬다.
 
 **P13. 채팅**
 1. 방송 중인 방송을 B(스트리머2)로 열고 오른쪽 채팅 창(모바일은 영상 아래 "채팅" 탭)에서 메시지를 입력해 Enter → A 화면에도 바로 보인다. 비로그인(시크릿 창)은 읽기만 되고 입력창 자리에 "로그인하고 채팅하기" 버튼이 나온다. 방송 전(READY)·종료 후에는 입력창 대신 "방송 중에만 채팅할 수 있어요"가 보이고 기록은 계속 읽힌다.
@@ -233,6 +234,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `auth_requires_login_and_acts_only_on_own_account` | 로그인 필수·본인 계정만 | P11 |
 | `auth_password_change_revokes_other_sessions` | 비밀번호 변경 시 다른 세션 만료 | P12 |
 | `auth_nickname_change_30day_limit` | 닉네임 30일 제한 | P12 |
+| `auth_withdraw_forfeits_balance`, `auth_withdraw_rules` | 탈퇴: 잔액 소멸 원장·세션 전부 만료·재로그인·재가입 불가·닉네임 30일 보류, LIVE 중·확인 없음·테스트 계정 거절 | P12 |
 | `broadcast_owner_crud` | 등록 → 수정 → 삭제 | P2 |
 | `chat_live_only`, `chat_guest_read_only` | LIVE 중에만 작성, 비로그인은 읽기만 | P13 |
 | `chat_edit_author_only_within_5min`, `chat_delete_author_or_owner` | 수정(작성자·5분)·삭제(작성자·방송 소유자) | P13 |
