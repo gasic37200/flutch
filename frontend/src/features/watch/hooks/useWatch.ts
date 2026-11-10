@@ -12,7 +12,7 @@ const PAUSE_GRACE_MS = 2000 // 연결 직후 트랙이 구독되기까지의 빈
 export function useWatch(broadcastId: number | undefined) {
   const query = useBroadcast(broadcastId)
   const broadcast = query.data
-  useBroadcastEvents(broadcastId)
+  const events = useBroadcastEvents(broadcastId)
   const viewer = useViewer(broadcastId)
   const hasVideo = Boolean(viewer.tracks.screenShare ?? viewer.tracks.camera)
   const noVideo = viewer.status === 'connected' && !hasVideo
@@ -39,7 +39,7 @@ export function useWatch(broadcastId: number | undefined) {
   else if (noVideo) view = 'connecting'
   else view = 'playing'
 
-  return { broadcast, error: query.error, refetch: query.refetch, view, viewer }
+  return { broadcast, error: query.error, refetch: query.refetch, view, viewer, events }
 }
 
 /** 1초마다 갱신되는 현재 시각(ms). 경과 시간 표시용. */
