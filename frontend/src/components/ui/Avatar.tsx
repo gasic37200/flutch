@@ -1,6 +1,6 @@
 import { faceSrc, profileTone } from './mascot.ts'
 
-const sizes = { sm: 'size-8', md: 'size-10', lg: 'size-16' }
+const sizes = { sm: 'size-9', md: 'size-10', lg: 'size-16' }
 
 type Props = { userId: number; nickname: string; src?: string | null; size?: keyof typeof sizes; className?: string }
 

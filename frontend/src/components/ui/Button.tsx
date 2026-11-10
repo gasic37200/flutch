@@ -1,14 +1,17 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { Link } from 'react-router'
 
-// 빨강(danger)은 "방송 종료"에만(DESIGN §2). outline은 영구 밴·삭제·탈퇴 확인용 흰 테두리.
+// 빨강(danger)은 "방송 종료"에만(DESIGN §2), burst(노랑)는 SUPER BURST에만. outline은 영구 밴·삭제·탈퇴 확인용 흰 테두리.
+// neutral은 테두리 없는 일반 버튼(취소·아이콘). 테두리 층(edge)과 안쪽 층(face)을 따로 칠해 1px 테두리를 만든다.
 const variants = {
-  primary: { edge: 'bg-brand', face: 'bg-brand text-bg hover:brightness-110' },
-  secondary: { edge: 'bg-brand-line hover:bg-brand', face: 'bg-surface-2 text-text' },
-  danger: { edge: 'bg-live', face: 'bg-live text-text hover:brightness-110' },
-  outline: { edge: 'bg-text', face: 'bg-surface-2 text-text' },
+  primary: { edge: 'bg-brand', face: 'bg-brand text-bg font-bold hover:bg-brand-hover' },
+  secondary: { edge: 'bg-brand', face: 'bg-surface text-brand font-bold hover:bg-surface-2' },
+  neutral: { edge: 'bg-surface-2', face: 'bg-surface-2 text-text font-medium hover:brightness-125' },
+  danger: { edge: 'bg-live', face: 'bg-live text-text font-bold hover:brightness-110' },
+  outline: { edge: 'bg-text', face: 'bg-surface text-text font-bold' },
+  burst: { edge: 'bg-burst', face: 'bg-burst text-bg font-display font-bold italic tracking-wide hover:brightness-110' },
 }
-const sizes = { lg: 'h-12 px-5 text-base', md: 'h-10 px-4 text-sm', sm: 'h-8 px-3 text-xs', icon: 'size-10' }
+const sizes = { lg: 'h-[42px] px-5 text-[15px]', md: 'h-10 px-4 text-sm', sm: 'h-[34px] px-4 text-sm', icon: 'size-[42px]' }
 
 type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {
   variant?: keyof typeof variants
@@ -22,9 +25,12 @@ type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {
 
 export default function Button({ variant = 'primary', size = 'md', loading, to, className = '', children, disabled, type = 'button', ...rest }: Props) {
   const v = variants[variant]
-  const edge = `chamfer inline-flex grow p-px [--c:6px] ${v.edge} disabled:cursor-not-allowed disabled:opacity-50`
+  // 비활성(로딩 제외)은 회색 칠 + 흐린 글자. 로딩은 원래 색을 유지한다.
+  const off = disabled && !loading
+  const edge = `chamfer inline-flex grow p-px [--c:6px] ${off ? 'bg-border' : v.edge} disabled:cursor-not-allowed`
+  const face = off ? 'bg-border text-text-dim font-bold' : v.face
   const content = (
-    <span className={`chamfer-inner inline-flex grow items-center justify-center gap-2 font-semibold whitespace-nowrap ${sizes[size]} ${v.face}`}>
+    <span className={`chamfer-inner inline-flex grow items-center justify-center gap-2 whitespace-nowrap ${sizes[size]} ${face}`}>
       {loading && <span className='size-4 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none' />}
       {children}
     </span>

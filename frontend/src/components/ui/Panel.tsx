@@ -8,6 +8,7 @@ type Props = HTMLAttributes<HTMLDivElement> & {
   /** 호버 시 밝은 네온 테두리 */
   interactive?: boolean
   selected?: boolean
+  /** bg-*를 주면 기본 배경(surface)을 대신한다 */
   innerClassName?: string
 }
 
@@ -16,10 +17,12 @@ export default function Panel({ tone = 'line', size = 'lg', interactive, selecte
   const edge =
     tone === 'clutch' ? 'bg-clutch' : tone === 'hero' || selected ? 'bg-brand' : interactive ? 'bg-brand-line hover:bg-brand' : 'bg-brand-line'
   const glow = tone === 'hero' ? 'drop-shadow-glow motion-reduce:drop-shadow-none' : 'has-[:focus-visible]:drop-shadow-focus'
+  // 같은 속성의 클래스끼리는 CSS 순서가 이기므로, 배경을 직접 주면 기본 배경을 뺀다
+  const bg = /(^|\s)bg-/.test(innerClassName) ? '' : 'bg-surface'
   return (
     <div {...rest} className={`${glow} ${className}`}>
       <div className={`chamfer h-full p-px ${size === 'lg' ? '[--c:12px]' : '[--c:6px]'} ${edge}`}>
-        <div className={`chamfer-inner h-full bg-surface ${innerClassName}`}>{children}</div>
+        <div className={`chamfer-inner h-full ${bg} ${innerClassName}`}>{children}</div>
       </div>
     </div>
   )

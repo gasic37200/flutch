@@ -15,14 +15,14 @@ type Common = {
 type InputProps = Common & { multiline?: false } & InputHTMLAttributes<HTMLInputElement>
 type AreaProps = Common & { multiline: true } & TextareaHTMLAttributes<HTMLTextAreaElement>
 
-// 기본·포커스·에러·비활성 상태를 테두리로 구분한다(포커스·에러 = 밝은 테두리, 비활성 = 흐리게).
+// 기본 = 은은한 라임 테두리, 포커스 = 라임 + 글로우, 에러 = 흰 테두리 + 흰 글자·아이콘(빨강 금지), 비활성 = 테두리 없이 어두운 배경.
 export default function Field(props: InputProps | AreaProps) {
   const { label, hideLabel, hint, error, counter, className = '', ...rest } = props
   const id = useId()
   const noteId = `${id}-note`
   const note = error ?? hint
-  const edge = error ? 'bg-text' : 'bg-brand-line focus-within:bg-brand'
-  const control = `chamfer-inner block w-full bg-surface-2 px-3 text-sm text-text placeholder:text-text-dim outline-none disabled:opacity-50`
+  const edge = rest.disabled ? 'bg-surface-dim' : error ? 'bg-text' : 'bg-brand-line focus-within:bg-brand'
+  const control = `chamfer-inner block w-full bg-surface px-3 text-sm text-text placeholder:text-text-dim outline-none disabled:bg-surface-dim disabled:text-text-dim`
   const shared = { id, 'aria-invalid': error ? true : undefined, 'aria-describedby': note ? noteId : undefined }
   const length = counter && typeof rest.value === 'string' ? rest.value.length : null
 
@@ -31,17 +31,20 @@ export default function Field(props: InputProps | AreaProps) {
       <label htmlFor={id} className={hideLabel ? 'sr-only' : 'mb-1 block text-sm font-semibold text-text-muted'}>
         {label}
       </label>
-      <div className={`chamfer p-px [--c:6px] ${edge}`}>
-        {props.multiline ? (
-          <textarea {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)} {...shared} className={`${control} min-h-24 py-2`} />
-        ) : (
-          <input {...(rest as InputHTMLAttributes<HTMLInputElement>)} {...shared} className={`${control} h-10`} />
-        )}
+      {/* 글로우는 clip-path 밖 래퍼에 건다 */}
+      <div className='focus-within:drop-shadow-field'>
+        <div className={`chamfer p-px [--c:6px] ${edge}`}>
+          {props.multiline ? (
+            <textarea {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)} {...shared} className={`${control} min-h-24 py-2`} />
+          ) : (
+            <input {...(rest as InputHTMLAttributes<HTMLInputElement>)} {...shared} className={`${control} h-10`} />
+          )}
+        </div>
       </div>
       {(note || length !== null) && (
         <div className='mt-1 flex items-start justify-between gap-2 text-xs'>
           <p id={noteId} className={`flex items-center gap-1 ${error ? 'text-text' : 'text-text-dim'}`}>
-            {error && <Icon name='alert' className='size-3.5 text-brand' />}
+            {error && <Icon name='alert' className='size-3.5 text-text' />}
             {note}
           </p>
           {length !== null && (

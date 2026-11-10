@@ -23,7 +23,7 @@ export default function ConfirmDialog({ open, title, message, confirmLabel, canc
       title={title}
       footer={
         <>
-          <Button variant='secondary' onClick={onCancel} disabled={loading}>
+          <Button variant='neutral' onClick={onCancel} disabled={loading}>
             {cancelLabel}
           </Button>
           <Button variant={tone === 'live' ? 'danger' : 'outline'} onClick={onConfirm} loading={loading}>
@@ -32,8 +32,8 @@ export default function ConfirmDialog({ open, title, message, confirmLabel, canc
         </>
       }
     >
-      <p className='flex items-start gap-2 text-sm text-text-muted'>
-        {tone === 'warn' && <Icon name='alert' className='mt-0.5 size-4 text-brand' />}
+      <p className='flex items-start gap-2 text-text-muted'>
+        {tone === 'warn' && <Icon name='alert' className='mt-0.5 size-4 text-text' />}
         {message}
       </p>
     </Modal>

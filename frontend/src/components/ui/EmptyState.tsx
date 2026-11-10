@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import Panel from './Panel.tsx'
 import { faceSrc, type Face } from './mascot.ts'
 
 type Props = {
@@ -12,11 +13,11 @@ type Props = {
 
 export default function EmptyState({ title, description, action, face = 'sleepy' }: Props) {
   return (
-    <div className='flex flex-col items-center gap-3 px-4 py-12 text-center'>
-      <img src={faceSrc(face)} alt='' className='size-32' />
-      <h2 className='text-lg font-bold'>{title}</h2>
-      {description && <p className='max-w-sm text-sm text-text-muted'>{description}</p>}
-      {action && <div className='mt-2'>{action}</div>}
-    </div>
+    <Panel innerClassName='flex flex-col items-center gap-2.5 p-6 text-center'>
+      <img src={faceSrc(face)} alt='' className='size-18 rounded-full' />
+      <h2 className='text-[15px] font-bold'>{title}</h2>
+      {description && <p className='max-w-sm text-[13px] text-text-muted'>{description}</p>}
+      {action && <div className='mt-1'>{action}</div>}
+    </Panel>
   )
 }

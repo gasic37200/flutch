@@ -30,13 +30,13 @@ export default function AppShell({ user = null, channels = [], onLogout }: Props
       </a>
       <Header user={user} onMenu={() => setDrawer(true)} onLogout={onLogout} />
       <div className='flex'>
-        <div className='sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-60 shrink-0 border-r border-border lg:block'>
+        <div className='sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-60 shrink-0 border-r border-surface-2 md:top-16 md:h-[calc(100dvh-4rem)] lg:block'>
           <Sidebar channels={channels} />
         </div>
         {drawer && (
           <div className='fixed inset-0 z-40 lg:hidden'>
             <button type='button' aria-label='메뉴 닫기' onClick={() => setDrawer(false)} className='absolute inset-0 bg-bg/80' />
-            <div className='relative h-full w-64 max-w-[80vw] border-r border-border'>
+            <div className='relative h-full w-64 max-w-[80vw] border-r border-surface-2'>
               <Sidebar channels={channels} onNavigate={() => setDrawer(false)} />
             </div>
           </div>

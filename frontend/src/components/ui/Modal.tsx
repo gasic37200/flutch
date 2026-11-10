@@ -26,18 +26,18 @@ export default function Modal({ open, onClose, title, children, footer }: Props)
       onClose={onClose}
       // Panel이 dialog 전체를 채우므로 dialog 자신이 클릭 대상이면 배경이다
       onClick={(e) => e.target === e.currentTarget && onClose()}
-      className='m-auto bg-transparent p-0 text-text backdrop:bg-bg/80'
+      className='m-auto bg-transparent p-0 text-text backdrop:bg-bg/70'
     >
-      <Panel className='w-[min(28rem,calc(100vw-2rem))]' innerClassName='space-y-4 p-5'>
-        <div className='flex items-center justify-between gap-4'>
-          <h2 id={titleId} className='text-lg font-bold'>
+      <Panel className='w-[min(28rem,calc(100vw-2rem))]' innerClassName='flex flex-col gap-3.5 p-5'>
+        <div className='flex items-center'>
+          <h2 id={titleId} className='text-[17px] font-bold'>
             {title}
           </h2>
-          <button type='button' onClick={onClose} aria-label='닫기' className='text-text-muted hover:text-text'>
-            <Icon name='close' />
+          <button type='button' onClick={onClose} aria-label='닫기' className='-my-2 -mr-2 ml-auto flex size-10 items-center justify-center text-text-muted hover:text-text'>
+            <Icon name='close' className='size-[18px]' />
           </button>
         </div>
-        <div>{children}</div>
+        <div className='text-sm'>{children}</div>
         {footer && <div className='flex justify-end gap-2'>{footer}</div>}
       </Panel>
     </dialog>
