@@ -69,6 +69,7 @@
 | 2026-11-09 | T08b | LiveKit `room_finished`는 종료가 아니라 60초 유예 시작으로 처리 | 빈 방이 약 18초 만에 닫혀 그대로 종료하면 유예 규칙이 깨짐(실측) | 웹훅 핸들러 분기 | 대기 |
 | 2026-11-09 | T08b | 3시간 10분 전 경고 중복 방지는 메모리(재시작 시 1회 더 갈 수 있음), LIVE 목록 커서는 순위 위치(offset) | 단순화, LIVE 수 수십 개 | DB 컬럼 추가·커서 방식 변경 | 대기 |
 | 2026-11-09 | T08b | 유예·최대 길이를 환경변수 `LIVE_GRACE_SECS`·`LIVE_MAX_DURATION_SECS`로 조정 가능(기본 60·10800) | 수동 확인용 | 없음 | 대기 |
+| 2026-11-10 | T10 | 모바일 판정은 UA(Android·iPhone·iPad·Mobile) — 태블릿도 모바일 화면, 전후면 전환은 기존 트랙을 끄고 새로 잡음(시청자 쪽 짧은 끊김 가능) | 모바일은 카메라 동시 2개를 못 여는 기기가 있음 | replaceTrack 적용 시 무중단 | 대기 |
 
 ## Task
 > task 1개 = 서브에이전트 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "(병렬)" 표시 task끼리 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
@@ -89,7 +90,7 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | T07 | 배포: 서버 세팅·nginx·certbot·compose.prod·`ubuntu-24.04-arm` 러너 이미지 빌드·GHCR·SSH 배포·health 확인·DB 백업 (병렬, 서버·도메인 준비 후) | 10, architecture §10 | T01 | Sonnet · medium | 🟨 |
 | T06a | 인증 화면: 로그인·가입·약관 2장·테스트 로그인 버튼·내 정보 (병렬) | 01 | T03, T05 | Sonnet · medium | ✅ |
 | T06b | 방송 화면: 등록·수정·**삭제**·**내 방송 관리**(READY 목록), 홈 그리드, **탐색·검색** (병렬) | 02 | T04, T05 | Sonnet · medium | ✅ |
-| T05d | **디자인 맞춤 · 공통**: 시안 보드 `Main`·`Components`·`Guest`·`Errors`(docs/design-refs/boards)에 토큰·공통 컴포넌트·헤더·사이드바·비로그인 상태·에러 화면을 맞춤 (11/10 추가 — T05가 시안 아티팩트를 열지 못해 home.webp만 보고 만듦) | DESIGN, boards | T05 | Sonnet · medium | ⬜ |
+| T05d | **디자인 맞춤 · 공통**: 시안 보드 `Main`·`Components`·`Guest`·`Errors`(docs/design-refs/boards)에 토큰·공통 컴포넌트·헤더·사이드바·비로그인 상태·에러 화면을 맞춤 (11/10 추가 — T05가 시안 아티팩트를 열지 못해 home.webp만 보고 만듦) | DESIGN, boards | T05 | Sonnet · medium | 🟨 |
 | T06c | **디자인 맞춤 · 홈·탐색·방송 폼·인증**: 보드 `Home`·`HomeMobile`·`Explore`·`BroadcastForm`·`Auth`·`Signup`·`SmallScreens`(내 정보·약관) (병렬) | DESIGN, boards | T05d | Sonnet · medium | ⬜ |
 
 ### 1. 송출·시청 — 11/11~12
@@ -100,17 +101,17 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | T08c | WebSocket 허브: 방송별 채널, Origin 검사, 쿠키 식별, **연결별 필터링**, 이벤트 형식 | architecture §6 | T08a | Opus · high | ✅ |
 | T08d | 프론트 LiveKit 기반: `livekit-client` 설치, 연결·트랙 훅, Watch·Studio 라우트 자리, WebSocket 클라이언트 훅 | 03 | T08a, T08c, T06b | Sonnet · medium | ✅ |
 | T09 | PC 송출 화면: 송출 전 확인·화면 공유·탭/시스템 소리·마이크·볼륨 슬라이더·레벨 미터·웹캠 모드·환경 안내·이어하기/기기 전환 모달 (병렬) | 03 | T08d | Sonnet · medium | ✅ |
-| T10 | 모바일 송출 화면: 카메라 전환·음소거·Wake Lock (병렬) | 03 | T08d | Sonnet · medium | 🟨 |
+| T10 | 모바일 송출 화면: 카메라 전환·음소거·Wake Lock (병렬) | 03 | T08d | Sonnet · medium | ✅ |
 | T11 | 시청 화면: 플레이어·상태 4종(대기·재연결·화면 공유 중단·종료)·실시간 정보 변경·게이지 바 자리 (병렬) | 03 | T08d | Sonnet · medium | ✅ |
 | T11b | **디자인 맞춤 · 시청**: 보드 `Watch`·`WatchMobile`·`WatchStates` (병렬) | DESIGN, boards | T05d, T11 | Sonnet · medium | ⬜ |
 
 ### 2. 필수 마무리 — 11/13
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
 |---|---|---|---|---|---|
-| T12 | 썸네일: 브라우저 1분 캡처 + `PUT /thumbnail` + 디스크 볼륨 + nginx `/media/thumbs` + 기본 썸네일 | 02 | T09, T07 | Sonnet · medium | ⬜ |
+| T12 | 썸네일: 브라우저 1분 캡처 + `PUT /thumbnail` + 디스크 볼륨 + nginx `/media/thumbs` + 기본 썸네일 | 02 | T09, T07 | Sonnet · medium | 🟨 |
 | T09c | **디자인 맞춤 · 스튜디오**: 보드 `Studio`·`StudioPrelive`·`StudioMobile`·`SmallScreens`(스튜디오 모달) (스튜디오 파일을 건드려서 T12 뒤) | DESIGN, boards | T05d, T10, T12 | Sonnet · medium | ⬜ |
 | T13 | 모니터링: 메트릭·Alloy·Loki·Grafana 대시보드 (T12와 같은 배포 파일을 건드려서 직렬) | 10 | T12 | Sonnet · medium | ⬜ |
-| T14 | README 필수 4항목(서비스 주소 포함)·지원 환경 표·수동 확인 절차 + **시나리오 이름 ↔ README 절차 대응표** (병렬) | spec 6 | T07, T09, T10, T11 | Sonnet · medium | ⬜ |
+| T14 | README 필수 4항목(서비스 주소 포함)·지원 환경 표·수동 확인 절차 + **시나리오 이름 ↔ README 절차 대응표** (병렬) | spec 6 | T07, T09, T10, T11 | Sonnet · medium | 🟨 |
 | T15 | 권한 시나리오 점검, **메인 세션이** `/ponytail-audit` 실행 후 must fix 반영 → **필수 완료** | 전체 | T12, T13, T14, T06c, T11b, T09c, U1 | 메인 세션 | ⬜ |
 
 ### 3·4·5. 선택 기능 — 11/14~17
