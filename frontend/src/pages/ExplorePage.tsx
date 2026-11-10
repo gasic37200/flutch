@@ -4,10 +4,11 @@ import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import Icon from '../components/ui/Icon.tsx'
 import BroadcastGrid, { CategoryChips, GridSkeleton, SectionTitle } from '../features/broadcast/components/BroadcastGrid.tsx'
 import { CATEGORY_LABEL } from '../features/broadcast/categories.ts'
+import ReplayGrid from '../features/replay/components/ReplayGrid.tsx'
 import { MAX_QUERY, useExplore } from '../features/broadcast/hooks/useExplore.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
 
-// 카테고리 카드(라이브 수)·스트리머·다시보기 섹션은 집계·검색 API가 생기는 T26·T25에서 붙인다.
+// 카테고리 카드(라이브 수)·스트리머 섹션은 집계 API가 생기면 붙인다. 다시보기 결과는 LIVE 결과 뒤에 이어 붙인다.
 export default function ExplorePage() {
   const x = useExplore()
   const { results } = x
@@ -76,6 +77,13 @@ export default function ExplorePage() {
           </>
         )}
       </section>
+
+      {x.replays.isPending || (x.replays.data?.pages[0]?.items.length ?? 0) > 0 || x.replays.isError ? (
+        <section className='flex flex-col gap-3.5' aria-labelledby='explore-replays'>
+          <SectionTitle id='explore-replays'>{x.q ? `"${x.q}" 다시보기` : '다시보기'}</SectionTitle>
+          <ReplayGrid query={x.replays} empty={null} />
+        </section>
+      ) : null}
     </div>
   )
 }

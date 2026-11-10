@@ -3,10 +3,11 @@ import EmptyState from '../components/ui/EmptyState.tsx'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import BroadcastGrid, { BroadcastCard, CategoryChips, GridSkeleton, SectionTitle } from '../features/broadcast/components/BroadcastGrid.tsx'
 import { MainLive, RecommendedCard } from '../features/broadcast/components/HomeSections.tsx'
+import RecentReplays from '../features/replay/components/RecentReplays.tsx'
 import { useHome } from '../features/broadcast/hooks/useHome.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
 
-// 게이지 1위 히어로·CLUTCH TIME 패널(T29)과 CLUTCH FEED(T30)는 이후 task에서 이 위에 붙는다.
+// 게이지 1위 히어로·CLUTCH TIME 패널(T29)은 이 위에, CLUTCH FEED(T30)는 "최근 다시보기" 자리에 붙는다.
 export default function HomePage() {
   const { category, setCategory, grid, main, recommended } = useHome()
   const empty = (
@@ -60,6 +61,8 @@ export default function HomePage() {
           <BroadcastGrid items={grid.data.items} empty={empty} />
         )}
       </section>
+
+      <RecentReplays />
     </div>
   )
 }

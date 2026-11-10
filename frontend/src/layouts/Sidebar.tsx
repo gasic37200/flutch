@@ -5,10 +5,11 @@ import Panel from '../components/ui/Panel.tsx'
 
 export type SidebarChannel = { broadcastId: number; userId: number; nickname: string; viewerCount: number }
 
-// 팔로잉·다시보기·PULSE는 이후 단계에서 이 배열에 추가한다("준비 중" 메뉴는 노출하지 않는다).
+// 팔로잉·PULSE는 이후 단계에서 이 배열에 추가한다("준비 중" 메뉴는 노출하지 않는다).
 const menu: { to: string; label: string; icon: IconName }[] = [
   { to: '/', label: '홈', icon: 'home' },
   { to: '/explore', label: '탐색', icon: 'compass' },
+  { to: '/replay', label: '다시보기', icon: 'video' },
 ]
 
 type Props = { channels: SidebarChannel[]; onNavigate?: () => void }
@@ -45,7 +46,7 @@ export default function Sidebar({ channels, onNavigate }: Props) {
           <li key={m.to}>
             <NavLink
               to={m.to}
-              end
+              end={m.to === '/'}
               onClick={onNavigate}
               className={({ isActive }) => `chamfer flex items-center gap-3 px-3 py-2.5 text-[15px] [--c:6px] ${isActive ? 'bg-brand/10 font-bold text-brand' : 'text-text-muted hover:bg-surface-2 hover:text-text'}`}
             >
