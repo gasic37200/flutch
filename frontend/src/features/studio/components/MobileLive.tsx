@@ -57,7 +57,7 @@ export default function MobileLive({ s }: { s: ReturnType<typeof useStudio> }) {
 
       <div className='absolute inset-x-0 bottom-7 flex justify-center gap-5'>
         {env.canFlip && (
-          <button type='button' aria-label='카메라 전환' onClick={() => void media.flipCamera()} className={round}>
+          <button type='button' aria-label='카메라 전환' onClick={() => void s.flipCamera()} className={round}>
             <Icon name='flip' className='size-6' />
           </button>
         )}

@@ -11,7 +11,7 @@ export default function MobileControls({ s }: { s: ReturnType<typeof useStudio> 
     <div className='space-y-3'>
       <div className='flex flex-wrap gap-2'>
         {media.videoReady && env.canFlip && (
-          <Button size='lg' variant='neutral' className='grow' onClick={() => void media.flipCamera()}>
+          <Button size='lg' variant='neutral' className='grow' onClick={() => void s.flipCamera()}>
             <Icon name='flip' />
             {media.facing === 'user' ? '후면 카메라로' : '전면 카메라로'}
           </Button>

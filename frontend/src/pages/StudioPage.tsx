@@ -36,7 +36,9 @@ export default function StudioPage() {
   if (!s.me) return null
   const manage = <Button to='/manage'>내 방송 관리</Button>
   if (!id) return <EmptyState title='방송을 선택해 주세요' description='내 방송 관리에서 방송을 골라 스튜디오로 들어올 수 있어요.' action={manage} />
-  if (s.broadcast.isError) return <ErrorScreen {...errorKindOf(s.broadcast.error)} onRetry={() => void s.broadcast.refetch()} />
+  const e = s.broadcast.isError ? errorKindOf(s.broadcast.error) : undefined
+  // 송출 중 백그라운드 재조회가 실패해도 화면을 갈아엎지 않는다(삭제된 방송 404만 예외).
+  if (e && (!data || e.kind === 'notFound')) return <ErrorScreen {...e} onRetry={() => void s.broadcast.refetch()} />
   if (!data) return <Skeleton className='aspect-video w-full max-w-4xl' />
   if (!s.isOwner) return <EmptyState face='grumpy' title='내 방송이 아니에요' description='내가 등록한 방송만 송출할 수 있어요.' action={manage} />
   if (phase === 'ended')

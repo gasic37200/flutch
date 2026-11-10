@@ -31,8 +31,9 @@ export default function WatchPage() {
   const desktop = useMediaQuery('(min-width: 1280px)')
 
   if (id === undefined) return <ErrorScreen kind='notFound' />
-  if (error) {
-    const e = errorKindOf(error)
+  // 재생 중 백그라운드 재조회가 실패해도 화면을 갈아엎지 않는다(삭제된 방송 404만 예외).
+  const e = error ? errorKindOf(error) : undefined
+  if (e && (!broadcast || e.kind === 'notFound')) {
     return <ErrorScreen {...e} onRetry={e.kind === 'notFound' ? undefined : () => void refetch()} />
   }
 

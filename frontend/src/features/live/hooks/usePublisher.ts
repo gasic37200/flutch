@@ -32,16 +32,18 @@ export function usePublisher(broadcastId: number | undefined) {
   const [error, setError] = useState<string | null>(null)
   const [published, setPublished] = useState<Track.Source[]>([])
 
+  const alive = useRef(true)
   // 언마운트·화면 이탈 시 카메라 불과 송출을 끊는다.
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    alive.current = true
+    return () => {
+      alive.current = false
       const room = roomRef.current
       roomRef.current = null
       room?.localParticipant.trackPublications.forEach((p) => p.track?.stop())
       void room?.disconnect()
-    },
-    [],
-  )
+    }
+  }, [])
 
   const connect = useCallback(
     async (takeover: boolean) => {
@@ -59,6 +61,7 @@ export function usePublisher(broadcastId: number | undefined) {
         setError(e instanceof ApiRequestError ? e.message : '송출을 시작하지 못했어요.')
         return setStatus('error')
       }
+      if (!alive.current) return // 요청 중 화면을 떠남: 새 연결을 만들지 않는다(남은 LIVE는 서버 유예가 정리)
       qc.setQueryData<BroadcastDetail>(['broadcast', broadcastId], res.broadcast)
       void roomRef.current?.disconnect() // 재시도 시 이전 연결 정리
       const room = new Room()
@@ -70,7 +73,7 @@ export function usePublisher(broadcastId: number | undefined) {
         .on(RoomEvent.Disconnected, (reason) => {
           if (roomRef.current !== room) return // 우리가 정리한 연결
           setPublished([])
-          setStatus(reason === DisconnectReason.PARTICIPANT_REMOVED ? 'displaced' : 'disconnected')
+          setStatus(reason === DisconnectReason.PARTICIPANT_REMOVED || reason === DisconnectReason.DUPLICATE_IDENTITY ? 'displaced' : 'disconnected')
         })
       try {
         await room.connect(res.livekit.url, res.livekit.token)

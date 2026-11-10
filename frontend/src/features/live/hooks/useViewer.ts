@@ -1,4 +1,5 @@
-import { type RemoteTrack, Room, RoomEvent, Track } from 'livekit-client'
+import { useQueryClient } from '@tanstack/react-query'
+import { DisconnectReason, type RemoteTrack, Room, RoomEvent, Track } from 'livekit-client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiRequestError } from '../../../api/client.ts'
 import type { LiveKitToken } from '../../../api/generated/LiveKitToken.ts'
@@ -22,9 +23,10 @@ const SLOT = {
  * 방송 상태는 `useBroadcast` 캐시를 보므로 같은 화면에서 `useBroadcastEvents`를 함께 켜야 READY → LIVE에 반응한다.
  */
 export function useViewer(broadcastId: number | undefined, enabled = true) {
+  const qc = useQueryClient()
   const { data: broadcast } = useBroadcast(broadcastId)
   const { me, isPending } = useAuth()
-  const tabId = useTabId()
+  const viewerTabId = `${useTabId()}-v` // 8~64자 규칙 안(UUID 36 + 2)
   const guestId = useGuestId()
   const status0 = broadcast?.status
   const [conn, setStatus] = useState<ViewerStatus>('connecting')
@@ -55,15 +57,19 @@ export function useViewer(broadcastId: number | undefined, enabled = true) {
       .on(RoomEvent.TrackUnsubscribed, sync)
       .on(RoomEvent.Reconnecting, () => setStatus('reconnecting'))
       .on(RoomEvent.Reconnected, () => setStatus('connected'))
-      .on(RoomEvent.Disconnected, () => {
-        if (!cancelled) setStatus('disconnected')
+      .on(RoomEvent.Disconnected, (reason) => {
+        if (cancelled) return
+        // 서버가 방을 닫았다 = 방송 종료. 끊김 화면 대신 상세 조회가 종료 상태를 정한다.
+        if (reason === DisconnectReason.ROOM_DELETED) void qc.invalidateQueries({ queryKey: ['broadcast', broadcastId] })
+        else setStatus('disconnected')
       })
     // StrictMode의 첫 마운트가 곧바로 정리돼도 토큰 요청·연결을 만들지 않게 한 틱 미룬다.
     const timer = setTimeout(() => {
       setStatus('connecting')
       api<LiveKitToken>(`/broadcasts/${broadcastId}/viewer-token`, {
         method: 'POST',
-        json: userId === undefined ? { tabId, guestId } : { tabId },
+        // 송출 탭과 같은 신원이 되면 서버가 송출자 복귀로 오인한다: 시청용 tabId는 따로 만든다.
+        json: userId === undefined ? { tabId: viewerTabId, guestId } : { tabId: viewerTabId },
       })
         .then(async (t) => {
           if (cancelled) return
@@ -86,7 +92,7 @@ export function useViewer(broadcastId: number | undefined, enabled = true) {
       setTracks({})
       void room.disconnect()
     }
-  }, [live, broadcastId, userId, tabId, guestId])
+  }, [live, broadcastId, userId, viewerTabId, guestId, qc])
 
   /** 사용자 클릭에서 호출: 브라우저 오디오 재생을 풀고 `muted`를 false로. */
   const unmute = useCallback(async () => {
