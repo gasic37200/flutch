@@ -8,7 +8,7 @@ const variants = {
   danger: { edge: 'bg-live', face: 'bg-live text-text hover:brightness-110' },
   outline: { edge: 'bg-text', face: 'bg-surface-2 text-text' },
 }
-const sizes = { md: 'h-10 px-4 text-sm', sm: 'h-8 px-3 text-xs', icon: 'size-10' }
+const sizes = { lg: 'h-12 px-5 text-base', md: 'h-10 px-4 text-sm', sm: 'h-8 px-3 text-xs', icon: 'size-10' }
 
 type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {
   variant?: keyof typeof variants

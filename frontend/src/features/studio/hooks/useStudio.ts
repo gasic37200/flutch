@@ -6,6 +6,7 @@ import { usePublisher, type MediaSource } from '../../live/hooks/usePublisher.ts
 import { useToast } from '../../../hooks/useToast.ts'
 import { detectEnv } from '../environment.ts'
 import { useElapsed } from './useElapsed.ts'
+import { useWakeLock } from './useWakeLock.ts'
 import { useStudioMedia, type Mode } from './useStudioMedia.ts'
 
 const LIVE_STATUSES = ['connected', 'displaced', 'disconnected']
@@ -60,6 +61,8 @@ export function useStudio(broadcastId: number | undefined) {
   const isOwner = !!me && !!data && data.owner.id === me.id
   const phase = pub.status === 'ended' || status === 'ENDED' ? 'ended' : LIVE_STATUSES.includes(pub.status) ? 'live' : 'ready'
 
+  const wakeLockMissing = useWakeLock(phase === 'live')
+
   const startPreview = async () => {
     if (await media.captureVideo()) await media.captureMic()
   }
@@ -89,6 +92,7 @@ export function useStudio(broadcastId: number | undefined) {
     media,
     connected: events.connected,
     elapsed,
+    wakeLockMissing,
     endConfirm,
     ending,
     askEnd: () => setEndConfirm(true),
