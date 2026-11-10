@@ -35,6 +35,10 @@ export function useExplore() {
       update({ category, q: draft.trim().slice(0, MAX_QUERY) || undefined })
       setDraft(null)
     },
+    clear: () => {
+      update({ category })
+      setDraft(null)
+    },
     results,
     items: results.data?.pages.flatMap((p) => p.items) ?? [],
   }

@@ -15,10 +15,10 @@ export default function ManagePage() {
   if (!me) return null
 
   return (
-    <div className='mx-auto max-w-3xl'>
+    <div className='max-w-3xl'>
       <div className='mb-4 flex items-center justify-between gap-3'>
         <div>
-          <h1 className='font-display text-2xl font-bold tracking-wide'>내 방송 관리</h1>
+          <h1 className='text-2xl font-black sm:text-[26px]'>내 방송 관리</h1>
           <p className='text-sm text-text-muted'>
             준비된 방송 <span className='font-mono'>{m.readyCount}/{READY_LIMIT}</span>
           </p>

@@ -39,3 +39,4 @@
 | [T08b-shared-livekit-room-collision.md](T08b-shared-livekit-room-collision.md) | T08b | 공용 로컬 LiveKit에서 worktree끼리 방 이름·웹훅이 섞임 → 웹훅 확인은 다른 LiveKit task와 시간을 나눠서 |
 | [T05d-tailwind-class-order-bg-override.md](T05d-tailwind-class-order-bg-override.md) | T05d | Tailwind는 CSS 순서가 이겨서 기본 배경 + 덮어쓰기 클래스가 안 먹음 → 덮어쓸 속성은 조건부로 뺀다 |
 | [T13-loki-allvalue-empty-matcher.md](T13-loki-allvalue-empty-matcher.md) | T13 | Grafana 변수 All(`.*`)이 Loki의 빈 매처 거절로 오류 → service 변수 allValue를 `.+`로 |
+| [T09c-localhost-cookie-shared-across-ports.md](T09c-localhost-cookie-shared-across-ports.md) | T09c | localhost 쿠키는 포트를 안 가려 다른 worktree 로그인이 내 세션을 덮어씀 → 401이면 다시 로그인 |

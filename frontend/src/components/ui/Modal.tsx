@@ -9,10 +9,12 @@ type Props = {
   children: ReactNode
   /** 하단 버튼 영역 */
   footer?: ReactNode
+  /** 라임 테두리로 강조(방송 이어하기처럼 지금 눌러야 하는 창) */
+  emphasis?: boolean
 }
 
 // 네이티브 <dialog>로 ESC·포커스 가두기를 얻는다. 열릴 때 첫 입력창에 포커스, 배경 클릭으로 닫는다.
-export default function Modal({ open, onClose, title, children, footer }: Props) {
+export default function Modal({ open, onClose, title, children, footer, emphasis }: Props) {
   const titleId = useId()
   if (!open) return null
   return (
@@ -28,7 +30,7 @@ export default function Modal({ open, onClose, title, children, footer }: Props)
       onClick={(e) => e.target === e.currentTarget && onClose()}
       className='m-auto bg-transparent p-0 text-text backdrop:bg-bg/70'
     >
-      <Panel className='w-[min(28rem,calc(100vw-2rem))]' innerClassName='flex flex-col gap-3.5 p-5'>
+      <Panel selected={emphasis} className='w-[min(28rem,calc(100vw-2rem))]' innerClassName='flex flex-col gap-3.5 p-5'>
         <div className='flex items-center'>
           <h2 id={titleId} className='text-[17px] font-bold'>
             {title}
