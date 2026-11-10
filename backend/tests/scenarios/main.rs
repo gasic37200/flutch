@@ -10,6 +10,7 @@ mod csrf;
 mod follow;
 mod health;
 mod live;
+mod moderation;
 mod payment;
 mod realtime;
 mod recording;

@@ -185,13 +185,17 @@ pub(super) async fn load(state: &AppState, id: i64) -> Result<db::Row, AppError>
         .ok_or(AppError::NotFound)
 }
 
-/// 상세 응답. shortcut: gauge·burstPrice·ban·freeClutchesLeft는 기본값, T19·T24·T18이 이 함수에서 채운다.
-pub(super) fn detail(
+/// 상세 응답. shortcut: gauge·burstPrice·freeClutchesLeft는 기본값, T19·T24가 이 함수에서 채운다.
+pub(super) async fn detail(
     state: &AppState,
     row: db::Row,
     viewer: Option<&CurrentUser>,
 ) -> Result<BroadcastDetail, AppError> {
     let is_owner = viewer.is_some_and(|u| u.id == row.owner_id);
+    let ban = match viewer {
+        Some(u) => crate::chat::ban_state(&state.db, row.owner_id, u.id).await?,
+        None => None,
+    };
     Ok(BroadcastDetail {
         broadcast: into_broadcast(state, row)?,
         gauge: ClutchGauge {
@@ -202,7 +206,7 @@ pub(super) fn detail(
         burst_price: BURST_PRICE,
         viewer: viewer.map(|_| ViewerState {
             is_owner,
-            ban: None,
+            ban,
             free_clutches_left: 5,
         }),
     })
@@ -213,11 +217,9 @@ pub async fn get_one(
     OptionalUser(user): OptionalUser,
     Path(id): Path<i64>,
 ) -> Result<Json<BroadcastDetail>, AppError> {
-    Ok(Json(detail(
-        &state,
-        load(&state, id).await?,
-        user.as_ref(),
-    )?))
+    Ok(Json(
+        detail(&state, load(&state, id).await?, user.as_ref()).await?,
+    ))
 }
 
 fn check_title(title: &str) -> Result<String, &'static str> {
@@ -279,7 +281,7 @@ pub async fn create(
     .await?
     .ok_or(BroadcastError::ReadyLimit)?;
     tracing::info!(broadcast_id = id, owner_id = user.id, "broadcast created");
-    let d = detail(&state, load(&state, id).await?, Some(&user))?;
+    let d = detail(&state, load(&state, id).await?, Some(&user)).await?;
     Ok((StatusCode::CREATED, Json(d)))
 }
 
@@ -333,7 +335,7 @@ pub async fn update(
     if !db::update_fields(&state.db, id, status, &patch).await? {
         return Err(BroadcastError::InvalidTransition.into());
     }
-    let d = detail(&state, load(&state, id).await?, Some(&user))?;
+    let d = detail(&state, load(&state, id).await?, Some(&user)).await?;
     let event = WsEvent::BroadcastUpdated(d.broadcast.clone());
     state.realtime.publish(id, Event::public(event));
     Ok(Json(d))
@@ -383,7 +385,7 @@ pub async fn put_thumbnail(
     if !db::set_thumbnail(&state.db, id, &version).await? {
         return Err(LiveError::NotLive.into());
     }
-    let d = detail(&state, load(&state, id).await?, Some(&user))?;
+    let d = detail(&state, load(&state, id).await?, Some(&user)).await?;
     let event = WsEvent::BroadcastUpdated(d.broadcast);
     state.realtime.publish(id, Event::public(event));
     Ok(StatusCode::NO_CONTENT)
