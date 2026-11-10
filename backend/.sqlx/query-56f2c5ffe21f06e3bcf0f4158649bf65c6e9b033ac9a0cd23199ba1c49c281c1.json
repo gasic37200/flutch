@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT CASE WHEN withdrawn_at IS NULL THEN nickname ELSE '탈퇴한 사용자' END AS \"n!\"\n             FROM users WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "n!",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "56f2c5ffe21f06e3bcf0f4158649bf65c6e9b033ac9a0cd23199ba1c49c281c1"
+}

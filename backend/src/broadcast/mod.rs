@@ -196,7 +196,7 @@ pub struct BroadcastDetail {
 #[ts(export)]
 pub struct ViewerState {
     pub is_owner: bool,
-    /// shortcut: 항상 null, T18이 채운다.
+    /// 이 스트리머에게 차단된 상태(풀린 임시차단은 null)
     pub ban: Option<BanState>,
     /// shortcut: 항상 5, T19가 채운다.
     pub free_clutches_left: i32,
@@ -359,7 +359,7 @@ pub async fn detail_of(
     id: i64,
     viewer: Option<&CurrentUser>,
 ) -> Result<BroadcastDetail, AppError> {
-    handlers::detail(state, handlers::load(state, id).await?, viewer)
+    handlers::detail(state, handlers::load(state, id).await?, viewer).await
 }
 
 async fn missing_or_invalid(db: &PgPool, id: i64) -> AppError {

@@ -3,7 +3,7 @@ import type { BanState } from "./BanState";
 
 export type ViewerState = { isOwner: boolean, 
 /**
- * shortcut: 항상 null, T18이 채운다.
+ * 이 스트리머에게 차단된 상태(풀린 임시차단은 null)
  */
 ban: BanState | null, 
 /**
