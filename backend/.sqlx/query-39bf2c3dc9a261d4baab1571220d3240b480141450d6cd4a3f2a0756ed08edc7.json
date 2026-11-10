@@ -1,0 +1,37 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COALESCE(SUM(amount), 0)::bigint AS \"total!\",\n                  COUNT(*) FILTER (WHERE kind IN ('donation', 'burst')) AS \"count!\",\n                  COALESCE(SUM(amount) FILTER (WHERE kind = 'clutch'), 0)::bigint AS \"clutch_total!\"\n           FROM donations WHERE broadcast_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "total!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "count!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "clutch_total!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "39bf2c3dc9a261d4baab1571220d3240b480141450d6cd4a3f2a0756ed08edc7"
+}

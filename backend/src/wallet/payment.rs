@@ -376,10 +376,14 @@ async fn finalize(state: &AppState, p: &TossPayment) -> Result<PaymentResult, Ap
     tx.commit().await?;
     if donated {
         metrics::counter!("donations_total").increment(1);
-        // shortcut: donation.created 실시간 이벤트는 T22(알림)가 여기 커밋 뒤에 발행한다
     }
     tracing::info!(order_id = %order.order_id, amount = order.amount, purpose = %order.purpose, donated, "payment confirmed");
-    result_of(state, &order).await
+    let result = result_of(state, &order).await?;
+    // 이번 확정이 후원까지 했을 때만(재시도·웹훅 재확정은 위에서 이미 돌아가 다시 발행하지 않는다)
+    if let Some(d) = result.donation.as_ref().filter(|_| donated) {
+        super::publish_donation(state, d.clone()).await;
+    }
+    Ok(result)
 }
 
 /// 확정된 주문의 결과. 처음 확정 응답과 재시도·웹훅 뒤 재조회가 같은 계산을 탄다(같은 결과).

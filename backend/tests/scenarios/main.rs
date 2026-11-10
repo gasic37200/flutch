@@ -7,6 +7,7 @@ mod auth;
 mod broadcast;
 mod chat;
 mod csrf;
+mod donation;
 mod health;
 mod live;
 mod payment;

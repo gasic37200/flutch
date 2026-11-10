@@ -287,6 +287,117 @@ pub async fn order_donation(
     .await
 }
 
+/// 방송이 받은 합계. `count`는 donation·burst 건수.
+pub struct Totals {
+    pub total: i64,
+    pub count: i64,
+    pub clutch_total: i64,
+}
+
+pub async fn donation_totals(db: &PgPool, broadcast_id: i64) -> Result<Totals, sqlx::Error> {
+    sqlx::query_as!(
+        Totals,
+        r#"SELECT COALESCE(SUM(amount), 0)::bigint AS "total!",
+                  COUNT(*) FILTER (WHERE kind IN ('donation', 'burst')) AS "count!",
+                  COALESCE(SUM(amount) FILTER (WHERE kind = 'clutch'), 0)::bigint AS "clutch_total!"
+           FROM donations WHERE broadcast_id = $1"#,
+        broadcast_id
+    )
+    .fetch_one(db)
+    .await
+}
+
+/// 방송의 donation·burst 최신순(`before`보다 작은 id). 실명 행 — 공개형 변환은 호출자가 한다.
+pub async fn list_donations(
+    db: &PgPool,
+    broadcast_id: i64,
+    before: Option<i64>,
+    limit: i64,
+) -> Result<Vec<DonationRow>, sqlx::Error> {
+    sqlx::query_as!(
+        DonationRow,
+        r#"SELECT d.id, d.broadcast_id, d.donor_id,
+                  CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS "nickname!",
+                  d.kind, d.amount, d.anonymous, d.message, d.created_at
+           FROM donations d JOIN users u ON u.id = d.donor_id
+           WHERE d.broadcast_id = $1 AND d.kind IN ('donation', 'burst')
+             AND ($2::bigint IS NULL OR d.id < $2)
+           ORDER BY d.id DESC LIMIT $3"#,
+        broadcast_id,
+        before,
+        limit
+    )
+    .fetch_all(db)
+    .await
+}
+
+/// 후원의 `(방송 id, 방송 소유자 id)`. 숨긴 방송의 후원은 없음.
+pub async fn donation_broadcast(db: &PgPool, id: i64) -> Result<Option<(i64, i64)>, sqlx::Error> {
+    let row = sqlx::query!(
+        "SELECT d.broadcast_id, b.owner_id FROM donations d JOIN broadcasts b ON b.id = d.broadcast_id
+         WHERE d.id = $1 AND b.hidden_at IS NULL",
+        id
+    )
+    .fetch_optional(db)
+    .await?;
+    Ok(row.map(|r| (r.broadcast_id, r.owner_id)))
+}
+
+pub struct StatsRow {
+    pub id: i64,
+    pub title: String,
+    pub hidden: bool,
+    pub started_at: DateTime<Utc>,
+    pub total: i64,
+    pub count: i64,
+}
+
+/// 내가 송출한 방송별 받은 합계(id 최신순). 숨긴 방송은 받은 기록이 있을 때만("삭제된 방송").
+pub async fn stats(
+    db: &PgPool,
+    owner_id: i64,
+    before: Option<i64>,
+    limit: i64,
+) -> Result<Vec<StatsRow>, sqlx::Error> {
+    sqlx::query_as!(
+        StatsRow,
+        r#"SELECT b.id,
+                  CASE WHEN b.hidden_at IS NULL THEN b.title ELSE '삭제된 방송' END AS "title!",
+                  b.hidden_at IS NOT NULL AS "hidden!", b.started_at AS "started_at!",
+                  COALESCE(SUM(d.amount), 0)::bigint AS "total!",
+                  COUNT(d.id) FILTER (WHERE d.kind IN ('donation', 'burst')) AS "count!"
+           FROM broadcasts b LEFT JOIN donations d ON d.broadcast_id = b.id
+           WHERE b.owner_id = $1 AND b.started_at IS NOT NULL AND ($2::bigint IS NULL OR b.id < $2)
+           GROUP BY b.id
+           HAVING b.hidden_at IS NULL OR COUNT(d.id) > 0
+           ORDER BY b.id DESC LIMIT $3"#,
+        owner_id,
+        before,
+        limit
+    )
+    .fetch_all(db)
+    .await
+}
+
+/// 내 방송들이 받은 `(누적, since 이후)` 합계.
+pub async fn received(
+    db: &PgPool,
+    owner_id: i64,
+    since: DateTime<Utc>,
+) -> Result<(i64, i64), sqlx::Error> {
+    let r = sqlx::query!(
+        r#"SELECT COALESCE(SUM(d.amount), 0)::bigint AS "total!",
+                  COALESCE(SUM(d.amount) FILTER (WHERE d.created_at >= $2), 0)::bigint AS "recent!"
+           FROM donations d JOIN broadcasts b ON b.id = d.broadcast_id
+           WHERE b.owner_id = $1"#,
+        owner_id,
+        since
+    )
+    .fetch_one(db)
+    .await?;
+    Ok((r.total, r.recent))
+}
+
 pub struct EntryRow {
     pub id: i64,
     pub first_id: i64,
