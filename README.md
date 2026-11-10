@@ -290,6 +290,10 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `clutch_gauge_decay_window` | 5분 지난 점수는 게이지에서 빠짐, 80% 임박 | (클러치 절차 추가 시) |
 | `super_clutch_trigger_reset_and_cooldown` | 100% 동시 요청에도 발동 1회, 게이지 0, 쿨다운 중 재발동 없음 | (클러치 절차 추가 시) |
 | `clutch_banned_rules`, `clutch_super_event_published` | 영구 밴은 무료만 허용·임시차단은 둘 다, `clutch.super` 이벤트 | (클러치 절차 추가 시) |
+| `clutch_gauge_event_throttled` | `clutch.gauge`는 방송당 0.5초에 1번, 사이 값은 마지막 것만 | (클러치 절차 추가 시) |
+| `burst_debits_and_boosts_gauge` | SUPER BURST 1,000비트 차감·원장 burst·후원 기록, 혼자 1회로 SUPER CLUTCH 발동, 쿨다운 중엔 게이지만 상승, 잔액 부족 409 | (클러치 절차 추가 시) |
+| `burst_anonymous_hidden_from_public` | 익명 버스트는 공개 이벤트·목록에서 후원자 숨김, 소유자에게만 실명 | (클러치 절차 추가 시) |
+| `burst_rules`, `burst_concurrent_only_balance_succeeds` | 비로그인 401·내 방송 403·영구 밴 403·임시차단 허용·비LIVE 409, 동시 2건은 잔액만큼만 성공 | (클러치 절차 추가 시) |
 | `donation_amount_mismatch_rejected` | 주문과 다른 금액 승인 거절(토스 호출 없음) | (후원 절차 추가 시) |
 | `donation_after_end_becomes_charge`, `banned_user_cannot_donate` | 승인 시 방송 종료·영구 밴이면 충전만, 주문 단계 거절 | (후원 절차 추가 시) |
 | `donation_live_only`, `donation_input_rules`, `banned_user_cannot_donate` | 잔액 후원: LIVE 중에만, 자기 방송·금지어·금액·잔액 부족·영구 밴 거절, 게이지 반영 | (후원 절차 추가 시) |

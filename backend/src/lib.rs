@@ -40,6 +40,8 @@ pub struct AppState {
     pub realtime: realtime::Hub,
     /// 송출 메모리 상태(시청자 집합 등)
     pub live: live::LiveState,
+    /// 클러치 메모리 상태(게이지 이벤트 묶음)
+    pub clutch: clutch::ClutchState,
 }
 
 /// 전체 앱 라우터. `main`과 시나리오 테스트가 같은 조립을 쓴다.

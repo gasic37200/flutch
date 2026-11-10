@@ -47,3 +47,4 @@
 | [T09b-trackunsubscribed-stale-track.md](T09b-trackunsubscribed-stale-track.md) | T09b | livekit-client는 TrackUnsubscribed를 pub.track 비우기 전에 발행 → sync에서 떠나는 트랙을 직접 제외 |
 | [T20b-withdraw-redirects-to-login.md](T20b-withdraw-redirects-to-login.md) | T20b | 탈퇴 성공 후 `me`를 먼저 비우면 `/me`의 로그인 확인이 로그인 화면으로 보냄 → 홈을 새로 불러옴 |
 | [T20b-sqlx-prepare-drops-test-queries.md](T20b-sqlx-prepare-drops-test-queries.md) | T20b | `cargo sqlx prepare`는 테스트 타깃 쿼리 캐시를 지움 → `-- --all-targets`로 모은다 |
+| [T24-throttle-test-timing.md](T24-throttle-test-timing.md) | T24 | 묶음(throttle) 시나리오가 전체 테스트에서만 실패 → 시간 기준점을 이벤트 수신 뒤가 아니라 요청 전에, 묶일 입력은 직접 publish로 몰아 넣기 |
