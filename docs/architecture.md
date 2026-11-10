@@ -190,4 +190,5 @@ frontend/src/
 - **배포**: main 머지 → 이미지 빌드 → SSH로 `docker compose pull && up -d` → `GET /api/v1/health` 확인.
   - 이미지 2개: `flutch-backend`(Rust 바이너리, `TZ=Asia/Seoul`)와 `flutch-web`(nginx + SPA 정적 파일, 한 이미지라 프론트 버전이 이미지 태그로 정해짐). 비공개 저장소라 서버는 git clone 대신 workflow가 `deploy/compose.prod.yml`·`backup.sh`·`init-cert.sh`를 scp로 올린다. 서버의 `.env`는 서버에만 있다.
   - HTTPS: 최초 1회 `init-cert.sh`(임시 80번 nginx + certbot webroot), 갱신은 `certbot` 컨테이너 루프 + `web`의 12시간 reload. nginx는 `X-Forwarded-For`를 `$remote_addr`로 덮어쓴다(위조 방지).
+  - 모니터링: `compose.prod.yml`에 prometheus·loki·alloy·node-exporter·grafana(외부 포트 없음, `mem_limit`로 상한). 백엔드 `GET /metrics`(`http_requests_total{method,route,status}`·`http_request_duration_seconds`·`live_broadcasts`·`ws_connections`·`donations_total`)는 nginx가 404로 막고 Prometheus가 `backend:8080`을 직접 수집. Alloy는 Docker 소켓(읽기 전용)으로 `flutch` 프로젝트 컨테이너 로그를 Loki에 보내며 라벨은 `service`·`level`만. Grafana는 nginx `/grafana/`(하위 경로, 로그인 필수), 설정·대시보드는 `deploy/monitoring/`를 workflow가 scp로 올린다.
   - DB 백업: 호스트 cron `backup.sh` → 요일별 파일명(7개 순환 = 7일 보관) → Object Storage(키가 있을 때).

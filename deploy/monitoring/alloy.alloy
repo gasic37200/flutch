@@ -1,0 +1,44 @@
+// flutch compose 프로젝트의 컨테이너 로그를 Loki로 보낸다. 라벨은 service·level 두 개만(카디널리티 억제).
+discovery.docker "flutch" {
+  host    = "unix:///var/run/docker.sock"
+  filter {
+    name   = "label"
+    values = ["com.docker.compose.project=flutch"]
+  }
+}
+
+discovery.relabel "flutch" {
+  targets = discovery.docker.flutch.targets
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+}
+
+loki.source.docker "flutch" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.flutch.output
+  labels     = {}
+  forward_to = [loki.process.level.receiver]
+}
+
+// 백엔드 JSON(`"level":"INFO"`)과 logfmt(`level=info`) 모두에서 레벨을 뽑는다. 못 찾으면 라벨 없이 보낸다.
+loki.process "level" {
+  stage.regex {
+    expression = "(?i)\"?level\"?[=:]\\s*\"?(?P<level>[a-z]+)"
+  }
+  stage.template {
+    source   = "level"
+    template = "{{ ToLower .Value }}"
+  }
+  stage.labels {
+    values = { level = "" }
+  }
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

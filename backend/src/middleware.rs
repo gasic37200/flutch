@@ -30,6 +30,7 @@ pub async fn request_context(req: Request, next: Next) -> Response {
         .get::<MatchedPath>()
         .map_or("unmatched", MatchedPath::as_str)
         .to_owned();
+    let req_method = req.method().clone();
     let span = tracing::info_span!(
         "request",
         request_id = %id,
@@ -42,6 +43,12 @@ pub async fn request_context(req: Request, next: Next) -> Response {
         .scope(id.clone(), next.run(req))
         .instrument(span.clone())
         .await;
+    crate::metrics::record_request(
+        req_method.as_str(),
+        &route,
+        res.status().as_u16(),
+        started.elapsed().as_secs_f64(),
+    );
     span.in_scope(|| {
         tracing::info!(
             status = res.status().as_u16(),
