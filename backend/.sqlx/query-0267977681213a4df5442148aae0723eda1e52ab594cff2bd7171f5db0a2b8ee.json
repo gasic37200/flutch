@@ -1,0 +1,160 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, order_id, payment_key, user_id, purpose, amount, broadcast_id, donation_amount,\n                donation_anonymous, donation_message, status, expires_at\n         FROM payment_orders WHERE order_id = $1 FOR UPDATE",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "payment_orders",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "order_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "payment_orders",
+            "name": "order_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "payment_key",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "payment_orders",
+            "name": "payment_key"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "user_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "payment_orders",
+            "name": "user_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "purpose",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "payment_orders",
+            "name": "purpose"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "amount",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "payment_orders",
+            "name": "amount"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "broadcast_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "payment_orders",
+            "name": "broadcast_id"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "donation_amount",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "payment_orders",
+            "name": "donation_amount"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "donation_anonymous",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "payment_orders",
+            "name": "donation_anonymous"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "donation_message",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "payment_orders",
+            "name": "donation_message"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "status",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "payment_orders",
+            "name": "status"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "expires_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "payment_orders",
+            "name": "expires_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "0267977681213a4df5442148aae0723eda1e52ab594cff2bd7171f5db0a2b8ee"
+}

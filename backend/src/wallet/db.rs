@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use sqlx::{PgConnection, PgPool};
 
-use super::Posted;
+use super::{NewDonation, Posted};
 
 /// 0행이면 잔액 부족(또는 지갑 없음). 지갑 갱신과 원장 추가가 한 문장이라 둘 중 하나만 반영되지 않는다.
 pub async fn debit(
@@ -89,6 +89,202 @@ pub async fn balance(db: &PgPool, user_id: i64) -> Result<i64, sqlx::Error> {
             .await?
             .unwrap_or(0),
     )
+}
+
+// ===== 결제 주문 =====
+
+pub struct OrderRow {
+    pub id: i64,
+    pub order_id: String,
+    pub payment_key: Option<String>,
+    pub user_id: i64,
+    pub purpose: String,
+    pub amount: i64,
+    pub broadcast_id: Option<i64>,
+    pub donation_amount: Option<i64>,
+    pub donation_anonymous: Option<bool>,
+    pub donation_message: Option<String>,
+    pub status: String,
+    pub expires_at: DateTime<Utc>,
+}
+
+pub struct NewOrder<'a> {
+    pub order_id: &'a str,
+    pub user_id: i64,
+    pub amount: i64,
+    /// 후원 주문이면 (방송, 후원액, 익명, 메시지)
+    pub donation: Option<(i64, i64, bool, Option<&'a str>)>,
+}
+
+/// 30분 뒤 만료되는 대기 주문. 만료 시각을 돌려준다.
+pub async fn insert_order(db: &PgPool, o: &NewOrder<'_>) -> Result<DateTime<Utc>, sqlx::Error> {
+    let (purpose, broadcast_id, d_amount, d_anon, d_msg) = match o.donation {
+        Some((b, a, anon, msg)) => ("donation", Some(b), Some(a), Some(anon), msg),
+        None => ("charge", None, None, None, None),
+    };
+    sqlx::query_scalar!(
+        r#"INSERT INTO payment_orders (order_id, user_id, purpose, amount, broadcast_id,
+                                       donation_amount, donation_anonymous, donation_message, expires_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now() + interval '30 minutes')
+           RETURNING expires_at"#,
+        o.order_id,
+        o.user_id,
+        purpose,
+        o.amount,
+        broadcast_id,
+        d_amount,
+        d_anon,
+        d_msg
+    )
+    .fetch_one(db)
+    .await
+}
+
+pub async fn find_order(
+    db: impl sqlx::PgExecutor<'_>,
+    order_id: &str,
+) -> Result<Option<OrderRow>, sqlx::Error> {
+    sqlx::query_as!(
+        OrderRow,
+        "SELECT id, order_id, payment_key, user_id, purpose, amount, broadcast_id, donation_amount,
+                donation_anonymous, donation_message, status, expires_at
+         FROM payment_orders WHERE order_id = $1",
+        order_id
+    )
+    .fetch_optional(db)
+    .await
+}
+
+/// 확정 트랜잭션용: 같은 주문의 확정(승인 응답·웹훅·재시도)을 한 줄로 세운다.
+pub async fn lock_order(
+    conn: &mut PgConnection,
+    order_id: &str,
+) -> Result<Option<OrderRow>, sqlx::Error> {
+    sqlx::query_as!(
+        OrderRow,
+        "SELECT id, order_id, payment_key, user_id, purpose, amount, broadcast_id, donation_amount,
+                donation_anonymous, donation_message, status, expires_at
+         FROM payment_orders WHERE order_id = $1 FOR UPDATE",
+        order_id
+    )
+    .fetch_optional(conn)
+    .await
+}
+
+pub async fn mark_done(
+    conn: &mut PgConnection,
+    id: i64,
+    payment_key: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "UPDATE payment_orders SET status = 'done', payment_key = $2, confirmed_at = now() WHERE id = $1",
+        id,
+        payment_key
+    )
+    .execute(conn)
+    .await?;
+    Ok(())
+}
+
+pub async fn expire_orders(db: &PgPool) -> Result<u64, sqlx::Error> {
+    Ok(sqlx::query!(
+        "UPDATE payment_orders SET status = 'expired' WHERE status = 'pending' AND expires_at <= now()"
+    )
+    .execute(db)
+    .await?
+    .rows_affected())
+}
+
+/// 숨기지 않은 방송의 `(소유자 id, 상태)`.
+pub async fn broadcast_info(db: &PgPool, id: i64) -> Result<Option<(i64, String)>, sqlx::Error> {
+    let row = sqlx::query!(
+        "SELECT owner_id, status FROM broadcasts WHERE id = $1 AND hidden_at IS NULL",
+        id
+    )
+    .fetch_optional(db)
+    .await?;
+    Ok(row.map(|r| (r.owner_id, r.status)))
+}
+
+/// 확정 트랜잭션 안에서 방송 상태. FOR SHARE라 커밋 전에 종료(UPDATE)되지 않는다.
+pub async fn broadcast_status_for_share(
+    conn: &mut PgConnection,
+    id: i64,
+) -> Result<Option<(i64, String)>, sqlx::Error> {
+    let row = sqlx::query!(
+        "SELECT owner_id, status FROM broadcasts WHERE id = $1 FOR SHARE",
+        id
+    )
+    .fetch_optional(conn)
+    .await?;
+    Ok(row.map(|r| (r.owner_id, r.status)))
+}
+
+// ===== 후원 기록 =====
+
+pub struct DonationRow {
+    pub id: i64,
+    pub broadcast_id: i64,
+    pub donor_id: i64,
+    pub nickname: String,
+    pub kind: String,
+    pub amount: i64,
+    pub anonymous: bool,
+    pub message: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+pub async fn insert_donation(
+    conn: &mut PgConnection,
+    d: &NewDonation<'_>,
+) -> Result<DonationRow, sqlx::Error> {
+    sqlx::query_as!(
+        DonationRow,
+        r#"WITH d AS (
+               INSERT INTO donations (broadcast_id, donor_id, kind, amount, anonymous, message, ledger_entry_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)
+               RETURNING id, broadcast_id, donor_id, kind, amount, anonymous, message, created_at
+           )
+           SELECT d.id AS "id!", d.broadcast_id AS "broadcast_id!", d.donor_id AS "donor_id!",
+                  CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS "nickname!",
+                  d.kind AS "kind!", d.amount AS "amount!", d.anonymous AS "anonymous!",
+                  d.message, d.created_at AS "created_at!"
+           FROM d JOIN users u ON u.id = d.donor_id"#,
+        d.broadcast_id,
+        d.donor_id,
+        d.kind.as_str(),
+        d.amount,
+        d.anonymous,
+        d.message,
+        d.ledger_entry_id
+    )
+    .fetch_one(conn)
+    .await
+}
+
+/// 후원 주문이 확정 때 남긴 후원 기록. 충전 원장과 후원 원장은 같은 트랜잭션이라 `created_at`(=트랜잭션
+/// 시작 시각 `now()`)이 같다 — 주문 → 후원 직접 연결 컬럼이 없어 이것으로 찾는다.
+pub async fn order_donation(
+    db: &PgPool,
+    payment_order_id: i64,
+) -> Result<Option<DonationRow>, sqlx::Error> {
+    sqlx::query_as!(
+        DonationRow,
+        r#"SELECT d.id, d.broadcast_id, d.donor_id,
+                  CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS "nickname!",
+                  d.kind, d.amount, d.anonymous, d.message, d.created_at
+           FROM ledger_entries c
+           JOIN payment_orders o ON o.id = c.payment_order_id
+           JOIN ledger_entries l ON l.user_id = c.user_id AND l.created_at = c.created_at
+                                AND l.type = 'donation' AND l.broadcast_id = o.broadcast_id AND l.id > c.id
+           JOIN donations d ON d.ledger_entry_id = l.id
+           JOIN users u ON u.id = d.donor_id
+           WHERE c.payment_order_id = $1
+           ORDER BY l.id LIMIT 1"#,
+        payment_order_id
+    )
+    .fetch_optional(db)
+    .await
 }
 
 pub struct EntryRow {

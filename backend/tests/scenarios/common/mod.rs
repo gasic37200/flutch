@@ -1,7 +1,7 @@
 //! 테스트용 앱 생성. DB는 `#[sqlx::test]`가 준 진짜 Postgres, 외부 연동(LiveKit·토스)만 fake.
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
@@ -10,10 +10,11 @@ use axum::body::Body;
 use axum::http::{HeaderMap, Request, StatusCode};
 use flutch::config::{
     AuthConfig, BroadcastConfig, Config, LiveConfig, LiveKitConfig, RecordingConfig, S3Config,
+    TossConfig,
 };
 use flutch::livekit::{LiveKitApi, LiveKitError, Participant};
 use flutch::recording::{ObjectStore, StorageError};
-use flutch::toss::TossApi;
+use flutch::toss::{TossApi, TossError, TossPayment};
 use flutch::{AppState, realtime};
 use sqlx::PgPool;
 use tower::ServiceExt;
@@ -112,8 +113,99 @@ impl ObjectStore for FakeStore {
     }
 }
 
-pub struct FakeToss;
-impl TossApi for FakeToss {}
+/// 다음 승인 호출 한 번의 결과.
+pub enum FakeConfirm {
+    /// 4xx 거절(카드 거절)
+    Reject,
+    /// 통신 실패(승인 안 됨)
+    Unavailable,
+    /// 토스는 승인했는데 응답을 못 받음(승인 기록은 남아 조회·웹훅에 나온다)
+    ApproveThenUnavailable,
+}
+
+/// 실제 토스처럼 승인된 결제를 기억하고, 같은 paymentKey 재승인은 `ALREADY_PROCESSED_PAYMENT`로 거절한다.
+#[derive(Default)]
+pub struct FakeToss {
+    /// 승인된 결제(paymentKey → 결제). 조회 API가 이것을 돌려준다.
+    pub payments: Mutex<HashMap<String, TossPayment>>,
+    /// 승인 API에 온 paymentKey(호출 순서대로)
+    pub confirm_calls: Mutex<Vec<String>>,
+    pub next_confirm: Mutex<Option<FakeConfirm>>,
+    /// true면 조회 API가 통신 실패
+    pub lookup_fails: AtomicBool,
+    /// 승인 응답 지연(ms) — 동시 요청이 확실히 겹치게 한다
+    pub confirm_delay_ms: AtomicU64,
+}
+
+impl FakeToss {
+    /// 그 paymentKey의 결제 객체 `secret`(웹훅 본문에 넣을 값)
+    pub fn secret(key: &str) -> String {
+        format!("secret-{key}")
+    }
+}
+
+#[async_trait]
+impl TossApi for FakeToss {
+    async fn confirm(
+        &self,
+        payment_key: &str,
+        order_id: &str,
+        amount: i64,
+    ) -> Result<TossPayment, TossError> {
+        self.confirm_calls
+            .lock()
+            .unwrap()
+            .push(payment_key.to_owned());
+        let delay = self.confirm_delay_ms.load(Ordering::SeqCst);
+        tokio::time::sleep(std::time::Duration::from_millis(delay)).await;
+        let next = self.next_confirm.lock().unwrap().take();
+        let unavailable = || TossError::Unavailable("fake".into());
+        match next {
+            Some(FakeConfirm::Reject) => {
+                return Err(TossError::Rejected {
+                    code: "REJECT_CARD_PAYMENT".into(),
+                    message: "한도초과 혹은 잔액부족".into(),
+                });
+            }
+            Some(FakeConfirm::Unavailable) => return Err(unavailable()),
+            _ => {}
+        }
+        let mut payments = self.payments.lock().unwrap();
+        if payments.contains_key(payment_key) {
+            return Err(TossError::Rejected {
+                code: "ALREADY_PROCESSED_PAYMENT".into(),
+                message: "이미 처리된 결제 입니다.".into(),
+            });
+        }
+        let p = TossPayment {
+            payment_key: payment_key.to_owned(),
+            order_id: order_id.to_owned(),
+            status: "DONE".into(),
+            total_amount: amount,
+            secret: Some(Self::secret(payment_key)),
+        };
+        payments.insert(payment_key.to_owned(), p.clone());
+        match next {
+            Some(FakeConfirm::ApproveThenUnavailable) => Err(unavailable()),
+            _ => Ok(p),
+        }
+    }
+
+    async fn payment(&self, payment_key: &str) -> Result<TossPayment, TossError> {
+        if self.lookup_fails.load(Ordering::SeqCst) {
+            return Err(TossError::Unavailable("fake".into()));
+        }
+        self.payments
+            .lock()
+            .unwrap()
+            .get(payment_key)
+            .cloned()
+            .ok_or(TossError::Rejected {
+                code: "NOT_FOUND_PAYMENT".into(),
+                message: "존재하지 않는 결제 정보 입니다.".into(),
+            })
+    }
+}
 
 pub fn test_app(db: PgPool) -> Router {
     flutch::app(test_state(db, Arc::new(FakeLiveKit::default())))
@@ -130,6 +222,31 @@ pub fn test_state_with(
     livekit: Arc<FakeLiveKit>,
     storage: Arc<FakeStore>,
     recording: Option<RecordingConfig>,
+) -> Arc<AppState> {
+    build_state(
+        db,
+        livekit,
+        storage,
+        recording,
+        Arc::new(FakeToss::default()),
+    )
+}
+
+/// 토스 호출을 조작·확인하는 시나리오용(같은 `Arc<FakeToss>`를 들고 있는다).
+pub fn test_state_with_toss(
+    db: PgPool,
+    livekit: Arc<FakeLiveKit>,
+    toss: Arc<FakeToss>,
+) -> Arc<AppState> {
+    build_state(db, livekit, Arc::new(FakeStore::default()), None, toss)
+}
+
+fn build_state(
+    db: PgPool,
+    livekit: Arc<FakeLiveKit>,
+    storage: Arc<FakeStore>,
+    recording: Option<RecordingConfig>,
+    toss: Arc<FakeToss>,
 ) -> Arc<AppState> {
     let config = Config {
         backend_port: 0,
@@ -156,12 +273,16 @@ pub fn test_state_with(
             retention_days: 30,
             max_total_bytes: 16 * 1024 * 1024 * 1024,
         }),
+        toss: TossConfig {
+            client_key: Some("test_gck_fake".into()),
+            secret_key: None,
+        },
     };
     Arc::new(AppState {
         config,
         db,
         livekit,
-        toss: Arc::new(FakeToss),
+        toss,
         storage,
         realtime: realtime::Hub::default(),
         live: Default::default(),

@@ -9,6 +9,7 @@ mod chat;
 mod csrf;
 mod health;
 mod live;
+mod payment;
 mod realtime;
 mod recording;
 mod schema;
