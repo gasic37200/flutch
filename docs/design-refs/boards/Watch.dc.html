@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>FLUTCH 시청</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@500;700&amp;family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0C0F}
+a{color:#F3F5F7;text-decoration:none}a:hover{color:#B0F612}
+.ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.texture{background:#0A0C0F url(../brand/bg-speed.jpg) center/cover}
+@keyframes pop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+.pop{animation:pop .4s ease-out}
+@media (prefers-reduced-motion:reduce){.pop{animation:none}}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
+
+  <header style="display:flex;align-items:center;gap:16px;padding:0 24px;height:64px;border-bottom:1px solid #191D25;box-sizing:border-box">
+    <a href="#" aria-label="FLUTCH 홈"><img src="../brand/logo-flutch.png" alt="FLUTCH" style="height:30px;display:block"></a>
+    <div style="flex:1;display:flex;justify-content:center;min-width:0"><label class="ch6" style="width:100%;max-width:520px;height:40px;background:#12151B;display:flex;align-items:center;gap:10px;padding:0 14px;box-sizing:border-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A3AAB6" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input type="search" aria-label="검색" placeholder="게임, 버추얼, 스트리머 검색…" style="flex:1;min-width:0;background:transparent;border:0;outline:0;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;font-size:14px"></label></div>
+    <a href="#" aria-label="내 지갑, 3,500 비트" style="display:inline-flex;align-items:center;gap:8px;border:1px solid #B0F612;border-radius:999px;padding:6px 14px;background:rgba(176,246,18,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg><b style="font-family:'JetBrains Mono',monospace;font-size:14px">3,500</b><span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:#B0F612;font-size:13px">Beats</span></a>
+    <a href="#" class="ch6" aria-label="방송하기" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;background:#191D25"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F3F5F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2"></rect><path d="m16 10 6-3v10l-6-3"></path></svg></a>
+    <button type="button" aria-label="내 메뉴" style="width:44px;height:44px;border:0;padding:0;background:transparent"><img src="../brand/face-happy.png" alt="" style="width:36px;height:36px;border-radius:50%;box-shadow:0 0 0 2px #B0F612"></button>
+  </header>
+
+  <div style="display:flex;flex-wrap:wrap;gap:20px;padding:20px 24px;box-sizing:border-box">
+
+    <main style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:14px">
+      <div class="texture" style="aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center">
+        <div style="position:absolute;inset:0;background:rgba(10,12,15,.3)"></div>
+        <span style="position:absolute;top:14px;left:14px;display:inline-flex;align-items:center;gap:6px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;padding:4px 10px"><span style="width:6px;height:6px;border-radius:50%;background:#fff"></span>LIVE</span>
+        <span style="position:relative;font-family:'Chakra Petch',sans-serif;font-size:15px;color:#A3AAB6;letter-spacing:.08em">화면 공유 영상</span>
+        <div class="ch6" style="position:absolute;right:14px;bottom:64px;width:22%;aspect-ratio:16/9;background:#191D25;box-shadow:0 0 0 1px rgba(176,246,18,.5);display:flex;align-items:center;justify-content:center;font-size:12px;color:#A3AAB6">웹캠 PIP</div>
+        <div class="pop ch12" style="position:absolute;top:14px;left:50%;transform:translateX(-50%);background:#B0F612;padding:1px;width:360px;max-width:80%">
+          <div class="ch12" style="background:rgba(18,21,27,.96);padding:12px 16px;display:flex;gap:12px;align-items:center">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg>
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><b style="font-size:14px">밤샘냥님 <span style="font-family:'JetBrains Mono',monospace;color:#B0F612">5,000</span> Beats 후원</b><span style="font-size:13px;color:#A3AAB6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">방금 그 3대1 미쳤다 진짜</span></div>
+          </div>
+        </div>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:48px;display:flex;align-items:center;gap:6px;padding:0 10px;background:linear-gradient(0deg,rgba(10,12,15,.9),rgba(10,12,15,0))">
+          <button type="button" aria-label="일시정지" style="width:40px;height:40px;border:0;background:transparent;color:#F3F5F7"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"></path></svg></button>
+          <button type="button" aria-label="소리" style="width:40px;height:40px;border:0;background:transparent;color:#F3F5F7"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path></svg></button>
+          <div style="width:90px;height:4px;background:#262B35"><div style="width:65%;height:100%;background:#F3F5F7"></div></div>
+          <span style="flex:1"></span>
+          <button type="button" style="height:32px;padding:0 10px;border:0;background:rgba(25,29,37,.8);color:#F3F5F7;font-size:12px;font-family:'Noto Sans KR',sans-serif" class="ch6">웹캠 숨기기</button>
+          <button type="button" aria-label="전체화면" style="width:40px;height:40px;border:0;background:transparent;color:#F3F5F7"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path></svg></button>
+        </div>
+      </div>
+
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px">
+        <div class="ch12" style="background:#12151B;display:flex;align-items:center;gap:14px;padding:12px 16px;flex-wrap:wrap">
+          <img src="../brand/logo-clutch-time.png" alt="CLUTCH TIME" style="height:40px">
+          <div style="flex:1 1 240px;display:flex;align-items:center;gap:12px;min-width:0">
+            <div class="ch6" style="flex:1;height:14px;background:#191D25"><div class="ch6" style="width:72%;height:100%;background:#B0F612"></div></div>
+            <b style="font-family:'JetBrains Mono',monospace;font-size:16px">72%</b>
+          </div>
+          <div style="position:relative">
+            <span class="pop" style="position:absolute;top:-14px;right:-8px;font-family:'Chakra Petch',sans-serif;font-style:italic;font-weight:700;font-size:12px;padding:2px 8px;background:linear-gradient(90deg,#FF2BD6,#FF7A1A,#FFE11A);color:#0A0C0F;border-radius:999px">COMBO x4</span>
+            <button type="button" class="ch6" style="height:44px;padding:0 18px;border:0;background:#B0F612;color:#0A0C0F;font-family:'Chakra Petch',sans-serif;font-style:italic;font-weight:700;font-size:16px;letter-spacing:.04em;display:inline-flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg>CLUTCH</button>
+          </div>
+          <button type="button" class="ch6" style="height:44px;padding:0 16px;border:0;background:#FFC21A;color:#0A0C0F;font-family:'Chakra Petch',sans-serif;font-style:italic;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg>SUPER BURST</button>
+          <span style="flex-basis:100%;font-size:12px;color:#7C8494">무료 클러치 1회 남음 · 30초마다 5회 무료, 이후 1회 1 Beat</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+        <img src="../brand/face-excited.png" alt="" style="width:56px;height:56px;border-radius:50%;box-shadow:0 0 0 2px #4DA3FF">
+        <div style="flex:1 1 360px;min-width:0;display:flex;flex-direction:column;gap:6px">
+          <h1 style="margin:0;font-size:20px;font-weight:700">[대회 준비중] 오늘도 클러치 가보자!</h1>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px">
+            <a href="#" style="font-weight:700">김플러</a><span style="color:#7C8494">팔로워 1.2만</span>
+            <span class="ch6" style="font-size:12px;padding:2px 8px;background:#191D25;color:#A3AAB6">FPS</span>
+            <span style="font-size:12px;color:#7C8494">#랭크 #대회준비 #소통</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="display:inline-flex;align-items:center;gap:6px;color:#FF2E4D;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>32,481</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#A3AAB6">01:24:17</span>
+          <span class="ch6" style="background:#B0F612;padding:1px;display:inline-flex"><button type="button" class="ch6" style="height:42px;padding:0 18px;border:0;background:#12151B;color:#B0F612;font-weight:700;font-size:14px;font-family:'Noto Sans KR',sans-serif">팔로우</button></span>
+          <button type="button" class="ch6" style="height:44px;padding:0 18px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:14px;font-family:'Noto Sans KR',sans-serif;display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg>후원하기</button>
+        </div>
+      </div>
+
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px">
+        <div class="ch12" style="background:#12151B;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:10px"><b style="font-size:15px">이 방송 후원</b><span style="font-size:13px;color:#A3AAB6">합계</span><b style="font-family:'JetBrains Mono',monospace;color:#B0F612">128,400 Beats</b><span style="font-size:13px;color:#7C8494">· 46건 (클러치·버스트 포함)</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+            <div style="display:flex;gap:10px"><b style="width:120px">밤샘냥</b><b style="font-family:'JetBrains Mono',monospace;color:#B0F612;width:90px">5,000</b><span style="color:#A3AAB6">방금 그 3대1 미쳤다 진짜</span></div>
+            <div style="display:flex;gap:10px"><b style="width:120px;color:#A3AAB6">익명의 후원자</b><b style="font-family:'JetBrains Mono',monospace;color:#FFC21A;width:90px">10,000</b><span style="color:#A3AAB6">대회 화이팅!!</span></div>
+            <div style="display:flex;gap:10px"><b style="width:120px">에임장인</b><b style="font-family:'JetBrains Mono',monospace;color:#B0F612;width:90px">1,000</b><span style="color:#7C8494">SUPER BURST</span></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside aria-label="채팅" class="ch12" style="flex:1 1 340px;max-width:100%;background:rgba(176,246,18,.25);padding:1px;align-self:stretch">
+      <div class="ch12" style="background:#12151B;height:100%;min-height:700px;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #191D25"><b style="font-size:15px">채팅</b><span style="margin-left:auto;font-size:12px;color:#7C8494">최근 50개</span></div>
+        <div style="flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.5">
+          <sc-for list="{{chats}}" as="m" hint-placeholder-count="10">
+            <div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;padding:{{m.pad}};background:{{m.bg}}">
+              <span style="font-size:11px;font-weight:700;padding:1px 5px;background:{{m.badgeBg}};color:#0A0C0F;display:{{m.badgeShow}}">{{m.badge}}</span>
+              <b style="color:{{m.color}}">{{m.name}}</b>
+              <span style="color:{{m.textColor}};font-style:{{m.italic}}">{{m.text}}</span>
+              <span style="font-size:11px;color:#7C8494">{{m.edited}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding:12px 16px;border-top:1px solid #191D25;display:flex;flex-direction:column;gap:8px">
+          <label class="ch6" style="display:flex;align-items:center;gap:8px;background:#191D25;padding:0 12px;height:44px">
+            <input type="text" aria-label="채팅 입력" placeholder="채팅을 입력하세요 (200자)" style="flex:1;min-width:0;background:transparent;border:0;outline:0;color:#F3F5F7;font-size:14px;font-family:'Noto Sans KR',sans-serif">
+            <button type="button" aria-label="보내기" style="width:36px;height:36px;border:0;background:transparent;color:#B0F612"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12 20 4l-6 16-3-7z"></path></svg></button>
+          </label>
+          <span style="font-size:12px;color:#7C8494">링크는 클릭되지 않아요 · 같은 메시지는 30초에 3번까지</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var m = function (name, text, color, opt) {
+      var o = { name: name, text: text, color: color, badge: '', badgeBg: 'transparent', badgeShow: 'none', bg: 'transparent', pad: '0', textColor: '#F3F5F7', italic: 'normal', edited: '' };
+      for (var k in (opt || {})) o[k] = opt[k];
+      return o;
+    };
+    return {
+      chats: [
+        m('김플러', '다들 오늘도 와줘서 고마워요!', '#4DA3FF', { badge: '스트리머', badgeBg: '#B0F612', badgeShow: 'inline' }),
+        m('에임장인', 'ㄷㄷ 방금 그거 실화냐', '#2EE6D6'),
+        m('밤샘냥', '와 미쳤다 ㄷㄷ', '#9B7BFF', { badge: '후원자', badgeBg: '#FFC21A', badgeShow: 'inline' }),
+        m('수다곰', '클러치각이다!', '#5CF2A0'),
+        m('라라', '이번 판 이기면 대회 간다', '#E8ECF1', { edited: '(수정됨)' }),
+        m('익명의 후원자', '10,000 Beats · 대회 화이팅!!', '#FFC21A', { bg: 'rgba(255,194,26,.1)', pad: '8px 10px' }),
+        m('모닝톡', '삭제된 메시지입니다', '#7C8494', { textColor: '#7C8494', italic: 'italic' }),
+        m('', '시청자123님의 채팅이 10분간 제한되었어요', '#7C8494', { textColor: '#7C8494' }),
+        m('용사킴', '*** 진짜 잘한다', '#B0F612'),
+        m('골골', '김플러 화이팅!!', '#4DA3FF')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

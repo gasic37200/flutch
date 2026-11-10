@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>FLUTCH 작은 화면</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@500;700&amp;family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0C0F}
+a{color:#B0F612;text-decoration:none}
+.ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+</style>
+</helmet>
+<div style="width:1440px;height:1300px;box-sizing:border-box;padding:40px 48px;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 32px;align-content:start">
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <span style="font-size:13px;color:#A3AAB6">내 정보 · /me</span>
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:20px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:12px"><img src="../brand/face-happy.png" alt="" style="width:56px;height:56px;border-radius:50%;box-shadow:0 0 0 2px #B0F612"><div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:17px">용사킴</b><span style="font-size:12px;color:#7C8494">아이디 yongsa_kim · 바꿀 수 없어요</span></div></div>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#A3AAB6">닉네임<input type="text" value="용사킴" disabled="" class="ch6" style="height:44px;border:0;background:#0F1217;color:#7C8494;padding:0 12px;font-size:14px;font-family:'Noto Sans KR',sans-serif"><span style="font-size:12px;color:#7C8494">23일 뒤에 다시 바꿀 수 있어요 (변경 후 30일 제한)</span></label>
+      <div style="height:1px;background:#191D25"></div>
+      <b style="font-size:14px">비밀번호 변경</b>
+      <input type="password" placeholder="현재 비밀번호" aria-label="현재 비밀번호" class="ch6" style="height:44px;border:0;background:#191D25;color:#F3F5F7;padding:0 12px;font-size:14px;font-family:'Noto Sans KR',sans-serif">
+      <input type="password" placeholder="새 비밀번호 (8자 이상, 영문+숫자)" aria-label="새 비밀번호" class="ch6" style="height:44px;border:0;background:#191D25;color:#F3F5F7;padding:0 12px;font-size:14px;font-family:'Noto Sans KR',sans-serif">
+      <span style="font-size:12px;color:#7C8494">바꾸면 이 기기를 뺀 다른 기기에서 모두 로그아웃돼요</span>
+      <button type="button" class="ch6" style="height:44px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:14px;font-family:'Noto Sans KR',sans-serif">비밀번호 변경</button>
+      <a href="#" style="font-size:13px;color:#A3AAB6;text-decoration:underline">회원 탈퇴</a>
+    </div></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <span style="font-size:13px;color:#A3AAB6">회원 탈퇴 확인 (모달)</span>
+    <div role="alertdialog" aria-label="회원 탈퇴" class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:20px;display:flex;flex-direction:column;gap:14px">
+      <img src="../brand/face-calm.png" alt="" style="width:56px;height:56px;border-radius:50%">
+      <b style="font-size:17px">정말 탈퇴할까요?</b>
+      <div class="ch6" style="background:#191D25;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.6">
+        <span>남은 <b style="font-family:'JetBrains Mono',monospace;color:#B0F612">3,500 Beats</b>는 탈퇴하면 <b>사라지고 되돌릴 수 없어요.</b></span>
+        <span style="color:#A3AAB6">채팅·후원 기록은 "탈퇴한 사용자"로 남아요. 아이디는 다시 쓸 수 없고, 닉네임은 30일 뒤 풀려요.</span>
+      </div>
+      <input type="password" placeholder="비밀번호를 다시 입력해 주세요" aria-label="비밀번호 확인" class="ch6" style="height:44px;border:0;background:#191D25;color:#F3F5F7;padding:0 12px;font-size:14px;font-family:'Noto Sans KR',sans-serif">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" style="width:18px;height:18px;accent-color:#B0F612">비트 소멸과 위 내용을 이해했어요</label>
+      <div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="ch6" style="height:42px;padding:0 16px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:14px;font-family:'Noto Sans KR',sans-serif">남아 있을게요</button><button type="button" class="ch6" style="height:42px;padding:0 16px;border:0;background:transparent;color:#F3F5F7;font-size:14px;font-family:'Noto Sans KR',sans-serif;box-shadow:inset 0 0 0 1px #F3F5F7">탈퇴</button></div>
+      <span style="font-size:12px;color:#7C8494">방송 중이면 먼저 방송을 종료해야 탈퇴할 수 있어요.</span>
+    </div></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <span style="font-size:13px;color:#A3AAB6">카카오 첫 로그인 · 닉네임 설정</span>
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:20px;display:flex;flex-direction:column;gap:14px">
+      <b style="font-size:18px">FLUTCH에서 쓸 닉네임을 정해 주세요</b>
+      <span style="font-size:13px;color:#A3AAB6">카카오 닉네임을 미리 채워 뒀어요. 중복·금지어 검사를 거쳐요.</span>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#A3AAB6">닉네임<input type="text" value="카카오곰" class="ch6" style="height:46px;border:0;background:#12151B;box-shadow:inset 0 0 0 1px #B0F612;color:#F3F5F7;padding:0 12px;font-size:15px;font-family:'Noto Sans KR',sans-serif"><span style="font-size:12px;color:#B0F612">사용할 수 있는 닉네임이에요</span></label>
+      <div class="ch6" style="background:#191D25;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:13px">
+        <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" checked="" style="width:18px;height:18px;accent-color:#B0F612">[필수] 이용약관·개인정보처리방침 동의</label>
+        <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" checked="" style="width:18px;height:18px;accent-color:#B0F612">[필수] 만 14세 이상이에요</label>
+      </div>
+      <button type="button" class="ch6" style="height:48px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:15px;font-family:'Noto Sans KR',sans-serif">시작하기</button>
+    </div></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <span style="font-size:13px;color:#A3AAB6">결제 결과 · 성공 / 실패</span>
+    <div class="ch12" style="background:#B0F612;padding:1px"><div class="ch12" style="background:#12151B;padding:18px;display:flex;align-items:center;gap:14px">
+      <img src="../brand/face-joy.png" alt="" style="width:56px;height:56px;border-radius:50%">
+      <div style="display:flex;flex-direction:column;gap:4px"><b style="font-size:16px">후원했어요!</b><span style="font-size:13px;color:#A3AAB6">1,500 Beats 충전 + 김플러님에게 5,000 Beats 후원</span><a href="#" style="font-size:13px">방송으로 돌아가기 →</a></div>
+    </div></div>
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:18px;display:flex;align-items:center;gap:14px">
+      <img src="../brand/face-grumpy.png" alt="" style="width:56px;height:56px;border-radius:50%">
+      <div style="display:flex;flex-direction:column;gap:4px"><b style="font-size:16px">결제가 완료되지 않았어요</b><span style="font-size:13px;color:#A3AAB6">결제를 취소했거나 시간이 지났어요. 비트는 빠져나가지 않았어요.</span><a href="#" style="font-size:13px">다시 시도 →</a></div>
+    </div></div>
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:18px;display:flex;align-items:center;gap:14px">
+      <img src="../brand/face-happy.png" alt="" style="width:56px;height:56px;border-radius:50%">
+      <div style="display:flex;flex-direction:column;gap:4px"><b style="font-size:16px">방송이 끝나서 충전으로 처리했어요</b><span style="font-size:13px;color:#A3AAB6">6,500 Beats가 잔액에 들어갔어요.</span><a href="#" style="font-size:13px">내 지갑 보기 →</a></div>
+    </div></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <span style="font-size:13px;color:#A3AAB6">약관 · 개인정보처리방침 (같은 템플릿)</span>
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:13px;line-height:1.7;color:#A3AAB6">
+      <b style="font-size:18px;color:#F3F5F7">개인정보처리방침</b>
+      <span class="ch6" style="background:#191D25;padding:8px 12px;color:#F3F5F7">공모전 시연용 서비스예요. 실제 결제는 일어나지 않아요.</span>
+      <b style="color:#F3F5F7">1. 수집하는 정보</b><span>아이디, 닉네임, 비밀번호(암호화 저장), 서비스 이용 기록</span>
+      <b style="color:#F3F5F7">2. 보관 기간</b><span>로그 7일, 탈퇴 시 닉네임 30일 후 해제, 결제·후원 기록은 관계 법령에 따라 보관</span>
+      <b style="color:#F3F5F7">3. IP 주소</b><span>요청 제한 계산에만 쓰고 저장하지 않아요</span>
+      <span style="color:#7C8494">시행일 2026-11-19</span>
+    </div></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <span style="font-size:13px;color:#A3AAB6">스튜디오 모달 · 차단된 채팅 입력창</span>
+    <div role="dialog" aria-label="방송 이어하기" class="ch12" style="background:#B0F612;padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:10px">
+      <b style="font-size:15px">방송을 이어서 할까요?</b>
+      <span style="font-size:13px;color:#A3AAB6">연결이 끊긴 지 <b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">0:23</b> · 60초 안에 돌아오면 시청자가 그대로 이어서 봐요.</span>
+      <div style="display:flex;gap:8px"><button type="button" class="ch6" style="flex:1;height:42px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:14px;font-family:'Noto Sans KR',sans-serif">이어서 방송</button><button type="button" class="ch6" style="height:42px;padding:0 14px;border:0;background:#191D25;color:#F3F5F7;font-size:14px;font-family:'Noto Sans KR',sans-serif">종료</button></div>
+    </div></div>
+    <div role="dialog" aria-label="기기 전환" class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:10px">
+      <b style="font-size:15px">다른 기기에서 송출 중이에요</b>
+      <span style="font-size:13px;color:#A3AAB6">이 기기로 전환하면 기존 기기의 송출은 끊겨요.</span>
+      <div style="display:flex;gap:8px"><button type="button" class="ch6" style="flex:1;height:42px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:14px;font-family:'Noto Sans KR',sans-serif">이 기기로 전환</button><button type="button" class="ch6" style="height:42px;padding:0 14px;border:0;background:#191D25;color:#F3F5F7;font-size:14px;font-family:'Noto Sans KR',sans-serif">취소</button></div>
+    </div></div>
+    <div class="ch6" style="display:flex;align-items:center;gap:8px;background:#0F1217;padding:0 12px;height:44px;color:#7C8494;font-size:14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>7분 후 채팅할 수 있어요</div>
+    <div class="ch6" style="display:flex;align-items:center;gap:8px;background:#0F1217;padding:0 12px;height:44px;color:#7C8494;font-size:14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m5.6 5.6 12.8 12.8"></path></svg>이 채널에서 채팅이 제한되었어요</div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

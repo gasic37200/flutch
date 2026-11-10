@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>FLUTCH 스트리머 페이지</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@500;700&amp;family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0C0F}
+a{color:#F3F5F7;text-decoration:none}
+.ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.texture{background:#0A0C0F url(../brand/bg-speed.jpg) center/cover}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
+  <div class="texture" style="height:180px;position:relative"><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,15,.2),#0A0C0F)"></div></div>
+
+  <div style="max-width:1200px;margin:-72px auto 0;padding:0 24px 48px;position:relative;display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap">
+      <img src="../brand/face-excited.png" alt="" style="width:112px;height:112px;border-radius:50%;box-shadow:0 0 0 4px #4DA3FF,0 0 0 8px #0A0C0F">
+      <div style="flex:1 1 240px;display:flex;flex-direction:column;gap:6px">
+        <h1 style="margin:0;font-size:28px;font-weight:900">김플러</h1>
+        <span style="font-size:14px;color:#A3AAB6">팔로워 <b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">12,480</b> · 지금 방송 중</span>
+      </div>
+      <a href="#" class="ch6" style="height:44px;padding:0 20px;display:inline-flex;align-items:center;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:15px">새 방송 등록</a>
+    </div>
+
+    <div role="tablist" aria-label="스트리머 페이지" style="display:flex;gap:4px;border-bottom:1px solid #191D25">
+      <button type="button" role="tab" aria-selected="false" style="height:44px;padding:0 18px;border:0;background:transparent;color:#A3AAB6;font-size:15px;font-family:'Noto Sans KR',sans-serif">방송</button>
+      <button type="button" role="tab" aria-selected="false" style="height:44px;padding:0 18px;border:0;background:transparent;color:#A3AAB6;font-size:15px;font-family:'Noto Sans KR',sans-serif">다시보기</button>
+      <button type="button" role="tab" aria-selected="true" style="height:44px;padding:0 18px;border:0;border-bottom:2px solid #B0F612;background:transparent;color:#F3F5F7;font-weight:700;font-size:15px;font-family:'Noto Sans KR',sans-serif">관리 <span style="font-size:11px;color:#7C8494;font-weight:400">본인만</span></button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:#A3AAB6">누적 받은 비트</span><b style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#B0F612">1,284,300</b></div></div>
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:#A3AAB6">최근 7일</span><b style="font-family:'JetBrains Mono',monospace;font-size:24px">212,000</b></div></div>
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:#A3AAB6">이번 방송</span><b style="font-family:'JetBrains Mono',monospace;font-size:24px">128,400</b></div></div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+      <section style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:12px">
+        <h2 style="margin:0;font-size:18px;font-weight:900">방송 관리</h2>
+        <sc-for list="{{broadcasts}}" as="b" hint-placeholder-count="4">
+          <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:12px 14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <span class="ch6" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;padding:3px 8px;background:{{b.stBg}};color:{{b.stFg}}">{{b.status}}</span>
+            <div style="flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:2px"><b style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{b.title}}</b><span style="font-size:12px;color:#7C8494">{{b.meta}}</span></div>
+            <div style="display:flex;gap:6px">
+              <button type="button" class="ch6" style="height:36px;padding:0 12px;border:0;background:{{b.mainBg}};color:{{b.mainFg}};font-weight:700;font-size:13px;font-family:'Noto Sans KR',sans-serif">{{b.main}}</button>
+              <button type="button" class="ch6" style="height:36px;padding:0 12px;border:0;background:#191D25;color:#F3F5F7;font-size:13px;font-family:'Noto Sans KR',sans-serif">수정</button>
+              <button type="button" class="ch6" style="height:36px;padding:0 12px;border:0;background:#191D25;color:#A3AAB6;font-size:13px;font-family:'Noto Sans KR',sans-serif">삭제</button>
+            </div>
+          </div></div>
+        </sc-for>
+
+        <h2 style="margin:12px 0 0;font-size:18px;font-weight:900">후원 내역 · 이번 방송</h2>
+        <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:14px;min-width:560px">
+            <thead><tr style="color:#7C8494;font-size:12px;text-align:left"><th style="padding:12px 14px;font-weight:500">후원자</th><th style="padding:12px 8px;font-weight:500">유형</th><th style="padding:12px 8px;font-weight:500">비트</th><th style="padding:12px 8px;font-weight:500">메시지</th><th style="padding:12px 14px"></th></tr></thead>
+            <tbody>
+              <sc-for list="{{donations}}" as="d" hint-placeholder-count="5">
+                <tr style="border-top:1px solid #191D25">
+                  <td style="padding:10px 14px"><b>{{d.name}}</b> <span style="font-size:11px;padding:1px 6px;background:#191D25;color:#A3AAB6;display:{{d.anon}}">익명</span></td>
+                  <td style="padding:10px 8px;color:#A3AAB6">{{d.kind}}</td>
+                  <td style="padding:10px 8px;font-family:'JetBrains Mono',monospace;font-weight:700;color:{{d.color}}">{{d.amount}}</td>
+                  <td style="padding:10px 8px;color:#A3AAB6">{{d.msg}}</td>
+                  <td style="padding:10px 14px;text-align:right"><button type="button" class="ch6" style="height:32px;padding:0 10px;border:0;background:#191D25;color:#A3AAB6;font-size:12px;font-family:'Noto Sans KR',sans-serif">차단</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div></div>
+      </section>
+
+      <section style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:12px">
+        <h2 style="margin:0;font-size:18px;font-weight:900">차단 목록</h2>
+        <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:8px 14px;display:flex;flex-direction:column">
+          <sc-for list="{{bans}}" as="x" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #191D25">
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px"><b style="font-size:14px">{{x.name}}</b><span style="font-size:12px;color:#7C8494">{{x.left}}</span></div>
+              <button type="button" class="ch6" style="height:32px;padding:0 10px;border:0;background:#191D25;color:#F3F5F7;font-size:12px;font-family:'Noto Sans KR',sans-serif">해제</button>
+            </div>
+          </sc-for>
+          <span style="font-size:12px;color:#7C8494;padding:10px 0">임시차단은 시간이 지나면 자동으로 풀려요.</span>
+        </div></div>
+      </section>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var bc = function (status, title, meta, main, opt) {
+      var o = { status: status, title: title, meta: meta, main: main, stBg: '#191D25', stFg: '#A3AAB6', mainBg: '#B0F612', mainFg: '#0A0C0F' };
+      for (var k in (opt || {})) o[k] = opt[k];
+      return o;
+    };
+    return {
+      broadcasts: [
+        bc('LIVE', '[대회 준비중] 오늘도 클러치 가보자!', 'FPS · 01:24:17 · 녹화 중', '스튜디오 열기', { stBg: '#FF2E4D', stFg: '#fff' }),
+        bc('READY', '주말 시참 랭크전', 'FPS · 대기 중 · 녹화 켜짐', '방송 시작', { stBg: 'rgba(176,246,18,.15)', stFg: '#B0F612' }),
+        bc('READY', '신작 공포게임 첫 플레이', '공포게임 · 대기 중', '방송 시작', { stBg: 'rgba(176,246,18,.15)', stFg: '#B0F612' }),
+        bc('ENDED', '어제 대회 연습 3판', 'FPS · 2시간 41분 · 최고 41,203명', '다시보기', { mainBg: '#191D25', mainFg: '#F3F5F7' })
+      ],
+      donations: [
+        { name: '밤샘냥', anon: 'none', kind: '후원', amount: '5,000', msg: '방금 그 3대1 미쳤다 진짜', color: '#B0F612' },
+        { name: '라라', anon: 'inline', kind: '후원', amount: '10,000', msg: '대회 화이팅!!', color: '#FFC21A' },
+        { name: '에임장인', anon: 'none', kind: 'SUPER BURST', amount: '1,000', msg: '—', color: '#B0F612' },
+        { name: '수다곰', anon: 'none', kind: '유료 클러치 ×37', amount: '37', msg: '—', color: '#B0F612' },
+        { name: '용사킴', anon: 'none', kind: '후원', amount: '3,000', msg: '오늘도 재밌어요', color: '#B0F612' }
+      ],
+      bans: [
+        { name: '시청자123', left: '임시차단 · 7분 남음' },
+        { name: '광고봇77', left: '영구 밴' },
+        { name: '도배왕', left: '임시차단 · 52분 남음' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

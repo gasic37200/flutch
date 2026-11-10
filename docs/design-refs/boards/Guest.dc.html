@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>FLUTCH 비로그인 상태</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@500;700&amp;family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0C0F}
+a{color:#F3F5F7;text-decoration:none}
+.ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+</style>
+</helmet>
+<div style="width:1440px;height:1000px;box-sizing:border-box;padding:40px 48px;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column;gap:32px">
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <span style="font-size:13px;color:#A3AAB6">헤더 · 비로그인 (데스크톱)</span>
+    <header style="display:flex;align-items:center;gap:16px;padding:0 24px;height:64px;background:#0A0C0F;border:1px solid #191D25">
+      <img src="../brand/logo-flutch.png" alt="FLUTCH" style="height:30px">
+      <div style="flex:1;display:flex;justify-content:center"><label class="ch6" style="width:100%;max-width:520px;height:40px;background:#12151B;display:flex;align-items:center;gap:10px;padding:0 14px;box-sizing:border-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A3AAB6" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input type="search" aria-label="검색" placeholder="게임, 버추얼, 스트리머 검색…" style="flex:1;background:transparent;border:0;outline:0;color:#F3F5F7;font-size:14px;font-family:'Noto Sans KR',sans-serif"></label></div>
+      <a href="#" class="ch6" aria-label="방송하기 (로그인 필요)" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;background:#191D25"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F3F5F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2"></rect><path d="m16 10 6-3v10l-6-3"></path></svg></a>
+      <span class="ch6" style="background:#B0F612;padding:1px;display:inline-flex"><a href="#" class="ch6" style="height:42px;padding:0 20px;display:inline-flex;align-items:center;background:#0A0C0F;color:#B0F612;font-weight:700;font-size:15px">로그인</a></span>
+    </header>
+  </section>
+
+  <div style="display:flex;gap:40px;align-items:flex-start">
+    <section style="flex:0 0 260px;display:flex;flex-direction:column;gap:10px">
+      <span style="font-size:13px;color:#A3AAB6">사이드바 · 비로그인 ("인기 라이브")</span>
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#0A0C0F;padding:12px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:8px;padding:0 4px 6px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg><span style="font-size:15px;font-weight:900;color:#F3F5F7">인기 라이브</span></div>
+        <sc-for list="{{pulse}}" as="p" hint-placeholder-count="5">
+          <a href="#" style="display:flex;align-items:center;gap:10px;padding:6px 4px"><img src="{{p.face}}" alt="" style="width:30px;height:30px;border-radius:50%;box-shadow:0 0 0 2px {{p.ring}}"><span style="flex:1;font-size:14px;font-weight:700">{{p.name}}</span><b style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#FF2E4D">{{p.v}}</b></a>
+        </sc-for>
+        <a href="#" class="ch6" style="margin-top:6px;padding:10px;background:#191D25;font-size:13px;color:#A3AAB6;text-align:center">로그인하면 내 PULSE가 보여요</a>
+      </div></div>
+    </section>
+
+    <section style="flex:1;display:flex;flex-direction:column;gap:10px">
+      <span style="font-size:13px;color:#A3AAB6">시청 화면 채팅 · 비로그인 (읽기만 가능)</span>
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px;max-width:420px"><div class="ch12" style="background:#12151B;display:flex;flex-direction:column">
+        <div style="padding:14px 16px;border-bottom:1px solid #191D25"><b style="font-size:15px">채팅</b></div>
+        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;font-size:14px">
+          <div><b style="color:#2EE6D6">에임장인</b> ㄷㄷ 방금 그거 실화냐</div>
+          <div><b style="color:#9B7BFF">밤샘냥</b> 와 미쳤다 ㄷㄷ</div>
+          <div><b style="color:#5CF2A0">수다곰</b> 클러치각이다!</div>
+        </div>
+        <div style="padding:14px 16px;border-top:1px solid #191D25;display:flex;flex-direction:column;gap:10px;align-items:stretch">
+          <span style="font-size:14px;color:#A3AAB6;text-align:center">로그인하고 채팅에 참여하세요</span>
+          <a href="#" class="ch6" style="height:44px;display:flex;align-items:center;justify-content:center;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:15px">로그인</a>
+        </div>
+      </div></div>
+
+      <span style="font-size:13px;color:#A3AAB6;margin-top:16px">클러치 게이지 바 · 비로그인</span>
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px;max-width:720px"><div class="ch12" style="background:#12151B;display:flex;align-items:center;gap:14px;padding:12px 16px">
+        <img src="../brand/logo-clutch-time.png" alt="CLUTCH TIME" style="height:36px">
+        <div class="ch6" style="flex:1;height:12px;background:#191D25"><div class="ch6" style="width:72%;height:100%;background:#B0F612"></div></div>
+        <b style="font-family:'JetBrains Mono',monospace;font-size:15px">72%</b>
+        <a href="#" class="ch6" style="height:44px;padding:0 16px;display:inline-flex;align-items:center;background:#191D25;color:#F3F5F7;font-size:14px">로그인하고 클러치</a>
+      </div></div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { pulse: [
+      { name: '김플러', v: '3.2만', face: '../brand/face-excited.png', ring: '#4DA3FF' },
+      { name: '버추얼_릴리', v: '1.8만', face: '../brand/face-joy.png', ring: '#9B7BFF' },
+      { name: '박클러치', v: '9.7천', face: '../brand/face-grumpy.png', ring: '#5CF2A0' },
+      { name: '밤샘냥', v: '4.1천', face: '../brand/face-calm.png', ring: '#2EE6D6' },
+      { name: '수다곰', v: '3.4천', face: '../brand/face-happy.png', ring: '#B0F612' }
+    ] };
+  }
+}
+</script>
+</body>
+</html>

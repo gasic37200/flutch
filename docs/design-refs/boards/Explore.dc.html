@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>FLUTCH 탐색</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@500;700&amp;family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0C0F}
+a{color:#F3F5F7;text-decoration:none}
+.ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.texture{background:#0A0C0F url(../brand/bg-speed.jpg) center/cover}
+.card:hover .cardframe{background:#B0F612}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;padding:28px 24px 48px;box-sizing:border-box;display:flex;flex-direction:column;gap:32px;max-width:1440px">
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <h1 style="margin:0;font-size:26px;font-weight:900">탐색</h1>
+    <label class="ch6" style="max-width:640px;height:48px;background:#12151B;box-shadow:inset 0 0 0 1px #B0F612;display:flex;align-items:center;gap:10px;padding:0 16px;box-sizing:border-box">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <input type="search" aria-label="검색" value="랭크" style="flex:1;min-width:0;background:transparent;border:0;outline:0;color:#F3F5F7;font-size:15px;font-family:'Noto Sans KR',sans-serif">
+      <button type="button" aria-label="검색어 지우기" style="width:36px;height:36px;border:0;background:transparent;color:#A3AAB6"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </label>
+    <span style="font-size:13px;color:#7C8494">제목·스트리머 닉네임·태그에서 찾아요</span>
+  </div>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <h2 style="margin:0;font-size:18px;font-weight:900">카테고리</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">
+      <sc-for list="{{cats}}" as="c" hint-placeholder-count="8">
+        <a href="#" class="card" style="display:block">
+          <div class="ch12 cardframe" style="background:{{c.frame}};padding:1px"><div class="ch12 texture" style="aspect-ratio:4/3;position:relative;display:flex;flex-direction:column;justify-content:flex-end;padding:12px;box-sizing:border-box">
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,15,.3),rgba(10,12,15,.88))"></div>
+            <b style="position:relative;font-size:16px">{{c.name}}</b>
+            <span style="position:relative;font-size:12px;color:#A3AAB6">라이브 <b style="font-family:'JetBrains Mono',monospace;color:#FF2E4D">{{c.live}}</b></span>
+          </div></div>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:baseline;gap:10px"><h2 style="margin:0;font-size:18px;font-weight:900">"랭크" 라이브</h2><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#A3AAB6">12</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">
+      <sc-for list="{{lives}}" as="l" hint-placeholder-count="4">
+        <a href="#" class="card" style="display:block">
+          <div class="ch12 cardframe" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;display:flex;flex-direction:column">
+            <div class="texture" style="aspect-ratio:16/9;position:relative">
+              <span style="position:absolute;top:8px;left:8px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;padding:2px 6px">LIVE</span>
+              <span style="position:absolute;top:8px;right:8px;background:rgba(10,12,15,.8);font-family:'JetBrains Mono',monospace;font-size:12px;padding:2px 6px">{{l.viewers}}</span>
+              <span style="position:absolute;left:8px;bottom:8px;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px">{{l.cat}}</span>
+            </div>
+            <div style="padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+              <b style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{l.title}}</b>
+              <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#A3AAB6"><img src="{{l.face}}" alt="" style="width:20px;height:20px;border-radius:50%;box-shadow:0 0 0 2px {{l.ring}}"><span style="flex:1">{{l.name}}</span><span style="font-size:12px;color:#B0F612">{{l.tag}}</span></div>
+            </div>
+          </div></div>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <div style="display:flex;flex-wrap:wrap;gap:28px">
+    <section style="flex:1 1 420px;display:flex;flex-direction:column;gap:14px">
+      <h2 style="margin:0;font-size:18px;font-weight:900">스트리머</h2>
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <sc-for list="{{streamers}}" as="s" hint-placeholder-count="3">
+          <a href="#" style="display:flex;flex-direction:column;align-items:center;gap:8px;width:96px">
+            <img src="{{s.face}}" alt="" style="width:72px;height:72px;border-radius:50%;box-shadow:0 0 0 3px {{s.ring}}">
+            <b style="font-size:14px">{{s.name}}</b>
+            <span style="font-size:12px;color:{{s.stColor}}">{{s.status}}</span>
+          </a>
+        </sc-for>
+      </div>
+    </section>
+    <section style="flex:1 1 420px;display:flex;flex-direction:column;gap:14px">
+      <h2 style="margin:0;font-size:18px;font-weight:900">다시보기</h2>
+      <sc-for list="{{vods}}" as="v" hint-placeholder-count="2">
+        <a href="#" style="display:flex;gap:12px;align-items:center">
+          <div class="texture ch6" style="width:140px;flex:0 0 140px;aspect-ratio:16/9;position:relative"><span style="position:absolute;right:6px;bottom:6px;background:rgba(10,12,15,.85);font-family:'JetBrains Mono',monospace;font-size:11px;padding:1px 5px">{{v.len}}</span></div>
+          <div style="min-width:0;display:flex;flex-direction:column;gap:4px"><b style="font-size:14px">{{v.title}}</b><span style="font-size:12px;color:#A3AAB6">{{v.meta}}</span></div>
+        </a>
+      </sc-for>
+    </section>
+  </div>
+
+  <section class="ch12" style="background:rgba(176,246,18,.25);padding:1px;max-width:640px"><div class="ch12" style="background:#12151B;padding:20px;display:flex;align-items:center;gap:16px">
+    <img src="../brand/face-sleepy.png" alt="" style="width:64px;height:64px;border-radius:50%">
+    <div style="display:flex;flex-direction:column;gap:4px"><b style="font-size:15px">검색 결과가 없을 때</b><span style="font-size:13px;color:#A3AAB6">"ㅁㄴㅇ"에 맞는 방송을 찾지 못했어요. 다른 검색어나 카테고리로 찾아보세요.</span></div>
+  </div></section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var F = { happy: '../brand/face-happy.png', joy: '../brand/face-joy.png', excited: '../brand/face-excited.png', calm: '../brand/face-calm.png', sleepy: '../brand/face-sleepy.png', grumpy: '../brand/face-grumpy.png' };
+    var cats = [['저스트채팅', 14], ['종합게임', 22], ['FPS', 31], ['RPG', 9], ['공포게임', 6], ['버추얼', 18], ['스포츠', 4], ['음악', 7]];
+    return {
+      cats: cats.map(function (c, i) { return { name: c[0], live: c[1], frame: i === 2 ? '#B0F612' : 'rgba(176,246,18,.25)' }; }),
+      lives: [
+        { title: '[대회 준비중] 오늘도 클러치 가보자!', cat: 'FPS', viewers: '32,481', name: '김플러', face: F.excited, ring: '#4DA3FF', tag: '#랭크' },
+        { title: '주말 시참 랭크전', cat: 'FPS', viewers: '2,904', name: '에임장인', face: F.grumpy, ring: '#2EE6D6', tag: '#랭크' },
+        { title: '배틀로얄 랭크 구함!', cat: 'FPS', viewers: '821', name: '용사킴', face: F.happy, ring: '#B0F612', tag: '#랭크' },
+        { title: '레이드 랭크 경쟁전', cat: 'RPG', viewers: '1,355', name: '라라', face: F.joy, ring: '#E8ECF1', tag: '#랭크' }
+      ],
+      streamers: [
+        { name: '랭크장인', face: F.grumpy, ring: '#5CF2A0', status: 'LIVE', stColor: '#FF2E4D' },
+        { name: '랭크업요정', face: F.joy, ring: '#9B7BFF', status: '오프라인', stColor: '#7C8494' },
+        { name: '랭크봇', face: F.calm, ring: '#4DA3FF', status: '오프라인', stColor: '#7C8494' }
+      ],
+      vods: [
+        { title: '10월 시즌 마지막 랭크', meta: '박클러치 · 조회 3,210 · 10월 31일', len: '2:12:40' },
+        { title: '랭크 1000점 찍는 날', meta: '에임장인 · 조회 1,804 · 11월 2일', len: '1:44:02' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
