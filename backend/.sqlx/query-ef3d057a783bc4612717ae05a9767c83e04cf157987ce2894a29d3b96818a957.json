@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COUNT(*) AS \"n!\" FROM clutch_events\n           WHERE user_id = $1 AND broadcast_id = $2 AND source = 'free'\n             AND created_at > clock_timestamp() - $3::bigint * interval '1 second'",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "n!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "ef3d057a783bc4612717ae05a9767c83e04cf157987ce2894a29d3b96818a957"
+}
