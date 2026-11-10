@@ -1,3 +1,4 @@
+import { Track } from 'livekit-client'
 import { useEffect, useRef, useState } from 'react'
 import { useRequireLogin } from '../../auth/hooks/useAuth.ts'
 import { useBroadcast } from '../../broadcast/hooks/useBroadcasts.ts'
@@ -24,7 +25,7 @@ export function useStudio(broadcastId: number | undefined) {
   const [endConfirm, setEndConfirm] = useState(false)
   const [ending, setEnding] = useState(false)
   const data = broadcast.data
-  const elapsed = useElapsed(data?.startedAt)
+  const elapsed = useElapsed(data?.startedAt, data?.endedAt)
 
   const { onEvent } = events
   useEffect(
@@ -52,15 +53,15 @@ export function useStudio(broadcastId: number | undefined) {
     }
   }, [pub.status, version, items, publishMediaTrack, unpublishSource])
 
-  // 방송이 끝났거나 다른 기기로 넘어가면 캡처를 끊는다(카메라 불·화면 공유 표시 해제)
-  useEffect(() => {
-    if (pub.status === 'ended' || pub.status === 'displaced') media.stopAll()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pub.status])
-
   const status = broadcast.data?.status
   const isOwner = !!me && !!data && data.owner.id === me.id
   const phase = pub.status === 'ended' || status === 'ENDED' ? 'ended' : LIVE_STATUSES.includes(pub.status) ? 'live' : 'ready'
+
+  // 방송이 끝났거나(서버 종료 포함) 다른 기기로 넘어가면 캡처를 끊는다(카메라 불·화면 공유 표시 해제)
+  useEffect(() => {
+    if (phase === 'ended' || pub.status === 'displaced') media.stopAll()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, pub.status])
 
   const wakeLockMissing = useWakeLock(phase === 'live')
   useThumbnailCapture(broadcastId, phase === 'live', media.stream)
@@ -74,6 +75,12 @@ export function useStudio(broadcastId: number | undefined) {
     if (m === media.mode) return
     if (phase === 'live') await media.captureVideo(m)
     else media.setMode(m)
+  }
+
+  /** 카메라 전·후면 전환. 게시 중인 clone이 카메라를 잡고 있으면 모바일이 새로 못 열어서, 먼저 내린다(새 트랙은 동기화 effect가 다시 게시) */
+  const flipCamera = async () => {
+    await pub.unpublishSource(Track.Source.Camera)
+    await media.flipCamera()
   }
 
   const stop = async () => {
@@ -104,6 +111,7 @@ export function useStudio(broadcastId: number | undefined) {
     chooseMode,
     /** 화면 소스 변경·화면 공유 중지 뒤 다시 공유 */
     reshare: () => media.captureVideo(),
+    flipCamera,
     goLive: () => pub.start(),
   }
 }
