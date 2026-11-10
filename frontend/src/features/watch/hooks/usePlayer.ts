@@ -20,6 +20,9 @@ function useAttach<T extends HTMLMediaElement>(track: RemoteTrack | undefined) {
  */
 export function usePlayer(tracks: ViewerTracks, muted: boolean) {
   const videoRef = useAttach<HTMLVideoElement>(tracks.screenShare ?? tracks.camera)
+  // 화면 공유가 있을 때만 카메라를 PIP로 쓴다(없으면 위 videoRef가 카메라를 크게 보여 준다)
+  const pipRef = useAttach<HTMLVideoElement>(tracks.screenShare ? tracks.camera : undefined)
+  const [pipHidden, setPipHidden] = useState(false)
   const micRef = useAttach<HTMLAudioElement>(tracks.microphone)
   const shareAudioRef = useAttach<HTMLAudioElement>(tracks.screenShareAudio)
   const boxRef = useRef<HTMLDivElement>(null)
@@ -43,5 +46,5 @@ export function usePlayer(tracks: ViewerTracks, muted: boolean) {
     else void boxRef.current?.requestFullscreen()
   }, [])
 
-  return { videoRef, micRef, shareAudioRef, boxRef, volume, setVolume, fullscreen, toggleFullscreen, muted }
+  return { videoRef, pipRef, pipHidden, togglePip: () => setPipHidden((h) => !h), hasPip: !!(tracks.screenShare && tracks.camera), micRef, shareAudioRef, boxRef, volume, setVolume, fullscreen, toggleFullscreen, muted }
 }

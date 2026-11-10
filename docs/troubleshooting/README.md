@@ -44,3 +44,4 @@
 | [T25-egress-needs-room-and-no-room-in-webhook.md](T25-egress-needs-room-and-no-room-in-webhook.md) | T25 | Egress는 방이 있어야 시작(→ 송출자 접속 웹훅에서 시작), `egress_ended` 웹훅엔 `room`이 없음 |
 | [T21-concurrent-test-overlap.md](T21-concurrent-test-overlap.md) | T21 | 동시 confirm 시나리오가 단독 실행에선 겹치지 않아 실패 → FakeToss 승인 지연으로 겹침 보장 |
 | [T22-pg-stat-activity-snapshot-in-tx.md](T22-pg-stat-activity-snapshot-in-tx.md) | T22 | 트랜잭션 안 pg_stat_activity 폴링은 스냅숏이 고정돼 겹침 확인이 멈춤 → pg_stat_clear_snapshot, 잠금은 풀 밖 커넥션 |
+| [T09b-trackunsubscribed-stale-track.md](T09b-trackunsubscribed-stale-track.md) | T09b | livekit-client는 TrackUnsubscribed를 pub.track 비우기 전에 발행 → sync에서 떠나는 트랙을 직접 제외 |
