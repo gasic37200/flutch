@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRequireLogin } from '../../auth/hooks/useAuth.ts'
 import { useChat } from '../../chat/hooks/useChat.ts'
 import { useBroadcast, useUpdateBroadcast } from '../../broadcast/hooks/useBroadcasts.ts'
+import { useDonationAlerts } from '../../donation/hooks/useDonationAlerts.ts'
 import { useBroadcastEvents } from '../../live/hooks/useBroadcastEvents.ts'
 import { usePublisher, type MediaSource } from '../../live/hooks/usePublisher.ts'
 import { useToast } from '../../../hooks/useToast.ts'
@@ -23,6 +24,7 @@ export function useStudio(broadcastId: number | undefined) {
   const broadcast = useBroadcast(broadcastId)
   const events = useBroadcastEvents(broadcastId)
   const chat = useChat(broadcastId, events)
+  const alerts = useDonationAlerts(events.onEvent)
   const pub = usePublisher(broadcastId)
   const media = useStudioMedia(env)
   const updateBroadcast = useUpdateBroadcast(broadcastId)
@@ -106,6 +108,7 @@ export function useStudio(broadcastId: number | undefined) {
     env,
     broadcast,
     chat,
+    alerts,
     data,
     isOwner,
     phase,

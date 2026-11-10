@@ -8,7 +8,7 @@ import { useAuth } from '../../auth/hooks/useAuth.ts'
 import { HOME_POLL_MS } from '../../broadcast/hooks/useBroadcasts.ts'
 import { useRecordings } from '../../replay/hooks/useRecordings.ts'
 
-export type StreamerTab = 'broadcasts' | 'replays' | 'bans'
+export type StreamerTab = 'broadcasts' | 'replays' | 'bans' | 'donations' | 'stats'
 
 /** 스트리머 페이지: 프로필·현재 방송·지난 방송·다시보기·본인 여부를 한 곳에서. */
 export function useStreamer(userId: number | undefined) {
