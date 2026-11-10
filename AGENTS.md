@@ -157,7 +157,7 @@ feat(broadcast): 송출 시작·종료 API 추가
 6. **컨텍스트 관리**: task를 머지할 때마다 roadmap에 상태가 남아 있으므로, 컨텍스트가 길어지면 `/compact` 후 1번(숙지)부터 다시.
 
 ### 9-3. 병렬 규칙
-- 서브에이전트 1개 = task 1개 = 브랜치 1개 = worktree 1개. **동시 최대 3개**(Rust 빌드 캐시가 worktree마다 수 GB, CPU 경쟁).
+- 서브에이전트 1개 = task 1개 = 브랜치 1개 = worktree 1개. **동시 최대 3개**(Rust 빌드 캐시가 worktree마다 수 GB, CPU 경쟁). 이 중 **Rust 빌드·테스트를 도는 task는 동시 2개까지**(WSL 메모리 7.7GB — 11/10 15:54 공용 Postgres가 메모리 부족으로 재시작되며 다른 task·로컬 사이트에 500).
 - 기반 단계는 T01 → T02 → T02b → T03 → T04 **직렬**, T05·T07은 T01 직후부터 병렬. 그 외 병렬은 roadmap에 "(병렬)" 표시된 task끼리만.
 - 파일이 겹치지 않는 단위로만 병렬. 프론트·백엔드가 같은 기능을 나누면 `docs/api.md` 계약을 먼저 머지.
 - 공용 파일(`backend/src/routes/mod.rs`, `main.rs`, `config.rs`, `scheduler.rs`, `error.rs`, `frontend/src/router.tsx`)은 T01이 만든 골격대로 **자기 도메인 부분만** 채운다(라우터는 미리 연결돼 있음). 골격 밖 수정이 필요하면 보고서에 요청한다. `docs/roadmap.md`·`docs/worklog.md`는 메인 세션만.
