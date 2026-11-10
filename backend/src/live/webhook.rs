@@ -21,6 +21,9 @@ struct WebhookEvent {
     event: String,
     room: Option<Room>,
     participant: Option<Participant>,
+    /// `egress_ended`만. 이 이벤트에는 `room`이 없다.
+    #[serde(rename = "egressInfo", alias = "egress_info")]
+    egress_info: Option<serde_json::Value>,
 }
 
 #[derive(Deserialize)]
@@ -51,6 +54,12 @@ pub async fn receive(
     }
     let ev: WebhookEvent = serde_json::from_slice(&body)
         .map_err(|e| AppError::Validation(BTreeMap::from([("body".to_owned(), e.to_string())])))?;
+    if ev.event == "egress_ended" {
+        if let Some(info) = &ev.egress_info {
+            crate::recording::egress_ended(&state, info).await?;
+        }
+        return Ok(StatusCode::OK);
+    }
     // 우리 방(`broadcast-<id>`)이 아니면 무시
     let Some(id) = ev
         .room
@@ -65,7 +74,6 @@ pub async fn receive(
         ("participant_joined", Some(p)) => joined(&state, id, p).await?,
         ("participant_left", Some(p)) => left(&state, id, p).await?,
         ("room_finished", _) => room_finished(&state, id).await?,
-        // shortcut: egress_ended(녹화 ready/failed)는 T25가 처리한다. 지금은 다른 이벤트와 같이 무시.
         _ => {}
     }
     Ok(StatusCode::OK)
@@ -77,6 +85,10 @@ async fn joined(state: &AppState, id: i64, p: Participant) -> Result<(), AppErro
         if let Some(b) = &live
             && b.publisher_identity.as_deref() == Some(p.identity.as_str())
         {
+            // 방이 생겼다 → 녹화 켜짐이면 Egress 시작(한 번만). 실패해도 방송에는 영향 없다.
+            if let Err(e) = crate::recording::start(state, id).await {
+                tracing::error!(broadcast_id = id, error = %e, "recording start failed");
+            }
             // 첫 접속이면 `POST /live`가 시작한 유예도 여기서 풀린다
             if db::end_grace(&state.db, id, &p.identity).await? {
                 tracing::info!(broadcast_id = id, identity = %p.identity, "publisher resumed");

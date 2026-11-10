@@ -10,7 +10,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
-use crate::config::LiveKitConfig;
+use crate::config::{LiveKitConfig, S3Config};
 
 /// 클라이언트 접속 토큰 유효 시간(api.md §3-1). 방송 최대 3시간보다 길게.
 pub const ACCESS_TOKEN_TTL_SECS: i64 = 4 * 60 * 60;
@@ -53,6 +53,16 @@ pub trait LiveKitApi: Send + Sync {
     async fn remove_participant(&self, room: &str, identity: &str) -> Result<(), LiveKitError>;
     /// 방에 지금 접속한 참가자(hidden 포함). 방이 없으면 빈 목록.
     async fn list_participants(&self, room: &str) -> Result<Vec<Participant>, LiveKitError>;
+    /// 방 전체(RoomComposite) MP4 녹화를 시작해 S3 호환 저장소의 `key`로 올린다. 돌려주는 값은 egress id.
+    /// 방이 있어야 시작되므로 송출자가 접속한 뒤에 부른다.
+    async fn start_recording(
+        &self,
+        room: &str,
+        s3: &S3Config,
+        key: &str,
+    ) -> Result<String, LiveKitError>;
+    /// Egress를 끝낸다(파일을 마무리해 올린다). 이미 끝났으면 성공.
+    async fn stop_recording(&self, egress_id: &str) -> Result<(), LiveKitError>;
 }
 
 /// 웹훅 검증 시계 오차 허용(초).
@@ -170,11 +180,21 @@ impl LiveKitHttp {
         video: Value,
         body: Value,
     ) -> Result<Value, LiveKitError> {
+        self.twirp("RoomService", method, video, body).await
+    }
+
+    async fn twirp(
+        &self,
+        service: &str,
+        method: &str,
+        video: Value,
+        body: Value,
+    ) -> Result<Value, LiveKitError> {
         let token = self.admin_token(chrono::Utc::now().timestamp(), video)?;
         let res = self
             .http
             .post(format!(
-                "{}/twirp/livekit.RoomService/{method}",
+                "{}/twirp/livekit.{service}/{method}",
                 self.http_base()
             ))
             .bearer_auth(token)
@@ -222,6 +242,54 @@ impl LiveKitApi for LiveKitHttp {
         match res.get_mut("participants") {
             Some(list) => Ok(serde_json::from_value(list.take())?),
             None => Ok(Vec::new()),
+        }
+    }
+
+    async fn start_recording(
+        &self,
+        room: &str,
+        s3: &S3Config,
+        key: &str,
+    ) -> Result<String, LiveKitError> {
+        let res = self
+            .twirp(
+                "Egress",
+                "StartRoomCompositeEgress",
+                json!({ "roomRecord": true }),
+                json!({
+                    "room_name": room,
+                    "file_outputs": [{
+                        "file_type": "MP4",
+                        "filepath": key,
+                        "s3": {
+                            "access_key": s3.access_key, "secret": s3.secret_key,
+                            "region": s3.region, "endpoint": s3.endpoint,
+                            "bucket": s3.bucket, "force_path_style": true,
+                        },
+                    }],
+                }),
+            )
+            .await?;
+        res["egress_id"]
+            .as_str()
+            .or(res["egressId"].as_str())
+            .map(str::to_owned)
+            .ok_or(LiveKitError::Status(404))
+    }
+
+    async fn stop_recording(&self, egress_id: &str) -> Result<(), LiveKitError> {
+        // 이미 끝난 Egress를 멈추면 Twirp 에러(failed_precondition 412 등) — 끝난 것이므로 성공으로 본다.
+        match self
+            .twirp(
+                "Egress",
+                "StopEgress",
+                json!({ "roomRecord": true }),
+                json!({ "egress_id": egress_id }),
+            )
+            .await
+        {
+            Err(LiveKitError::Status(412)) => Ok(()),
+            r => r.map(drop),
         }
     }
 }

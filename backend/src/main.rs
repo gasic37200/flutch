@@ -5,7 +5,7 @@ use flutch::config::Config;
 use flutch::livekit::LiveKitHttp;
 use flutch::scheduler::Scheduler;
 use flutch::toss::TossHttp;
-use flutch::{AppState, app, connect_db, realtime};
+use flutch::{AppState, app, connect_db, realtime, recording};
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::time::ChronoLocal;
 
@@ -32,9 +32,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .timeout(std::time::Duration::from_secs(10))
         .build()?;
     let port = config.backend_port;
+    let storage: Arc<dyn recording::ObjectStore> = match &config.recording.s3 {
+        Some(s3) => Arc::new(recording::S3Http::new(s3.clone(), http.clone())),
+        None => Arc::new(recording::NoStorage),
+    };
     let state = Arc::new(AppState {
         livekit: Arc::new(LiveKitHttp::new(config.livekit.clone(), http.clone())),
         toss: Arc::new(TossHttp::new(http)),
+        storage,
         realtime: realtime::Hub::default(),
         live: Default::default(),
         db,

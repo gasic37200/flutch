@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 
-use super::{Broadcast, BroadcastStatus, parse_enum};
+use super::{Broadcast, BroadcastStatus, RecordingRef, parse_enum};
 use crate::auth::UserSummary;
 use crate::error::AppError;
 
@@ -21,6 +21,8 @@ pub struct Row {
     pub peak_viewers: i32,
     pub thumbnail_path: Option<String>,
     pub created_at: DateTime<Utc>,
+    pub recording_id: Option<i64>,
+    pub recording_status: Option<String>,
 }
 
 impl Row {
@@ -50,7 +52,13 @@ impl Row {
             created_at: self.created_at,
             reconnecting: self.disconnected_at.is_some(),
             super_clutch_until: None,
-            recording: None,
+            recording: match (self.recording_id, self.recording_status) {
+                (Some(id), Some(status)) => Some(RecordingRef {
+                    id,
+                    status: parse_enum(&status)?,
+                }),
+                _ => None,
+            },
         })
     }
 }
@@ -77,8 +85,10 @@ pub async fn find(db: &PgPool, f: &Filter) -> Result<Vec<Row>, sqlx::Error> {
                   CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS "owner_nickname!",
                   b.status, b.title, b.category, b.tags, b.record, b.pip_corner,
                   b.started_at, b.ended_at, b.disconnected_at, b.peak_viewers,
-                  b.thumbnail_path, b.created_at
+                  b.thumbnail_path, b.created_at,
+                  r.id AS "recording_id?", r.status AS "recording_status?"
            FROM broadcasts b JOIN users u ON u.id = b.owner_id
+           LEFT JOIN recordings r ON r.broadcast_id = b.id
            WHERE b.hidden_at IS NULL
              AND ($1::bigint IS NULL OR b.id = $1)
              AND ($2::bigint IS NULL OR b.owner_id = $2)
@@ -242,7 +252,7 @@ pub async fn hide_ended(db: &PgPool, id: i64) -> Result<bool, sqlx::Error> {
     if res.rows_affected() == 0 {
         return Ok(false);
     }
-    // shortcut: 저장소의 파일 삭제는 T25(녹화)가 붙인다. 여기선 상태만 deleted로.
+    // 파일 삭제는 호출자가 `recording::purge`로(실패해도 주기 작업이 재시도). 여기선 상태만 deleted로.
     sqlx::query!(
         "UPDATE recordings SET status = 'deleted' WHERE broadcast_id = $1",
         id

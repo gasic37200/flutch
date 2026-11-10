@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE recordings SET status = 'failed'\n         WHERE status = 'recording' AND created_at < now() - make_interval(secs => $1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Float8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b9ebb23ba871b23e9a325da6787f82cba2f461ed005abe44aaddbed242c06788"
+}

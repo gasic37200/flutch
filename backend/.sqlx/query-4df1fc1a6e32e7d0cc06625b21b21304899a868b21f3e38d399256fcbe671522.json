@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE recordings SET status = 'failed' WHERE id = $1 AND status = 'recording'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4df1fc1a6e32e7d0cc06625b21b21304899a868b21f3e38d399256fcbe671522"
+}

@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE recordings SET status = 'failed'\n         WHERE egress_id = $1 AND status = 'recording' RETURNING id, broadcast_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "recordings",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "broadcast_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "recordings",
+            "name": "broadcast_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "ae7bf0a1600e94094da6885e0bae8b9cb3de4a2bde5ae9c89b26803a754f686d"
+}

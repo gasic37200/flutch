@@ -415,6 +415,10 @@ pub async fn delete(
             }
         }
     }
+    // 숨김 처리된 방송의 녹화 파일 삭제. 실패해도 삭제는 성공(deleted 표시가 남아 1시간 주기 작업이 다시 지운다).
+    if let Err(e) = crate::recording::purge(&state).await {
+        tracing::error!(broadcast_id = id, error = %e, "recording purge failed");
+    }
     // 숨김 처리된 방송의 썸네일 파일은 더 쓰이지 않는다. 실패해도 삭제는 성공(없으면 정상).
     let _ = tokio::fs::remove_file(thumbnail_file(&state, id)).await;
     tracing::info!(broadcast_id = id, owner_id = user.id, "broadcast deleted");

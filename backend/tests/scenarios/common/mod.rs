@@ -8,8 +8,11 @@ use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
 use axum::http::{HeaderMap, Request, StatusCode};
-use flutch::config::{AuthConfig, BroadcastConfig, Config, LiveConfig, LiveKitConfig};
+use flutch::config::{
+    AuthConfig, BroadcastConfig, Config, LiveConfig, LiveKitConfig, RecordingConfig, S3Config,
+};
 use flutch::livekit::{LiveKitApi, LiveKitError, Participant};
+use flutch::recording::{ObjectStore, StorageError};
 use flutch::toss::TossApi;
 use flutch::{AppState, realtime};
 use sqlx::PgPool;
@@ -32,6 +35,12 @@ pub struct FakeLiveKit {
     pub participants: Mutex<HashMap<String, Vec<Participant>>>,
     /// true면 `list_participants`가 실패한다.
     pub list_fails: AtomicBool,
+    /// `start_recording`으로 녹화를 시작한 (방, 객체 키).
+    pub started_recordings: Mutex<Vec<(String, String)>>,
+    /// `stop_recording`으로 멈춘 egress id.
+    pub stopped_recordings: Mutex<Vec<String>>,
+    /// true면 `start_recording`이 실패한다.
+    pub recording_start_fails: AtomicBool,
 }
 
 #[async_trait]
@@ -61,6 +70,46 @@ impl LiveKitApi for FakeLiveKit {
             .cloned()
             .unwrap_or_default())
     }
+
+    async fn start_recording(
+        &self,
+        room: &str,
+        _s3: &S3Config,
+        key: &str,
+    ) -> Result<String, LiveKitError> {
+        if self.recording_start_fails.load(Ordering::SeqCst) {
+            return Err(LiveKitError::Status(503));
+        }
+        let mut started = self.started_recordings.lock().unwrap();
+        started.push((room.to_owned(), key.to_owned()));
+        Ok(format!("EG_{}", started.len()))
+    }
+
+    async fn stop_recording(&self, egress_id: &str) -> Result<(), LiveKitError> {
+        self.stopped_recordings
+            .lock()
+            .unwrap()
+            .push(egress_id.to_owned());
+        Ok(())
+    }
+}
+
+/// 녹화 저장소. 지운 객체 키를 기록하고, `delete_fails`면 실패한다.
+#[derive(Default)]
+pub struct FakeStore {
+    pub deleted: Mutex<Vec<String>>,
+    pub delete_fails: AtomicBool,
+}
+
+#[async_trait]
+impl ObjectStore for FakeStore {
+    async fn delete(&self, key: &str) -> Result<(), StorageError> {
+        if self.delete_fails.load(Ordering::SeqCst) {
+            return Err(StorageError::Status(503));
+        }
+        self.deleted.lock().unwrap().push(key.to_owned());
+        Ok(())
+    }
 }
 
 pub struct FakeToss;
@@ -72,6 +121,16 @@ pub fn test_app(db: PgPool) -> Router {
 
 /// 앱 상태. 호출 기록을 보려면 `FakeLiveKit`을 직접 만들어 넘기고 같은 `Arc`를 들고 있는다.
 pub fn test_state(db: PgPool, livekit: Arc<FakeLiveKit>) -> Arc<AppState> {
+    test_state_with(db, livekit, Arc::new(FakeStore::default()), None)
+}
+
+/// 녹화 설정을 켠 앱 상태. 녹화 시나리오가 쓴다(`recording`이 `None`이면 녹화 꺼짐).
+pub fn test_state_with(
+    db: PgPool,
+    livekit: Arc<FakeLiveKit>,
+    storage: Arc<FakeStore>,
+    recording: Option<RecordingConfig>,
+) -> Arc<AppState> {
     let config = Config {
         backend_port: 0,
         database_url: String::new(),
@@ -91,15 +150,38 @@ pub fn test_state(db: PgPool, livekit: Arc<FakeLiveKit>) -> Arc<AppState> {
         broadcast: BroadcastConfig {
             thumb_dir: std::env::temp_dir().join("flutch-test-thumbs"),
         },
+        recording: recording.unwrap_or(RecordingConfig {
+            s3: None,
+            public_base_url: String::new(),
+            retention_days: 30,
+            max_total_bytes: 16 * 1024 * 1024 * 1024,
+        }),
     };
     Arc::new(AppState {
         config,
         db,
         livekit,
         toss: Arc::new(FakeToss),
+        storage,
         realtime: realtime::Hub::default(),
         live: Default::default(),
     })
+}
+
+/// 녹화가 켜진 테스트 설정(가짜 저장소, 공개 URL `https://cdn.test`).
+pub fn recording_config() -> RecordingConfig {
+    RecordingConfig {
+        s3: Some(S3Config {
+            endpoint: "https://s3.test".into(),
+            bucket: "rec".into(),
+            region: "test".into(),
+            access_key: "ak".into(),
+            secret_key: "sk".into(),
+        }),
+        public_base_url: "https://cdn.test/rec".into(),
+        retention_days: 30,
+        max_total_bytes: 16 * 1024 * 1024 * 1024,
+    }
 }
 
 pub struct TestResponse {

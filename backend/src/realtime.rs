@@ -19,7 +19,7 @@ use tokio::sync::broadcast::{self, error::RecvError};
 use ts_rs::TS;
 
 use crate::AppState;
-use crate::broadcast::{Broadcast, BroadcastEnded};
+use crate::broadcast::{Broadcast, BroadcastEnded, RecordingRef};
 use crate::chat::Chat;
 use crate::error::AppError;
 use crate::extract::OptionalUser;
@@ -63,6 +63,9 @@ pub enum WsEvent {
     ChatUpdated(Chat),
     #[serde(rename = "chat.deleted")]
     ChatDeleted { id: i64 },
+    /// 녹화 상태 변경(다시보기 준비 완료·실패)
+    #[serde(rename = "recording.updated")]
+    RecordingUpdated(RecordingRef),
     /// 서버 채널 지연으로 이벤트를 놓침 → 상세·채팅을 다시 조회
     #[serde(rename = "resync")]
     Resync {},

@@ -99,11 +99,10 @@ pub struct BroadcastEnded {
     pub peak_viewers: i32,
     pub duration_sec: i64,
     pub reason: EndReason,
-    /// shortcut: 항상 null, T25가 채운다.
     pub recording: Option<RecordingRef>,
 }
 
-/// shortcut: 녹화 task(T25)가 recording 도메인으로 옮긴다. 지금은 `Broadcast.recording` 타입용.
+/// 녹화 상태(api.md §1). `Broadcast.recording`·`recording.updated`가 쓴다.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, TS)]
 #[serde(rename_all = "snake_case")]
 #[ts(export)]
@@ -174,7 +173,7 @@ pub struct Broadcast {
     pub reconnecting: bool,
     /// shortcut: 항상 null, T19/T29가 채운다.
     pub super_clutch_until: Option<DateTime<Utc>>,
-    /// shortcut: 항상 null, T25가 채운다.
+    /// record=false거나 아직 없으면 null
     pub recording: Option<RecordingRef>,
 }
 
@@ -320,10 +319,11 @@ pub async fn end_live(state: &AppState, id: i64, reason: EndReason) -> Result<()
         }
         return Err(missing_or_invalid(&state.db, id).await);
     }
+    // Egress를 먼저 멈춰 파일을 마무리시킨 뒤 방을 닫는다. 실패해도 종료는 유지.
+    crate::recording::stop(state, id).await;
     if let Err(e) = state.livekit.delete_room(&room_name(id)).await {
         tracing::error!(broadcast_id = id, error = %e, "livekit room delete failed");
     }
-    // shortcut: Egress 종료(T25)는 아직 없다.
     tracing::info!(broadcast_id = id, ?reason, "broadcast ended");
     // 종료는 이미 커밋됐다. 이벤트를 못 만들어도 종료를 실패로 돌리지 않는다(시청자는 재조회로 따라온다).
     match ended_event(state, id, reason).await {
@@ -349,7 +349,7 @@ async fn ended_event(
         peak_viewers: row.peak_viewers,
         duration_sec: row.started_at.map_or(0, |s| (ended_at - s).num_seconds()),
         reason,
-        recording: None,
+        recording: crate::recording::ref_of(state, id).await?,
     })
 }
 

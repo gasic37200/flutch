@@ -10,5 +10,6 @@ mod csrf;
 mod health;
 mod live;
 mod realtime;
+mod recording;
 mod schema;
 mod wallet;

@@ -81,7 +81,7 @@ async fn webhook_with(app: &Router, token: Option<&str>, body: &str) -> TestResp
 }
 
 /// 올바르게 서명한 웹훅. 200이어야 한다.
-async fn webhook(app: &Router, ev: Value) {
+pub async fn webhook(app: &Router, ev: Value) {
     let body = ev.to_string();
     let token = webhook_token("secret", "devkey", &body, 300);
     let res = webhook_with(app, Some(&token), &body).await;
@@ -89,7 +89,7 @@ async fn webhook(app: &Router, ev: Value) {
 }
 
 /// LiveKit `WebhookEvent` 형식(protojson, false 값은 생략).
-fn participant(event: &str, id: i64, identity: &str, can_publish: bool) -> Value {
+pub fn participant(event: &str, id: i64, identity: &str, can_publish: bool) -> Value {
     let permission = if can_publish {
         json!({ "canSubscribe": true, "canPublish": true })
     } else {
@@ -133,14 +133,14 @@ async fn backdate_disconnect(db: &PgPool, id: i64, secs: i64) {
     .unwrap();
 }
 
-async fn create(app: &Router, cookie: &str) -> i64 {
+pub async fn create(app: &Router, cookie: &str) -> i64 {
     let body = json!({ "title": "송출 테스트", "category": "game" });
     let res = send(app, json_req("POST", B, Some(cookie), body)).await;
     assert_eq!(res.status, StatusCode::CREATED, "{}", res.json);
     res.json["id"].as_i64().unwrap()
 }
 
-async fn go_live(app: &Router, cookie: Option<&str>, id: i64, body: Value) -> TestResponse {
+pub async fn go_live(app: &Router, cookie: Option<&str>, id: i64, body: Value) -> TestResponse {
     send(
         app,
         json_req("POST", &format!("{B}/{id}/live"), cookie, body),

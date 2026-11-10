@@ -29,6 +29,6 @@ viewerCount: number, peakViewers: number, startedAt: string | null, endedAt: str
  */
 superClutchUntil: string | null, 
 /**
- * shortcut: 항상 null, T25가 채운다.
+ * record=false거나 아직 없으면 null
  */
 recording: RecordingRef | null, };
