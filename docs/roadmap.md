@@ -89,6 +89,8 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | T07 | 배포: 서버 세팅·nginx·certbot·compose.prod·`ubuntu-24.04-arm` 러너 이미지 빌드·GHCR·SSH 배포·health 확인·DB 백업 (병렬, 서버·도메인 준비 후) | 10, architecture §10 | T01 | Sonnet · medium | 🟨 |
 | T06a | 인증 화면: 로그인·가입·약관 2장·테스트 로그인 버튼·내 정보 (병렬) | 01 | T03, T05 | Sonnet · medium | ✅ |
 | T06b | 방송 화면: 등록·수정·**삭제**·**내 방송 관리**(READY 목록), 홈 그리드, **탐색·검색** (병렬) | 02 | T04, T05 | Sonnet · medium | ✅ |
+| T05d | **디자인 맞춤 · 공통**: 시안 보드 `Main`·`Components`·`Guest`·`Errors`(docs/design-refs/boards)에 토큰·공통 컴포넌트·헤더·사이드바·비로그인 상태·에러 화면을 맞춤 (11/10 추가 — T05가 시안 아티팩트를 열지 못해 home.webp만 보고 만듦) | DESIGN, boards | T05 | Sonnet · medium | ⬜ |
+| T06c | **디자인 맞춤 · 홈·탐색·방송 폼·인증**: 보드 `Home`·`HomeMobile`·`Explore`·`BroadcastForm`·`Auth`·`Signup`·`SmallScreens`(내 정보·약관) (병렬) | DESIGN, boards | T05d | Sonnet · medium | ⬜ |
 
 ### 1. 송출·시청 — 11/11~12
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
@@ -100,14 +102,16 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | T09 | PC 송출 화면: 송출 전 확인·화면 공유·탭/시스템 소리·마이크·볼륨 슬라이더·레벨 미터·웹캠 모드·환경 안내·이어하기/기기 전환 모달 (병렬) | 03 | T08d | Sonnet · medium | ✅ |
 | T10 | 모바일 송출 화면: 카메라 전환·음소거·Wake Lock (병렬) | 03 | T08d | Sonnet · medium | 🟨 |
 | T11 | 시청 화면: 플레이어·상태 4종(대기·재연결·화면 공유 중단·종료)·실시간 정보 변경·게이지 바 자리 (병렬) | 03 | T08d | Sonnet · medium | ✅ |
+| T11b | **디자인 맞춤 · 시청**: 보드 `Watch`·`WatchMobile`·`WatchStates` (병렬) | DESIGN, boards | T05d, T11 | Sonnet · medium | ⬜ |
 
 ### 2. 필수 마무리 — 11/13
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
 |---|---|---|---|---|---|
 | T12 | 썸네일: 브라우저 1분 캡처 + `PUT /thumbnail` + 디스크 볼륨 + nginx `/media/thumbs` + 기본 썸네일 | 02 | T09, T07 | Sonnet · medium | ⬜ |
+| T09c | **디자인 맞춤 · 스튜디오**: 보드 `Studio`·`StudioPrelive`·`StudioMobile`·`SmallScreens`(스튜디오 모달) (스튜디오 파일을 건드려서 T12 뒤) | DESIGN, boards | T05d, T10, T12 | Sonnet · medium | ⬜ |
 | T13 | 모니터링: 메트릭·Alloy·Loki·Grafana 대시보드 (T12와 같은 배포 파일을 건드려서 직렬) | 10 | T12 | Sonnet · medium | ⬜ |
 | T14 | README 필수 4항목(서비스 주소 포함)·지원 환경 표·수동 확인 절차 + **시나리오 이름 ↔ README 절차 대응표** (병렬) | spec 6 | T07, T09, T10, T11 | Sonnet · medium | ⬜ |
-| T15 | 권한 시나리오 점검, **메인 세션이** `/ponytail-audit` 실행 후 must fix 반영 → **필수 완료** | 전체 | T12, T13, T14, U1 | 메인 세션 | ⬜ |
+| T15 | 권한 시나리오 점검, **메인 세션이** `/ponytail-audit` 실행 후 must fix 반영 → **필수 완료** | 전체 | T12, T13, T14, T06c, T11b, T09c, U1 | 메인 세션 | ⬜ |
 
 ### 3·4·5. 선택 기능 — 11/14~17
 T15 이후 **채팅(T16~) · 지갑(T20~) · 녹화(T25~) 세 줄을 동시에** 진행할 수 있다(최대 3).

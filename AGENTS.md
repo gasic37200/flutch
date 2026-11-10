@@ -169,7 +169,7 @@ feat(broadcast): 송출 시작·종료 API 추가
 ### 9-4. 작업 지시서 양식 (메인 → 서브에이전트)
 ```
 [Txx] <task 이름>
-- 읽을 문서: AGENTS.md, docs/conventions.md, docs/features/<nn>.md, docs/architecture.md §<n>, (해당 시) docs/api.md·DESIGN.md
+- 읽을 문서: AGENTS.md, docs/conventions.md, docs/features/<nn>.md, docs/architecture.md §<n>, (해당 시) docs/api.md·DESIGN.md, **화면 task는 `docs/design-refs/boards/`의 해당 보드(README 대응표)**
 - 모델·사고: <roadmap의 모델·사고 칸 그대로>
 - 건드릴 범위: <폴더/파일>
 - 건드리지 말 것: docs/roadmap.md·worklog.md, 공용 파일의 다른 도메인 부분(골격 밖 수정은 보고서에 요청), 다른 task 영역

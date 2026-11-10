@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>FLUTCH 팔로잉</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@500;700&amp;family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0C0F}
+a{color:#F3F5F7;text-decoration:none}
+.ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.texture{background:#0A0C0F url(../brand/bg-speed.jpg) center/cover}
+.card:hover .cardframe{background:#B0F612}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;padding:28px 24px 48px;box-sizing:border-box;display:flex;flex-direction:column;gap:28px;max-width:1440px">
+  <div style="display:flex;align-items:center;gap:10px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg><h1 style="margin:0;font-family:'Chakra Petch',sans-serif;font-style:italic;font-size:30px;font-weight:700;letter-spacing:.04em">PULSE</h1><span style="font-size:14px;color:#A3AAB6">내가 팔로우한 채널 <b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">7</b></span></div>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="width:10px;height:10px;border-radius:50%;background:#FF2E4D"></span><h2 style="margin:0;font-size:18px;font-weight:900">지금 방송 중</h2><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#A3AAB6">3</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">
+      <sc-for list="{{lives}}" as="l" hint-placeholder-count="3">
+        <a href="#" class="card" style="display:block">
+          <div class="ch12 cardframe" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;display:flex;flex-direction:column">
+            <div class="texture" style="aspect-ratio:16/9;position:relative">
+              <span style="position:absolute;top:8px;left:8px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;padding:2px 6px">LIVE</span>
+              <span style="position:absolute;top:8px;right:8px;background:rgba(10,12,15,.8);font-family:'JetBrains Mono',monospace;font-size:12px;padding:2px 6px">{{l.viewers}}</span>
+              <span style="position:absolute;left:8px;bottom:8px;font-family:'Chakra Petch',sans-serif;font-style:italic;font-weight:700;font-size:11px;padding:2px 6px;background:linear-gradient(90deg,#FF2BD6,#FF7A1A,#FFE11A);color:#0A0C0F;display:{{l.super}}">SUPER CLUTCH</span>
+            </div>
+            <div style="padding:12px 14px;display:flex;align-items:center;gap:10px">
+              <img src="{{l.face}}" alt="" style="width:36px;height:36px;border-radius:50%;box-shadow:0 0 0 2px {{l.ring}}">
+              <div style="min-width:0;display:flex;flex-direction:column;gap:2px"><b style="font-size:14px">{{l.name}}</b><span style="font-size:13px;color:#A3AAB6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{l.title}}</span></div>
+            </div>
+          </div></div>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="width:10px;height:10px;border-radius:50%;background:#7C8494"></span><h2 style="margin:0;font-size:18px;font-weight:900">오프라인</h2><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#A3AAB6">4</span></div>
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px;max-width:880px"><div class="ch12" style="background:#12151B;display:flex;flex-direction:column">
+      <sc-for list="{{offline}}" as="o" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid #191D25">
+          <img src="{{o.face}}" alt="" style="width:44px;height:44px;border-radius:50%;opacity:.55">
+          <a href="#" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">{{o.name}}</b><span style="font-size:12px;color:#7C8494">{{o.meta}}</span></a>
+          <a href="#" class="ch6" style="height:36px;padding:0 12px;display:inline-flex;align-items:center;background:#191D25;color:#F3F5F7;font-size:13px">다시보기</a>
+          <button type="button" class="ch6" style="height:36px;padding:0 12px;border:0;background:transparent;color:#A3AAB6;font-size:13px;font-family:'Noto Sans KR',sans-serif;box-shadow:inset 0 0 0 1px #262B35">팔로우 취소</button>
+        </div>
+      </sc-for>
+    </div></div>
+  </section>
+
+  <section class="ch12" style="background:rgba(176,246,18,.25);padding:1px;max-width:640px"><div class="ch12" style="background:#12151B;padding:20px;display:flex;align-items:center;gap:16px">
+    <img src="../brand/face-calm.png" alt="" style="width:64px;height:64px;border-radius:50%">
+    <div style="flex:1;display:flex;flex-direction:column;gap:4px"><b style="font-size:15px">팔로우한 채널이 없을 때</b><span style="font-size:13px;color:#A3AAB6">스트리머를 팔로우하면 여기서 맥박이 뛰어요. 사이드바 PULSE에도 함께 보여요.</span></div>
+    <a href="#" class="ch6" style="height:42px;padding:0 16px;display:inline-flex;align-items:center;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:14px">탐색하기</a>
+  </div></section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var F = { happy: '../brand/face-happy.png', joy: '../brand/face-joy.png', excited: '../brand/face-excited.png', calm: '../brand/face-calm.png', sleepy: '../brand/face-sleepy.png', grumpy: '../brand/face-grumpy.png' };
+    return {
+      lives: [
+        { name: '버추얼_릴리', title: '[버추얼] 신규 3D 모델 첫 공개', viewers: '18,240', face: F.joy, ring: '#9B7BFF', super: 'inline' },
+        { name: '김플러', title: '[대회 준비중] 오늘도 클러치 가보자!', viewers: '32,481', face: F.excited, ring: '#4DA3FF', super: 'none' },
+        { name: '밤샘냥', title: '새벽 공포게임 같이 할 사람?', viewers: '4,102', face: F.calm, ring: '#2EE6D6', super: 'none' }
+      ],
+      offline: [
+        { name: '네온비비드', meta: '마지막 방송 2시간 전 · 팔로워 8,120', face: F.calm },
+        { name: '겜스터', meta: '마지막 방송 어제 · 팔로워 3,402', face: F.sleepy },
+        { name: '라라', meta: '마지막 방송 3일 전 · 팔로워 2,207', face: F.happy },
+        { name: '골골', meta: '마지막 방송 6일 전 · 팔로워 978', face: F.grumpy }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

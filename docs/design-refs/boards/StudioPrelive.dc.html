@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>FLUTCH 송출 전</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@500;700&amp;family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0C0F}
+a{color:#B0F612}
+.ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.texture{background:#0A0C0F url(../brand/bg-speed.jpg) center/cover}
+input[type=range]{accent-color:#B0F612}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
+  <header style="display:flex;align-items:center;gap:16px;padding:0 24px;height:64px;border-bottom:1px solid #191D25;box-sizing:border-box;flex-wrap:wrap">
+    <img src="../brand/logo-flutch.png" alt="FLUTCH" style="height:28px">
+    <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;letter-spacing:.08em;color:#A3AAB6">STUDIO</span>
+    <span class="ch6" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;padding:3px 8px;background:rgba(176,246,18,.15);color:#B0F612">READY</span>
+    <b style="font-size:15px">주말 시참 랭크전</b>
+    <span style="flex:1"></span>
+    <button type="button" class="ch6" style="height:48px;padding:0 24px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:16px;font-family:'Noto Sans KR',sans-serif;display:inline-flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:#FF2E4D"></span>방송 시작</button>
+  </header>
+
+  <div style="display:flex;flex-wrap:wrap;gap:20px;padding:20px 24px;box-sizing:border-box">
+    <main style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:14px">
+      <div role="status" class="ch6" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#191D25;font-size:14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg>이 환경(macOS)에서는 시스템 소리를 보낼 수 없어서 <b>탭 소리만</b> 송출돼요. 게임 소리를 보내려면 브라우저 탭을 공유해 주세요.</div>
+
+      <div class="texture" style="aspect-ratio:16/9;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+        <div style="position:absolute;inset:0;background:rgba(10,12,15,.6)"></div>
+        <span style="position:relative;font-family:'Chakra Petch',sans-serif;font-size:15px;color:#A3AAB6;letter-spacing:.08em">미리보기 · 아직 송출되지 않아요</span>
+        <button type="button" class="ch6" style="position:relative;height:48px;padding:0 22px;border:0;background:#191D25;color:#F3F5F7;font-weight:700;font-size:15px;font-family:'Noto Sans KR',sans-serif;box-shadow:inset 0 0 0 1px #B0F612">공유할 화면 선택</button>
+        <span style="position:relative;font-size:12px;color:#7C8494">창을 고를 때 "탭 오디오 공유" 또는 "시스템 오디오 공유"를 켜 주세요</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">
+        <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px"><b style="font-size:15px">마이크</b><span style="margin-left:auto;font-size:12px;color:#B0F612">● 소리가 들어오고 있어요</span></div>
+          <select class="ch6" aria-label="마이크 장치" style="height:40px;border:0;background:#191D25;color:#F3F5F7;padding:0 10px;font-size:14px;font-family:'Noto Sans KR',sans-serif"><option>기본 마이크 (USB Audio)</option></select>
+          <input type="range" aria-label="마이크 볼륨" value="80" style="width:100%">
+          <div style="display:flex;gap:2px;height:8px"><sc-for list="{{mic}}" as="b" hint-placeholder-count="24"><span style="flex:1;background:{{b}}"></span></sc-for></div>
+        </div></div>
+        <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px"><b style="font-size:15px">화면 소리</b><span style="margin-left:auto;font-size:12px;color:#7C8494">화면을 선택하면 표시돼요</span></div>
+          <input type="range" aria-label="화면 소리 볼륨" value="50" style="width:100%">
+          <div style="display:flex;gap:2px;height:8px"><sc-for list="{{sys}}" as="b" hint-placeholder-count="24"><span style="flex:1;background:{{b}}"></span></sc-for></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px"><span style="flex:1;font-size:14px">웹캠 같이 보내기 (PIP)</span><button type="button" role="switch" aria-checked="false" aria-label="웹캠 PIP" style="width:48px;height:28px;border-radius:999px;border:0;background:#262B35;position:relative"><span style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#7C8494"></span></button></div>
+        </div></div>
+      </div>
+    </main>
+
+    <aside style="flex:1 1 340px;max-width:100%;display:flex;flex-direction:column;gap:14px">
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <b style="font-size:15px">시작 전 확인</b>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:14px">
+          <span style="color:#B0F612">✓ 로그인됨 · 내 방송</span>
+          <span style="color:#B0F612">✓ 마이크 권한 허용</span>
+          <span style="color:#A3AAB6">○ 공유할 화면 선택 전</span>
+          <span style="color:#A3AAB6">○ 녹화 켜짐 (최대 3시간)</span>
+        </div>
+      </div></div>
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:8px">
+        <b style="font-size:15px">권한이 막혔을 때</b>
+        <span style="font-size:13px;color:#A3AAB6;line-height:1.6">주소창 왼쪽 자물쇠 아이콘 → 사이트 설정 → 카메라·마이크를 "허용"으로 바꾼 뒤 새로고침해 주세요. 화면 공유와 마이크는 HTTPS에서만 동작해요.</span>
+      </div></div>
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:8px">
+        <b style="font-size:15px">지원 환경</b>
+        <span style="font-size:13px;color:#A3AAB6;line-height:1.6">시스템 소리: Windows Chrome·Edge<br>탭 소리: 데스크톱 Chrome·Edge<br>모바일: 카메라 송출 (Android Chrome, iOS Safari)</span>
+      </div></div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var bars = function (n) { var a = []; for (var i = 0; i < 24; i++) a.push(i < n ? (i < 17 ? '#B0F612' : '#F3F5F7') : '#262B35'); return a; };
+    return { mic: bars(14), sys: bars(0) };
+  }
+}
+</script>
+</body>
+</html>
