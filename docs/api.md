@@ -307,9 +307,10 @@ type Hero = {
 }
 type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: string; broadcast: Broadcast; startSec: number; durationSec: number; triggeredAt: string }
 ```
-- 클러치: 사용자·방송별 **최근 30초 무료 5회**, 6번째부터 1회 1비트 조건부 차감(원장 `clutch`, 후원 기록 kind `clutch`, 알림 없음). 점수: 클러치 50점, 후원·버스트 1비트당 10점(설정값).
+- 클러치: 사용자·방송별 **최근 30초 무료 5회**(DB 기준, 재시작 안전), 6번째부터 1회 1비트 조건부 차감(원장 `clutch`, 후원 기록 kind `clutch`, 알림 없음). 점수: 클러치 50점, 후원·버스트 1비트당 10점(설정값).
 - 버스트: 가격 `burstPrice`(설정값 1,000) 차감, 원장 `burst` + 후원 기록 kind `burst`(표시 이름은 `anonymous`).
 - 게이지는 최근 5분 슬라이딩 합계 / 10,000점. 100% 도달 시 쿨다운(진행 중이거나 마지막 발동 30분 이내)이 아니면 SUPER CLUTCH: 게이지 0, `super_clutches` 추가(5분, 회전 바로 다음 순서), `clutch.super` 발행. 쿨다운 중이면 게이지만 오르고 phase `cooldown`.
+- 점수는 마지막 SUPER CLUTCH 이후 이벤트만 센다. 시연용으로 환경변수 `CLUTCH_GAUGE_TARGET`·`CLUTCH_POINTS`가 기준·클러치 점수를 바꾼다. 감소(5분 창 밖으로 빠짐)는 이벤트가 없어 클라이언트가 20초마다 상세를 다시 받는다.
 - 히어로: 진행 중 SUPER CLUTCH가 있으면 30초씩 회전(`mode=super_clutch`, 서버 1초 스케줄러가 DB 기준으로 진행), 없으면 게이지 1위 LIVE(`top_gauge`), 모두 0이면 시청자 수 1위(`top_viewers`), LIVE가 없으면 `empty`. 홈은 10초 폴링하고 `slot.nextSwitchAt`이 더 이르면 그때 다시 조회.
 - 클립: 녹화 `ready`인 방송의 SUPER CLUTCH마다 `startSec = max(0, 발동시각 − startedAt − 30)`, `durationSec = 45`. 클립이 없으면 홈은 `GET /recordings`(최근 다시보기)를 보여준다.
 - 시나리오: `clutch_free_combo_then_paid` `clutch_gauge_decay_window` `super_clutch_trigger_reset_and_cooldown` `clutch_rotation` `clutch_banned_rules`

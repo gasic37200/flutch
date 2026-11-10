@@ -15,7 +15,7 @@ thumbnailUrl: string | null,
  */
 viewerCount: number, peakViewers: number, startedAt: string | null, endedAt: string | null, createdAt: string, reconnecting: boolean, 
 /**
- * shortcut: 항상 null, T19/T29가 채운다.
+ * SUPER CLUTCH 진행 중이면 종료 시각
  */
 superClutchUntil: string | null, 
 /**

@@ -6,6 +6,7 @@ mod common;
 mod auth;
 mod broadcast;
 mod chat;
+mod clutch;
 mod csrf;
 mod follow;
 mod health;

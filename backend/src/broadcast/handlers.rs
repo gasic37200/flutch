@@ -10,11 +10,12 @@ use serde::Deserialize;
 use super::db::{self, Filter, Patch};
 use super::{
     BROADCAST_READY_LIMIT, BURST_PRICE, Broadcast, BroadcastDetail, BroadcastError,
-    BroadcastStatus, Category, ClutchGauge, ClutchPhase, CreateBroadcastRequest, EndReason, Page,
-    UpdateBroadcastRequest, ViewerState, end_live, enum_str, parse_enum,
+    BroadcastStatus, Category, CreateBroadcastRequest, EndReason, Page, UpdateBroadcastRequest,
+    ViewerState, end_live, enum_str, parse_enum,
 };
 use crate::AppState;
 use crate::auth::{contains_banned_word, contains_profanity};
+use crate::clutch;
 use crate::error::AppError;
 use crate::extract::{CurrentUser, JsonBody, OptionalUser};
 use crate::live::LiveError;
@@ -185,29 +186,36 @@ pub(super) async fn load(state: &AppState, id: i64) -> Result<db::Row, AppError>
         .ok_or(AppError::NotFound)
 }
 
-/// 상세 응답. shortcut: gauge·burstPrice·freeClutchesLeft는 기본값, T19·T24가 이 함수에서 채운다.
+/// 상세 응답. shortcut: burstPrice는 기본값, T24가 이 함수에서 채운다.
 pub(super) async fn detail(
     state: &AppState,
     row: db::Row,
     viewer: Option<&CurrentUser>,
 ) -> Result<BroadcastDetail, AppError> {
+    let id = row.id;
     let is_owner = viewer.is_some_and(|u| u.id == row.owner_id);
+    let cfg = &state.config.clutch;
+    let gauge = if row.status == "LIVE" {
+        clutch::gauge_of(&state.db, cfg, id).await?
+    } else {
+        clutch::idle_gauge()
+    };
+    let free_clutches_left = match viewer {
+        Some(u) => clutch::free_left(&state.db, cfg, u.id, id).await?,
+        None => 0,
+    };
     let ban = match viewer {
         Some(u) => crate::chat::ban_state(&state.db, row.owner_id, u.id).await?,
         None => None,
     };
     Ok(BroadcastDetail {
         broadcast: into_broadcast(state, row)?,
-        gauge: ClutchGauge {
-            percent: 0,
-            phase: ClutchPhase::Charging,
-            cooldown_until: None,
-        },
+        gauge,
         burst_price: BURST_PRICE,
         viewer: viewer.map(|_| ViewerState {
             is_owner,
             ban,
-            free_clutches_left: 5,
+            free_clutches_left,
         }),
     })
 }

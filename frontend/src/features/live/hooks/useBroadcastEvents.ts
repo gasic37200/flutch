@@ -33,8 +33,7 @@ export function useBroadcastEvents(broadcastId: number | undefined) {
   useEffect(() => {
     if (broadcastId === undefined) return
     const key = ['broadcast', broadcastId]
-    const patch = (f: (d: BroadcastDetail) => BroadcastDetail) =>
-      qc.setQueryData<BroadcastDetail>(key, (d) => (d ? f(d) : d))
+    const patch = (f: (d: BroadcastDetail) => BroadcastDetail) => qc.setQueryData<BroadcastDetail>(key, (d) => (d ? f(d) : d))
     const refetch = () => void qc.invalidateQueries({ queryKey: key })
 
     let ws: WebSocket | null = null
@@ -58,6 +57,12 @@ export function useBroadcastEvents(broadcastId: number | undefined) {
             recording: e.data.recording,
           }))
           refetch()
+          break
+        case 'clutch.gauge':
+          patch((d) => ({ ...d, gauge: e.data }))
+          break
+        case 'clutch.super':
+          patch((d) => ({ ...d, superClutchUntil: e.data.expiresAt }))
           break
         case 'recording.updated':
           patch((d) => ({ ...d, recording: e.data }))

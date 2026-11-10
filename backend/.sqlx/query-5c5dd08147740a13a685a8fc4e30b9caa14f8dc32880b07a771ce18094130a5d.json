@@ -1,0 +1,55 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COALESCE(SUM(e.points), 0)::bigint AS \"points!\",\n                  l.triggered_at AS \"triggered_at?\", l.expires_at AS \"expires_at?\",\n                  clock_timestamp() AS \"now!\"\n           FROM (SELECT 1) one\n           LEFT JOIN LATERAL (\n               SELECT triggered_at, expires_at FROM super_clutches\n               WHERE broadcast_id = $1 ORDER BY triggered_at DESC LIMIT 1\n           ) l ON true\n           LEFT JOIN clutch_events e\n                  ON e.broadcast_id = $1\n                 AND e.created_at > clock_timestamp() - $2::bigint * interval '1 second'\n                 AND e.created_at > COALESCE(l.triggered_at, '-infinity')\n           GROUP BY l.triggered_at, l.expires_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "points!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "triggered_at?",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "super_clutches",
+            "name": "triggered_at"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "expires_at?",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "super_clutches",
+            "name": "expires_at"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "now!",
+        "type_info": "Timestamptz",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "5c5dd08147740a13a685a8fc4e30b9caa14f8dc32880b07a771ce18094130a5d"
+}

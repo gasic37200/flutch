@@ -277,6 +277,7 @@ fn build_state(
             client_key: Some("test_gck_fake".into()),
             secret_key: None,
         },
+        clutch: Default::default(),
     };
     Arc::new(AppState {
         config,

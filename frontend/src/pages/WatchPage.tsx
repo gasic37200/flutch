@@ -1,4 +1,7 @@
 import { useParams } from 'react-router'
+import ClutchButton from '../features/watch/components/ClutchButton.tsx'
+import SuperClutchOverlay from '../features/watch/components/SuperClutchOverlay.tsx'
+import { useClutch } from '../features/watch/hooks/useClutch.ts'
 import ClutchGauge from '../components/ui/ClutchGauge.tsx'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import Panel from '../components/ui/Panel.tsx'
@@ -19,6 +22,7 @@ export default function WatchPage() {
   const { broadcast, error, refetch, view, viewer, events } = useWatch(id)
   const chat = useChat(id, events)
   const player = usePlayer(viewer.tracks, viewer.muted)
+  const clutch = useClutch(broadcast, events.onEvent)
   const desktop = useMediaQuery('(min-width: 1280px)')
 
   if (id === undefined) return <ErrorScreen kind='notFound' />
@@ -32,26 +36,34 @@ export default function WatchPage() {
   const chatCard = <ChatCard chat={chat} broadcast={broadcast} className='h-[30rem] xl:h-175' headerClassName={desktop ? '' : 'hidden'} />
 
   return (
-    <ShellBody aside={desktop ? chatCard : undefined}>
-      <div className='flex flex-col gap-3.5'>
-        <Player view={view} broadcast={broadcast} player={player} onUnmute={() => void viewer.unmute()} />
-        {broadcast && (
-          <>
-            <Panel innerClassName='px-3 py-2.5 md:px-4 md:py-3'>
-              <ClutchGauge percent={broadcast.gauge.percent} size='lg' />
-            </Panel>
-            <WatchInfo broadcast={broadcast} />
-          </>
-        )}
-        {!desktop && (
-          <div>
-            <Tabs label='채팅' tabs={[{ id: 'chat', label: '채팅' }]} value='chat' onChange={() => {}} />
-            <div role='tabpanel' className='pt-3'>
-              {chatCard}
+    <>
+      <SuperClutchOverlay superClutch={clutch.superClutch} />
+      <ShellBody aside={desktop ? chatCard : undefined}>
+        <div className='flex flex-col gap-3.5'>
+          <Player view={view} broadcast={broadcast} player={player} onUnmute={() => void viewer.unmute()} />
+          {broadcast && (
+            <>
+              <Panel innerClassName='px-3 py-2.5 md:px-4 md:py-3'>
+                <div className='flex items-center gap-3'>
+                  <div className='min-w-0 grow'>
+                    <ClutchGauge percent={broadcast.gauge.percent} cooldown={broadcast.gauge.phase === 'cooldown'} size='lg' />
+                  </div>
+                  <ClutchButton clutch={clutch} />
+                </div>
+              </Panel>
+              <WatchInfo broadcast={broadcast} />
+            </>
+          )}
+          {!desktop && (
+            <div>
+              <Tabs label='채팅' tabs={[{ id: 'chat', label: '채팅' }]} value='chat' onChange={() => {}} />
+              <div role='tabpanel' className='pt-3'>
+                {chatCard}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-    </ShellBody>
+          )}
+        </div>
+      </ShellBody>
+    </>
   )
 }

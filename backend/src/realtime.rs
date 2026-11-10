@@ -22,6 +22,7 @@ use crate::AppState;
 use crate::auth::UserSummary;
 use crate::broadcast::{Broadcast, BroadcastEnded, RecordingRef};
 use crate::chat::Chat;
+use crate::clutch::{ClutchGauge, SuperClutch};
 use crate::error::AppError;
 use crate::extract::OptionalUser;
 use crate::middleware::origin_allowed;
@@ -75,6 +76,12 @@ pub enum WsEvent {
     /// 녹화 상태 변경(다시보기 준비 완료·실패)
     #[serde(rename = "recording.updated")]
     RecordingUpdated(RecordingRef),
+    /// 게이지 변경(방송당 초당 최대 2회)
+    #[serde(rename = "clutch.gauge")]
+    ClutchGauge(ClutchGauge),
+    /// SUPER CLUTCH 발동 — 3초 전체 화면 연출
+    #[serde(rename = "clutch.super")]
+    ClutchSuper(SuperClutch),
     /// 서버 채널 지연으로 이벤트를 놓침 → 상세·채팅을 다시 조회
     #[serde(rename = "resync")]
     Resync {},

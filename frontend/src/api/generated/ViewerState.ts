@@ -7,6 +7,6 @@ export type ViewerState = { isOwner: boolean,
  */
 ban: BanState | null, 
 /**
- * shortcut: 항상 5, T19가 채운다.
+ * 최근 30초 창에서 남은 무료 클러치(0~5)
  */
 freeClutchesLeft: number, };
