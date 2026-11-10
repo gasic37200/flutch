@@ -27,6 +27,7 @@ use crate::error::AppError;
 use crate::extract::OptionalUser;
 use crate::middleware::origin_allowed;
 use crate::moderation::SystemKind;
+use crate::wallet::DonationCreated;
 
 /// 방송당 버퍼. 느린 연결이 이만큼 밀리면 `Lagged` → `resync`.
 const CHANNEL_CAPACITY: usize = 256;
@@ -76,6 +77,12 @@ pub enum WsEvent {
     /// 녹화 상태 변경(다시보기 준비 완료·실패)
     #[serde(rename = "recording.updated")]
     RecordingUpdated(RecordingRef),
+    /// split으로만 발행(`wallet::publish_donation`) — 공개형은 익명 donor=null
+    #[serde(rename = "donation.created")]
+    DonationCreated(DonationCreated),
+    /// 소유자가 표시 중인 후원 알림을 넘김
+    #[serde(rename = "donation.skipped")]
+    DonationSkipped { id: i64 },
     /// 게이지 변경(방송당 초당 최대 2회)
     #[serde(rename = "clutch.gauge")]
     ClutchGauge(ClutchGauge),

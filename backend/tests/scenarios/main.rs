@@ -8,6 +8,7 @@ mod broadcast;
 mod chat;
 mod clutch;
 mod csrf;
+mod donation;
 mod follow;
 mod health;
 mod live;

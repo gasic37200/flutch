@@ -275,6 +275,11 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `clutch_banned_rules`, `clutch_super_event_published` | 영구 밴은 무료만 허용·임시차단은 둘 다, `clutch.super` 이벤트 | (클러치 절차 추가 시) |
 | `donation_amount_mismatch_rejected` | 주문과 다른 금액 승인 거절(토스 호출 없음) | (후원 절차 추가 시) |
 | `donation_after_end_becomes_charge`, `banned_user_cannot_donate` | 승인 시 방송 종료·영구 밴이면 충전만, 주문 단계 거절 | (후원 절차 추가 시) |
+| `donation_live_only`, `donation_input_rules`, `banned_user_cannot_donate` | 잔액 후원: LIVE 중에만, 자기 방송·금지어·금액·잔액 부족·영구 밴 거절, 게이지 반영 | (후원 절차 추가 시) |
+| `donation_balance_conditional_debit` | 동시 잔액 후원 2건 → 잔액만큼만 성공, 음수 잔액 없음 | (서버 내부) |
+| `donation_anonymous_name_visibility` | 익명 후원: 공개 목록·비로그인·다른 사용자 이벤트는 익명, 소유자만 실명, 후원자 배지 | (후원 절차 추가 시) |
+| `donation_skip_owner_only`, `donation_created_on_charge_and_donate` | 알림 스킵은 소유자만, 충전하고 후원하기도 알림 | (후원 절차 추가 시) |
+| `donation_list_totals_and_pages`, `donation_stats_kst_7_days`, `donation_stats_only_mine` | 방송별 후원 내역·합계, 스트리머 통계(KST 최근 7일) | (후원 절차 추가 시) |
 | `charge_limits_and_order_expiry` | 충전 1,000~1,000,000·보유 3,000,000, 30분 주문 만료 | (후원 절차 추가 시) |
 | `payment_toss_rejected_or_unavailable`, `payment_webhook_secret_mismatch_ignored`, `payment_confirm_owner_only` | 토스 거절·통신 실패 복구, 웹훅 재확인, 주문자만 확정 | (서버 내부) |
 | `health_check_reports_ok_with_request_id`, `health_check_reports_503_when_db_is_down` | 헬스체크 | 배포 후 `GET /api/v1/health` |

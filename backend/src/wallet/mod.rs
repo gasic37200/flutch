@@ -19,9 +19,11 @@ use ts_rs::TS;
 use crate::AppState;
 use crate::auth::{UserSummary, contains_banned_word, mask_profanity};
 use crate::error::AppError;
+use crate::realtime::{Event, WsEvent};
 use crate::scheduler::Scheduler;
 
 mod db;
+mod donation;
 mod handlers;
 mod payment;
 
@@ -43,6 +45,12 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/payments/orders", post(payment::create_order))
         .route("/payments/confirm", post(payment::confirm))
         .route("/payments/webhook", post(payment::webhook))
+        .route(
+            "/broadcasts/{id}/donations",
+            get(donation::list).post(donation::donate),
+        )
+        .route("/donations/{id}/skip", post(donation::skip))
+        .route("/me/donation-stats", get(donation::stats))
 }
 
 /// 주기 작업: 만료 결제 대기 주문 정리(1분)
@@ -202,6 +210,53 @@ impl db::DonationRow {
             created_at: self.created_at,
         })
     }
+}
+
+impl Donation {
+    /// 공개형/소유자형 변환은 이것 하나로 한다(목록·이벤트 모두). 익명 후원은 소유자가 아니면 `donor`를 지운다.
+    pub fn visible_to(mut self, is_owner: bool) -> Self {
+        if self.anonymous && !is_owner {
+            self.donor = None;
+        }
+        self
+    }
+}
+
+/// `donation.created` 이벤트 data
+#[derive(Clone, Serialize, TS)]
+#[ts(export)]
+pub struct DonationCreated {
+    pub donation: Donation,
+    /// 이 방송이 받은 비트 합계(donation + clutch + burst)
+    pub total: i64,
+}
+
+/// `donation.created`를 split으로 발행한다(**커밋 뒤**, `d`는 실명형). 합계 조회가 실패하면 이벤트만
+/// 건너뛴다 — 후원은 이미 확정됐고 이벤트 누락은 허용(재조회로 회복).
+pub async fn publish_donation(state: &AppState, d: Donation) {
+    let total = match db::donation_totals(&state.db, d.broadcast_id).await {
+        Ok(t) => t.total,
+        Err(e) => {
+            tracing::warn!(donation_id = d.id, error = %e, "donation.created skipped: totals query failed");
+            return;
+        }
+    };
+    let broadcast_id = d.broadcast_id;
+    let public = DonationCreated {
+        donation: d.clone().visible_to(false),
+        total,
+    };
+    let owner = DonationCreated {
+        donation: d.visible_to(true),
+        total,
+    };
+    state.realtime.publish(
+        broadcast_id,
+        Event::split(
+            WsEvent::DonationCreated(public),
+            WsEvent::DonationCreated(owner),
+        ),
+    );
 }
 
 /// 후원 기록 입력. `ledger_entry_id`는 같은 트랜잭션의 `debit` 결과.
