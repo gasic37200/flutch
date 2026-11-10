@@ -205,12 +205,13 @@ pub fn is_live_limit(e: &sqlx::Error) -> bool {
     e.as_database_error().and_then(|d| d.constraint()) == Some("broadcasts_one_live_per_owner")
 }
 
-/// `LIVE → ENDED`. LIVE가 아니면 false.
-pub async fn mark_ended(db: &PgPool, id: i64) -> Result<bool, sqlx::Error> {
+/// `LIVE → ENDED`. LIVE가 아니면 false. `only_if_away`면 유예 중(`disconnected_at`)일 때만 — 방금 돌아온 송출자를 끝내지 않는다.
+pub async fn mark_ended(db: &PgPool, id: i64, only_if_away: bool) -> Result<bool, sqlx::Error> {
     let res = sqlx::query!(
         "UPDATE broadcasts SET status = 'ENDED', ended_at = now(), disconnected_at = NULL
-         WHERE id = $1 AND status = 'LIVE'",
-        id
+         WHERE id = $1 AND status = 'LIVE' AND (NOT $2 OR disconnected_at IS NOT NULL)",
+        id,
+        only_if_away
     )
     .execute(db)
     .await?;

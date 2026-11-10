@@ -71,12 +71,21 @@ pub async fn start(
     }
     let identity = format!("u:{}:{}", user.id, req.tab_id);
     if status == "READY" {
-        broadcast::start_live(&state.db, id).await?;
-        let live = broadcast::detail_of(&state, id, None).await?.broadcast;
-        state
-            .realtime
-            .publish(id, Event::public(WsEvent::BroadcastUpdated(live)));
-        // shortcut: 녹화 켜짐이면 Egress 시작(T25)이 여기 붙는다.
+        match broadcast::start_live(&state.db, id).await {
+            Ok(()) => {
+                let live = broadcast::detail_of(&state, id, None).await?.broadcast;
+                state
+                    .realtime
+                    .publish(id, Event::public(WsEvent::BroadcastUpdated(live)));
+                // shortcut: 녹화 켜짐이면 Egress 시작(T25)이 여기 붙는다.
+            }
+            // 동시에 온 다른 시작 요청이 먼저 LIVE로 바꿨다 → 아래 claim_publisher가 판단
+            Err(_)
+                if db::target(&state.db, id)
+                    .await?
+                    .is_some_and(|t| t.status == "LIVE") => {}
+            Err(e) => return Err(e),
+        }
     }
     let takeover = req.takeover.unwrap_or(false);
     let previous = match db::claim_publisher(&state.db, id, &identity, takeover).await? {

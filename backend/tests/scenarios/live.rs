@@ -10,7 +10,9 @@ use axum::http::{Request, StatusCode};
 use base64::Engine;
 use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
 use flutch::AppState;
+use flutch::broadcast::{EndReason, end_live};
 use flutch::live::{check_limits, sync};
+use flutch::livekit::{Participant, Permission};
 use hmac::{Hmac, KeyInit, Mac};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -98,6 +100,15 @@ fn participant(event: &str, id: i64, identity: &str, can_publish: bool) -> Value
         "room": { "sid": "RM_test", "name": format!("broadcast-{id}") },
         "participant": { "sid": "PA_test", "identity": identity, "state": "ACTIVE", "permission": permission },
     })
+}
+
+/// `list_participants`가 돌려줄 참가자.
+fn member(identity: &str, can_publish: bool) -> Participant {
+    Participant {
+        identity: identity.to_owned(),
+        sid: format!("PA_{identity}"),
+        permission: Permission { can_publish },
+    }
 }
 
 fn room_finished(id: i64) -> Value {
@@ -225,6 +236,7 @@ async fn live_start_owner_only(db: PgPool) {
         v["canPublishSources"],
         json!(["camera", "microphone", "screen_share", "screen_share_audio"])
     );
+    assert!(v.get("hidden").is_none());
     assert_eq!(
         publisher_identity(&db, id).await.as_deref(),
         Some(identity.as_str())
@@ -240,6 +252,8 @@ async fn live_start_owner_only(db: PgPool) {
     assert_eq!(v["canPublish"], false);
     assert_eq!(v["canPublishData"], false);
     assert!(v.get("canPublishSources").is_none());
+    // 시청자 신원은 다른 참가자에게 보이지 않는다
+    assert_eq!(v["hidden"], true);
 
     // 동시 LIVE 1개
     let second = create(&app, &owner).await;
@@ -305,6 +319,9 @@ async fn live_takeover_other_device(db: PgPool) {
             .status,
         StatusCode::OK
     );
+    // 접속 웹훅 전에는 유예 중(접속하지 못하면 유예 만료로 끝난다)
+    assert_eq!(detail(&app, id).await["reconnecting"], true);
+    webhook(&app, participant("participant_joined", id, &a, true)).await;
     // 같은 탭(새로고침)은 새 토큰만
     let res = go_live(&app, Some(&owner), id, json!({ "tabId": TAB_A })).await;
     assert_eq!(res.status, StatusCode::OK);
@@ -458,7 +475,9 @@ async fn live_webhook_signature_invalid_rejected(db: PgPool) {
     let (owner, uid) = login_as(&app, "streamer1").await;
     let id = create(&app, &owner).await;
     go_live(&app, Some(&owner), id, json!({ "tabId": TAB_A })).await;
-    let body = participant("participant_left", id, &format!("u:{uid}:{TAB_A}"), true).to_string();
+    let a = format!("u:{uid}:{TAB_A}");
+    webhook(&app, participant("participant_joined", id, &a, true)).await;
+    let body = participant("participant_left", id, &a, true).to_string();
 
     let bad = [
         None,
@@ -503,7 +522,9 @@ async fn live_disconnect_grace_auto_end(db: PgPool) {
     let room = format!("broadcast-{id}");
     let mut ws = connect(addr, id, Some(ORIGIN), None).await.unwrap();
 
+    // 첫 접속이 시작 때의 유예를 푼다
     webhook(&app, participant("participant_joined", id, &a, true)).await;
+    assert_eq!(next_event(&mut ws).await["type"], "broadcast.resumed");
     // 송출자 퇴장 → 유예 시작
     webhook(&app, participant("participant_left", id, &a, true)).await;
     let ev = next_event(&mut ws).await;
@@ -522,6 +543,9 @@ async fn live_disconnect_grace_auto_end(db: PgPool) {
     webhook(&app, participant("participant_joined", id, &a, true)).await;
     assert_eq!(next_event(&mut ws).await["type"], "broadcast.resumed");
     assert_eq!(detail(&app, id).await["reconnecting"], false);
+    // 만료 판정 직후 송출자가 돌아와 유예가 풀렸으면 끝내지 않는다
+    end_live(&state, id, EndReason::Disconnect).await.unwrap();
+    assert_eq!(detail(&app, id).await["status"], "LIVE");
 
     // 웹훅 순서가 뒤바뀌어 유예가 지났어도 송출자가 실제로 방에 있으면 유지
     webhook(&app, participant("participant_left", id, &a, true)).await;
@@ -530,7 +554,7 @@ async fn live_disconnect_grace_auto_end(db: PgPool) {
     lk.participants
         .lock()
         .unwrap()
-        .insert(room.clone(), vec![a.clone()]);
+        .insert(room.clone(), vec![member(&a, true)]);
     check_limits(&state).await.unwrap();
     assert_eq!(next_event(&mut ws).await["type"], "broadcast.resumed");
     assert_eq!(detail(&app, id).await["status"], "LIVE");
@@ -628,6 +652,7 @@ async fn live_viewer_count(db: PgPool) {
 
     // 송출자·소유자의 시청 탭·우리 토큰이 아닌 참가자(Egress 등)는 세지 않는다
     webhook(&app, join(format!("u:{uid}:{TAB_A}"), true)).await;
+    assert_eq!(next_event(&mut ws).await["type"], "broadcast.resumed");
     webhook(&app, join(format!("u:{uid}:{TAB_C}"), false)).await;
     webhook(&app, join("EG_recorder".into(), false)).await;
     assert_eq!(detail(&app, id).await["viewerCount"], 0);
@@ -679,6 +704,14 @@ async fn live_viewer_count(db: PgPool) {
         (vec![second], true)
     );
 
+    // 같은 신원 재접속: 새 참가(새 sid)가 옛 퇴장보다 먼저 와도 수는 그대로
+    let guest = format!("g:guest-12345678:{TAB_A}");
+    let mut rejoin = join(guest.clone(), false);
+    rejoin["participant"]["sid"] = json!("PA_new");
+    webhook(&app, rejoin).await;
+    webhook(&app, leave(guest)).await; // 옛 접속(PA_test)의 퇴장
+    assert_eq!(detail(&app, id).await["viewerCount"], 1);
+
     // 방이 닫혀도(빈 방 정리) 바로 끝내지 않고 유예
     webhook(&app, room_finished(id)).await;
     assert_eq!(next_event(&mut ws).await["data"]["count"], 0);
@@ -698,22 +731,24 @@ async fn live_viewer_count(db: PgPool) {
 async fn live_restart_sync(db: PgPool) {
     let (app, lk, state) = setup_state(db.clone());
     let (s1, uid1) = login_as(&app, "streamer1").await;
-    let (s2, _) = login_as(&app, "streamer2").await;
+    let (s2, uid2) = login_as(&app, "streamer2").await;
     let (_, vid) = login_as(&app, "viewer").await;
     let b1 = create(&app, &s1).await;
     let b2 = create(&app, &s2).await;
     go_live(&app, Some(&s1), b1, json!({ "tabId": TAB_A })).await;
     go_live(&app, Some(&s2), b2, json!({ "tabId": TAB_A })).await;
+    let p2 = format!("u:{uid2}:{TAB_A}");
+    webhook(&app, participant("participant_joined", b2, &p2, true)).await;
     // 재시작 전: b1 송출자가 끊겼다가 돌아왔는데 그 웹훅을 놓쳤다 / b2 송출자는 서버가 꺼진 사이 나갔다
     backdate_disconnect(&db, b1, 10).await;
     lk.participants.lock().unwrap().insert(
         format!("broadcast-{b1}"),
         vec![
-            format!("u:{uid1}:{TAB_A}"),
-            format!("u:{uid1}:{TAB_C}"),
-            format!("u:{vid}:{TAB_A}"),
-            format!("u:{vid}:{TAB_B}"),
-            format!("g:guest-12345678:{TAB_A}"),
+            member(&format!("u:{uid1}:{TAB_A}"), true),
+            member(&format!("u:{uid1}:{TAB_C}"), false),
+            member(&format!("u:{vid}:{TAB_A}"), false),
+            member(&format!("u:{vid}:{TAB_B}"), false),
+            member(&format!("g:guest-12345678:{TAB_A}"), false),
         ],
     );
 
@@ -745,4 +780,65 @@ async fn live_restart_sync(db: PgPool) {
     check_limits(&state).await.unwrap();
     assert_eq!(detail(&app, b2).await["status"], "ENDED");
     assert_eq!(detail(&app, b1).await["status"], "LIVE");
+}
+
+#[sqlx::test]
+async fn live_publisher_never_joins_auto_end(db: PgPool) {
+    let (app, lk, state, addr) = setup_server(db.clone()).await;
+    let (owner, uid) = login_as(&app, "streamer1").await;
+    let id = create(&app, &owner).await;
+    let a = format!("u:{uid}:{TAB_A}");
+    let room = format!("broadcast-{id}");
+    let mut ws = connect(addr, id, Some(ORIGIN), None).await.unwrap();
+
+    let res = go_live(&app, Some(&owner), id, json!({ "tabId": TAB_A })).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    assert_eq!(next_event(&mut ws).await["type"], "broadcast.updated");
+    // 송출자가 아직 접속하지 않았다 → 유예 중
+    assert_eq!(detail(&app, id).await["reconnecting"], true);
+    check_limits(&state).await.unwrap();
+    assert_eq!(detail(&app, id).await["status"], "LIVE");
+
+    // 끝내 접속하지 못하고(연결 실패·탭 닫음, 웹훅 없음) 60초 → 자동 종료. 그 사이 다른 이벤트 없음
+    backdate_disconnect(&db, id, 61).await;
+    check_limits(&state).await.unwrap();
+    let ev = next_event(&mut ws).await;
+    assert_eq!(ev["type"], "broadcast.ended");
+    assert_eq!(ev["data"]["reason"], "disconnect");
+    assert_eq!(*lk.deleted_rooms.lock().unwrap(), vec![room.clone()]);
+
+    // 끝난 방송의 옛 송출 토큰으로 들어오면 내보낸다(방이 다시 살아나지 않게). 시청자는 두고.
+    webhook(&app, participant("participant_joined", id, &a, true)).await;
+    let guest = format!("g:guest-12345678:{TAB_B}");
+    webhook(&app, participant("participant_joined", id, &guest, false)).await;
+    assert_eq!(*lk.removed_participants.lock().unwrap(), vec![(room, a)]);
+    assert_eq!(detail(&app, id).await["status"], "ENDED");
+}
+
+#[sqlx::test]
+async fn live_subscriber_same_identity_keeps_grace(db: PgPool) {
+    let (app, lk, state) = setup_state(db.clone());
+    let (owner, uid) = login_as(&app, "streamer1").await;
+    let id = create(&app, &owner).await;
+    go_live(&app, Some(&owner), id, json!({ "tabId": TAB_A })).await;
+    let a = format!("u:{uid}:{TAB_A}");
+    webhook(&app, participant("participant_joined", id, &a, true)).await;
+    webhook(&app, participant("participant_left", id, &a, true)).await;
+    assert_eq!(detail(&app, id).await["reconnecting"], true);
+
+    // 같은 탭이 같은 신원의 시청(구독 전용) 토큰으로 들어와도 송출자 복귀가 아니다
+    webhook(&app, participant("participant_joined", id, &a, false)).await;
+    assert_eq!(detail(&app, id).await["reconnecting"], true);
+    webhook(&app, participant("participant_left", id, &a, false)).await;
+    assert_eq!(detail(&app, id).await["reconnecting"], true);
+
+    // 유예 만료 때 LiveKit에 구독 전용으로만 있으면 송출자가 없는 것으로 보고 종료
+    lk.participants
+        .lock()
+        .unwrap()
+        .insert(format!("broadcast-{id}"), vec![member(&a, false)]);
+    backdate_disconnect(&db, id, 61).await;
+    check_limits(&state).await.unwrap();
+    assert_eq!(detail(&app, id).await["status"], "ENDED");
+    assert!(lk.removed_participants.lock().unwrap().is_empty());
 }

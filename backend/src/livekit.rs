@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use base64::Engine;
 use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
 use hmac::{Hmac, KeyInit, Mac};
+use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
@@ -22,6 +23,26 @@ pub enum LiveKitError {
     Status(u16),
     #[error("livekit signing key rejected")]
     Key,
+    #[error("livekit response: {0}")]
+    Json(#[from] serde_json::Error),
+}
+
+/// LiveKit `ParticipantInfo`에서 쓰는 필드. 웹훅은 camelCase, 서버 API(Twirp JSON)는 snake_case로 온다.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Participant {
+    pub identity: String,
+    /// 접속 1회마다 새로 붙는 id. 같은 신원 재접속을 구분한다.
+    #[serde(default)]
+    pub sid: String,
+    #[serde(default)]
+    pub permission: Permission,
+}
+
+/// protojson 웹훅은 false를 생략한다 → 없으면 false.
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct Permission {
+    #[serde(default, rename = "canPublish", alias = "can_publish")]
+    pub can_publish: bool,
 }
 
 #[async_trait]
@@ -30,8 +51,8 @@ pub trait LiveKitApi: Send + Sync {
     async fn delete_room(&self, room: &str) -> Result<(), LiveKitError>;
     /// 참가자 한 명을 내보낸다(기기 전환). 방이나 참가자가 이미 없으면 성공.
     async fn remove_participant(&self, room: &str, identity: &str) -> Result<(), LiveKitError>;
-    /// 방에 지금 접속한 참가자 신원. 방이 없으면 빈 목록.
-    async fn list_participants(&self, room: &str) -> Result<Vec<String>, LiveKitError>;
+    /// 방에 지금 접속한 참가자(hidden 포함). 방이 없으면 빈 목록.
+    async fn list_participants(&self, room: &str) -> Result<Vec<Participant>, LiveKitError>;
 }
 
 /// 웹훅 검증 시계 오차 허용(초).
@@ -76,6 +97,7 @@ pub fn verify_webhook(config: &LiveKitConfig, token: &str, body: &[u8], now: i64
 
 /// 클라이언트 접속 토큰. `publish`면 송출(카메라·마이크·화면·화면 소리)+구독, 아니면 구독만.
 /// LiveKit은 `canPublish`·`canPublishData`가 없으면 true로 보므로 항상 명시한다.
+/// 시청자는 `hidden`: 다른 참가자에게 신원이 보이지 않는다(웹훅·서버 API에는 그대로 나온다).
 pub fn access_token(
     config: &LiveKitConfig,
     room: &str,
@@ -90,6 +112,8 @@ pub fn access_token(
     if publish {
         video["canPublishSources"] =
             json!(["camera", "microphone", "screen_share", "screen_share_audio"]);
+    } else {
+        video["hidden"] = json!(true);
     }
     sign(
         &config.api_secret,
@@ -187,20 +211,18 @@ impl LiveKitApi for LiveKitHttp {
         .map(drop)
     }
 
-    async fn list_participants(&self, room: &str) -> Result<Vec<String>, LiveKitError> {
-        let res = self
+    async fn list_participants(&self, room: &str) -> Result<Vec<Participant>, LiveKitError> {
+        let mut res = self
             .room_service(
                 "ListParticipants",
                 json!({ "roomAdmin": true, "room": room }),
                 json!({ "room": room }),
             )
             .await?;
-        Ok(res["participants"]
-            .as_array()
-            .into_iter()
-            .flatten()
-            .filter_map(|p| p["identity"].as_str().map(str::to_owned))
-            .collect())
+        match res.get_mut("participants") {
+            Some(list) => Ok(serde_json::from_value(list.take())?),
+            None => Ok(Vec::new()),
+        }
     }
 }
 
@@ -235,6 +257,29 @@ mod tests {
         let claims = claims_of(&t, b"secret");
         assert_eq!(claims["iss"], "key");
         assert_eq!(claims["video"]["roomCreate"], true);
+    }
+
+    /// 로컬 LiveKit v1.13 실측 형식: 웹훅은 camelCase·false 생략, ListParticipants는 snake_case.
+    #[test]
+    fn participant_parses_webhook_and_server_api() {
+        let hook: Participant = serde_json::from_value(json!({
+            "sid": "PA_1", "identity": "u:1:t", "permission": { "canSubscribe": true, "canPublish": true }
+        }))
+        .unwrap();
+        assert!(hook.permission.can_publish);
+        let hidden: Participant = serde_json::from_value(json!({
+            "sid": "PA_2", "identity": "u:2:t", "permission": { "canSubscribe": true, "hidden": true }
+        }))
+        .unwrap();
+        assert!(!hidden.permission.can_publish);
+        let api: Participant = serde_json::from_value(json!({
+            "sid": "PA_3", "identity": "u:1:t", "permission": { "can_subscribe": true, "can_publish": true, "hidden": false }
+        }))
+        .unwrap();
+        assert_eq!(
+            (api.sid.as_str(), api.permission.can_publish),
+            ("PA_3", true)
+        );
     }
 
     #[test]

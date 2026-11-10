@@ -50,8 +50,12 @@ pub async fn claim_publisher(
     if previous.is_some() && !row.away && !takeover {
         return Ok(Claim::Active);
     }
+    // 새 송출자는 접속 웹훅이 올 때까지 유예 중으로 둔다: 끝내 접속하지 못하면(연결 실패·탭 닫음) 웹훅이 없어도 유예 만료로 끝난다.
     sqlx::query!(
-        "UPDATE broadcasts SET publisher_identity = $2 WHERE id = $1",
+        "UPDATE broadcasts SET publisher_identity = $2,
+                disconnected_at = CASE WHEN publisher_identity IS DISTINCT FROM $2
+                                       THEN COALESCE(disconnected_at, now()) ELSE disconnected_at END
+         WHERE id = $1",
         id,
         identity
     )

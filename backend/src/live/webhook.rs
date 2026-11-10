@@ -12,7 +12,7 @@ use super::{LiveError, db, is_viewer};
 use crate::AppState;
 use crate::broadcast::room_name;
 use crate::error::AppError;
-use crate::livekit;
+use crate::livekit::{self, Participant};
 use crate::realtime::{Event, WsEvent};
 
 /// LiveKit `WebhookEvent`(protojson, camelCase)에서 쓰는 필드만.
@@ -28,19 +28,10 @@ struct Room {
     name: String,
 }
 
-#[derive(Deserialize)]
-struct Participant {
-    identity: String,
-    #[serde(default)]
-    permission: Permission,
-}
-
-/// protojson은 false를 생략한다 → 없으면 false.
-#[derive(Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-struct Permission {
-    #[serde(default)]
-    can_publish: bool,
+/// 우리 송출 토큰(`u:` + canPublish)으로 들어온 참가자. 같은 신원이라도 구독 전용(시청 탭)은 송출자가 아니다.
+/// `u:`가 아닌 송출 권한 참가자(Egress 등)는 건드리지 않는다.
+fn is_publisher_token(p: &Participant) -> bool {
+    p.permission.can_publish && p.identity.starts_with("u:")
 }
 
 pub async fn receive(
@@ -72,7 +63,7 @@ pub async fn receive(
     tracing::debug!(broadcast_id = id, event = %ev.event, "livekit webhook");
     match (ev.event.as_str(), ev.participant) {
         ("participant_joined", Some(p)) => joined(&state, id, p).await?,
-        ("participant_left", Some(p)) => left(&state, id, &p.identity).await?,
+        ("participant_left", Some(p)) => left(&state, id, p).await?,
         ("room_finished", _) => room_finished(&state, id).await?,
         // shortcut: egress_ended(녹화 ready/failed)는 T25가 처리한다. 지금은 다른 이벤트와 같이 무시.
         _ => {}
@@ -81,20 +72,21 @@ pub async fn receive(
 }
 
 async fn joined(state: &AppState, id: i64, p: Participant) -> Result<(), AppError> {
-    let Some(b) = db::live(&state.db, id).await? else {
-        return Ok(());
-    };
-    if b.publisher_identity.as_deref() == Some(p.identity.as_str()) {
-        if db::end_grace(&state.db, id, &p.identity).await? {
-            tracing::info!(broadcast_id = id, identity = %p.identity, "publisher resumed");
-            state
-                .realtime
-                .publish(id, Event::public(WsEvent::BroadcastResumed {}));
+    let live = db::live(&state.db, id).await?;
+    if is_publisher_token(&p) {
+        if let Some(b) = &live
+            && b.publisher_identity.as_deref() == Some(p.identity.as_str())
+        {
+            // 첫 접속이면 `POST /live`가 시작한 유예도 여기서 풀린다
+            if db::end_grace(&state.db, id, &p.identity).await? {
+                tracing::info!(broadcast_id = id, identity = %p.identity, "publisher resumed");
+                state
+                    .realtime
+                    .publish(id, Event::public(WsEvent::BroadcastResumed {}));
+            }
+            return Ok(());
         }
-        return Ok(());
-    }
-    if p.permission.can_publish {
-        // 기기 전환으로 밀려난 기기가 옛 송출 토큰(TTL 4시간)으로 다시 들어왔다 → 내보낸다
+        // 기기 전환으로 밀려난 기기, 또는 끝난 방송의 옛 송출 토큰(TTL 4시간)으로 다시 들어왔다 → 내보낸다
         tracing::info!(broadcast_id = id, identity = %p.identity, "stale publisher rejoined, removing");
         if let Err(e) = state
             .livekit
@@ -105,9 +97,12 @@ async fn joined(state: &AppState, id: i64, p: Participant) -> Result<(), AppErro
         }
         return Ok(());
     }
+    let Some(b) = live else {
+        return Ok(());
+    };
     if is_viewer(&p.identity, b.owner_id)
         && let Some(count) = state.live.update_viewers(id, |s| {
-            s.insert(p.identity);
+            s.insert(p.identity, p.sid);
         })
     {
         db::raise_peak(&state.db, id, count).await?;
@@ -118,9 +113,12 @@ async fn joined(state: &AppState, id: i64, p: Participant) -> Result<(), AppErro
     Ok(())
 }
 
-async fn left(state: &AppState, id: i64, identity: &str) -> Result<(), AppError> {
+async fn left(state: &AppState, id: i64, p: Participant) -> Result<(), AppError> {
     let count = state.live.update_viewers(id, |s| {
-        s.remove(identity);
+        // 재접속의 새 참가가 먼저 왔으면 sid가 달라 지우지 않는다
+        if s.get(&p.identity) == Some(&p.sid) {
+            s.remove(&p.identity);
+        }
     });
     let Some(b) = db::live(&state.db, id).await? else {
         return Ok(());
@@ -130,12 +128,13 @@ async fn left(state: &AppState, id: i64, identity: &str) -> Result<(), AppError>
             .realtime
             .publish(id, Event::public(WsEvent::ViewerCount { count }));
     }
-    if b.publisher_identity.as_deref() == Some(identity)
-        && let Some(since) = db::start_grace(&state.db, id, Some(identity)).await?
+    if is_publisher_token(&p)
+        && b.publisher_identity.as_deref() == Some(p.identity.as_str())
+        && let Some(since) = db::start_grace(&state.db, id, Some(&p.identity)).await?
     {
         tracing::info!(
             broadcast_id = id,
-            identity,
+            identity = %p.identity,
             "publisher disconnected, grace started"
         );
         state

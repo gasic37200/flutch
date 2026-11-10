@@ -1,11 +1,12 @@
 //! 주기 작업(architecture §5): 60초 유예·3시간 자동 종료, 재시작 시 LiveKit 동기화.
 
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 use super::{db, is_viewer, lock};
 use crate::AppState;
 use crate::broadcast::{EndReason, end_live, room_name};
 use crate::error::AppError;
+use crate::livekit::Participant;
 use crate::realtime::{Event, WsEvent};
 
 /// 자동 종료 몇 초 전에 경고하나(features/03 "3시간 10분 전 경고").
@@ -47,7 +48,7 @@ pub async fn check_limits(state: &AppState) -> Result<(), AppError> {
 async fn expire_grace(state: &AppState, id: i64, publisher: Option<&str>) -> Result<(), AppError> {
     match state.livekit.list_participants(&room_name(id)).await {
         Ok(list) => {
-            if let Some(p) = publisher.filter(|p| list.iter().any(|i| i == p)) {
+            if let Some(p) = publisher.filter(|p| publishing(&list, p)) {
                 if db::end_grace(&state.db, id, p).await? {
                     tracing::info!(broadcast_id = id, "publisher still in room, grace cleared");
                     state
@@ -62,6 +63,12 @@ async fn expire_grace(state: &AppState, id: i64, publisher: Option<&str>) -> Res
         }
     }
     end_live(state, id, EndReason::Disconnect).await
+}
+
+/// 송출자 신원이 송출 권한으로 방에 있나(같은 신원의 구독 전용 참가자는 아님).
+fn publishing(list: &[Participant], publisher: &str) -> bool {
+    list.iter()
+        .any(|m| m.identity == publisher && m.permission.can_publish)
 }
 
 /// 재시작 동기화: LIVE 방송마다 LiveKit 실제 참가자로 시청자 집합을 복구하고,
@@ -80,10 +87,10 @@ pub async fn sync(state: &AppState) -> Result<(), AppError> {
     }
     let n = rooms.len();
     for (b, list) in rooms {
-        let viewers: HashSet<String> = list
+        let viewers: HashMap<String, String> = list
             .iter()
-            .filter(|i| is_viewer(i, b.owner_id))
-            .cloned()
+            .filter(|m| is_viewer(&m.identity, b.owner_id))
+            .map(|m| (m.identity.clone(), m.sid.clone()))
             .collect();
         if let Some(count) = state.live.update_viewers(b.id, |s| *s = viewers) {
             db::raise_peak(&state.db, b.id, count).await?;
@@ -91,7 +98,7 @@ pub async fn sync(state: &AppState) -> Result<(), AppError> {
                 .realtime
                 .publish(b.id, Event::public(WsEvent::ViewerCount { count }));
         }
-        match b.publisher_identity.filter(|p| list.contains(p)) {
+        match b.publisher_identity.filter(|p| publishing(&list, p)) {
             Some(p) if b.away => {
                 if db::end_grace(&state.db, b.id, &p).await? {
                     state

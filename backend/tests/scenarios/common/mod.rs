@@ -9,7 +9,7 @@ use axum::Router;
 use axum::body::Body;
 use axum::http::{HeaderMap, Request, StatusCode};
 use flutch::config::{AuthConfig, BroadcastConfig, Config, LiveConfig, LiveKitConfig};
-use flutch::livekit::{LiveKitApi, LiveKitError};
+use flutch::livekit::{LiveKitApi, LiveKitError, Participant};
 use flutch::toss::TossApi;
 use flutch::{AppState, realtime};
 use sqlx::PgPool;
@@ -28,8 +28,8 @@ pub struct FakeLiveKit {
     pub deleted_rooms: Mutex<Vec<String>>,
     /// `remove_participant`로 내보낸 (방, 신원).
     pub removed_participants: Mutex<Vec<(String, String)>>,
-    /// `list_participants`가 돌려줄 방별 참가자 신원(없는 방은 빈 목록).
-    pub participants: Mutex<HashMap<String, Vec<String>>>,
+    /// `list_participants`가 돌려줄 방별 참가자(없는 방은 빈 목록).
+    pub participants: Mutex<HashMap<String, Vec<Participant>>>,
     /// true면 `list_participants`가 실패한다.
     pub list_fails: AtomicBool,
 }
@@ -49,7 +49,7 @@ impl LiveKitApi for FakeLiveKit {
         Ok(())
     }
 
-    async fn list_participants(&self, room: &str) -> Result<Vec<String>, LiveKitError> {
+    async fn list_participants(&self, room: &str) -> Result<Vec<Participant>, LiveKitError> {
         if self.list_fails.load(Ordering::SeqCst) {
             return Err(LiveKitError::Status(503));
         }

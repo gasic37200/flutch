@@ -227,6 +227,8 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `live_webhook_signature_invalid_rejected` | 웹훅 서명 검증 | (서버 내부) |
 | `live_viewer_count` | 시청자 수 집계 | P4 |
 | `live_restart_sync` | 시작 시 LiveKit 상태 동기화 | P10 |
+| `live_publisher_never_joins_auto_end` | 송출 시작 후 끝내 접속 못 하면 60초 뒤 종료 | P9 |
+| `live_subscriber_same_identity_keeps_grace` | 같은 신원 시청 참가는 유예를 풀지 않음 | (서버 내부) |
 | `ws_receives_broadcast_updated_and_ended` | 변경·종료 실시간 반영 | P5, P8 |
 | `ws_split_event_hides_anonymous_from_public` | 연결별 이벤트 필터링 | (후원 절차 추가 시) |
 | `ws_unknown_or_hidden_broadcast_404` | 없는·숨긴 방송 구독 404 | (서버 내부) |

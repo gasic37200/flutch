@@ -52,8 +52,8 @@ pub fn register(s: &mut Scheduler) {
 /// 송출 메모리 상태. 재시작하면 비고 `sync`가 LiveKit 참가자 목록으로 복구한다.
 #[derive(Default)]
 pub struct LiveState {
-    /// 방송별 시청자 LiveKit 신원(소유자·송출자·Egress 제외)
-    viewers: Mutex<HashMap<i64, HashSet<String>>>,
+    /// 방송별 시청자 LiveKit 신원 → 접속 sid(소유자·송출자·Egress 제외)
+    viewers: Mutex<HashMap<i64, Viewers>>,
     /// 자동 종료 경고를 보낸 방송. shortcut: 메모리라 재시작 후 경고 구간이면 한 번 더 보낸다, 문제 되면 DB 컬럼으로.
     warned: Mutex<HashSet<i64>>,
     synced: AtomicBool,
@@ -64,10 +64,13 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
+/// 시청자 신원 → 접속 sid. 같은 신원 재접속은 새 참가가 옛 퇴장보다 먼저 올 수 있어 퇴장은 sid가 같을 때만 지운다.
+type Viewers = HashMap<String, String>;
+
 /// 신원 `u:<id>:<tab>`/`g:<guest>:<tab>`을 사용자 단위로 묶은 수(같은 사용자 여러 탭은 1명).
-fn user_count(identities: &HashSet<String>) -> i64 {
+fn user_count(identities: &Viewers) -> i64 {
     let users: HashSet<_> = identities
-        .iter()
+        .keys()
         .filter_map(|i| i.rsplit_once(':'))
         .map(|(user, _tab)| user)
         .collect();
@@ -87,7 +90,7 @@ impl LiveState {
     }
 
     /// 방송의 신원 집합을 바꾸고, 시청자 수가 달라졌으면 새 값.
-    fn update_viewers(&self, id: i64, f: impl FnOnce(&mut HashSet<String>)) -> Option<i64> {
+    fn update_viewers(&self, id: i64, f: impl FnOnce(&mut Viewers)) -> Option<i64> {
         let mut map = lock(&self.viewers);
         let set = map.entry(id).or_default();
         let before = user_count(set);
