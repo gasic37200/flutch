@@ -5,6 +5,7 @@ import Button from '../../../components/ui/Button.tsx'
 import Icon from '../../../components/ui/Icon.tsx'
 import { faceSrc, type Face } from '../../../components/ui/mascot.ts'
 import Skeleton from '../../../components/ui/Skeleton.tsx'
+import { pipPosition } from '../../live/pip.ts'
 import { formatDuration, type WatchView } from '../hooks/useWatch.ts'
 import type { usePlayer } from '../hooks/usePlayer.ts'
 
@@ -115,9 +116,9 @@ function Overlay({ view, broadcast }: Pick<Props, 'view' | 'broadcast'>) {
 
 const iconBtn = 'inline-flex size-10 items-center justify-center text-text hover:text-brand focus-visible:outline-2 focus-visible:outline-text'
 
-// 표현만: 상태·트랙·볼륨은 useWatch·usePlayer가 준다. 웹캠 PIP 겹치기는 T09b가 이 영역(relative 박스)에 얹는다.
+// 표현만: 상태·트랙·볼륨·PIP 숨김은 useWatch·usePlayer가 준다.
 export default function Player({ view, broadcast, player: p, onUnmute }: Props) {
-  const { videoRef, micRef, shareAudioRef, boxRef } = p
+  const { videoRef, pipRef, micRef, shareAudioRef, boxRef } = p
   if (view === 'loading') return <Skeleton className='aspect-video w-full' />
   const playing = view === 'playing'
   const live = broadcast?.status === 'LIVE'
@@ -128,6 +129,15 @@ export default function Player({ view, broadcast, player: p, onUnmute }: Props) 
       style={playing ? undefined : { backgroundImage: 'url(/brand/bg-speed.jpg)' }}
     >
       <video ref={videoRef} muted playsInline autoPlay aria-label='방송 화면' className={`size-full object-contain ${playing ? '' : 'invisible'}`} />
+      {/* PIP: 숨겨도 요소는 남겨 다시 보일 때 트랙이 붙은 채로 있게 한다. 탭하면 숨김(모바일은 이 탭이 숨기기 버튼) */}
+      <button
+        type='button'
+        onClick={p.togglePip}
+        aria-label='웹캠 숨기기'
+        className={`absolute aspect-video w-[24%] ring-1 ring-brand/60 ${pipPosition(broadcast?.pipCorner ?? 'bottom_right', { top: 'top-12', bottom: 'bottom-14' })} ${playing && p.hasPip && !p.pipHidden ? '' : 'hidden'}`}
+      >
+        <video ref={pipRef} muted playsInline autoPlay aria-label='웹캠 화면' className='size-full bg-bg object-cover' />
+      </button>
       <audio ref={micRef} muted={p.muted} autoPlay />
       <audio ref={shareAudioRef} muted={p.muted} autoPlay />
       <Overlay view={view} broadcast={broadcast} />
@@ -154,7 +164,12 @@ export default function Player({ view, broadcast, player: p, onUnmute }: Props) 
               />
             </>
           )}
-          <button type='button' onClick={p.toggleFullscreen} aria-label={p.fullscreen ? '전체화면 해제' : '전체화면'} className={`${iconBtn} ml-auto`}>
+          {p.hasPip && (
+            <button type='button' onClick={p.togglePip} aria-pressed={p.pipHidden} aria-label={p.pipHidden ? '웹캠 보이기' : '웹캠 숨기기'} className={`${iconBtn} ml-auto`}>
+              <Icon name='camera' className={p.pipHidden ? 'text-text-dim' : ''} />
+            </button>
+          )}
+          <button type='button' onClick={p.toggleFullscreen} aria-label={p.fullscreen ? '전체화면 해제' : '전체화면'} className={`${iconBtn} ${p.hasPip ? '' : 'ml-auto'}`}>
             <Icon name={p.fullscreen ? 'collapse' : 'expand'} />
           </button>
         </div>

@@ -11,6 +11,7 @@ import Skeleton from '../components/ui/Skeleton.tsx'
 import AudioControl from '../features/studio/components/AudioControl.tsx'
 import MobileControls from '../features/studio/components/MobileControls.tsx'
 import MobileLive from '../features/studio/components/MobileLive.tsx'
+import PipControl from '../features/studio/components/PipControl.tsx'
 import StudioAside from '../features/studio/components/StudioAside.tsx'
 import StudioDialogs from '../features/studio/components/StudioDialogs.tsx'
 import StudioPreview from '../features/studio/components/StudioPreview.tsx'
@@ -137,7 +138,7 @@ export default function StudioPage() {
             </Bar>
           ))}
 
-          <StudioPreview stream={media.stream} ended={media.videoEnded} tall={mobile} placeholder={live ? '송출 미리보기' : '미리보기 · 아직 송출되지 않아요'}>
+          <StudioPreview stream={media.stream} ended={media.videoEnded} tall={mobile} pip={!mobile && s.pipOn && media.pipStream ? { stream: media.pipStream, corner: data.pipCorner } : undefined} placeholder={live ? '송출 미리보기' : '미리보기 · 아직 송출되지 않아요'}>
             {media.videoEnded ? (
               <Button onClick={() => void s.reshare()}>{screen ? '다시 공유하기' : '카메라 다시 켜기'}</Button>
             ) : (
@@ -177,6 +178,7 @@ export default function StudioPage() {
                     공유할 화면 바꾸기
                   </Button>
                 )}
+                {screen && <PipControl on={s.pipOn} corner={data.pipCorner} onToggle={(on) => void s.togglePip(on)} onCorner={s.setPipCorner} />}
               </Panel>
 
               <Panel innerClassName='flex flex-col gap-3.5 p-4'>

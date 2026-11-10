@@ -2,10 +2,11 @@ import { Track } from 'livekit-client'
 import { useEffect, useRef, useState } from 'react'
 import { useRequireLogin } from '../../auth/hooks/useAuth.ts'
 import { useChat } from '../../chat/hooks/useChat.ts'
-import { useBroadcast } from '../../broadcast/hooks/useBroadcasts.ts'
+import { useBroadcast, useUpdateBroadcast } from '../../broadcast/hooks/useBroadcasts.ts'
 import { useBroadcastEvents } from '../../live/hooks/useBroadcastEvents.ts'
 import { usePublisher, type MediaSource } from '../../live/hooks/usePublisher.ts'
 import { useToast } from '../../../hooks/useToast.ts'
+import type { PipCorner } from '../../../api/generated/PipCorner.ts'
 import { detectEnv } from '../environment.ts'
 import { useElapsed } from './useElapsed.ts'
 import { useWakeLock } from './useWakeLock.ts'
@@ -24,6 +25,7 @@ export function useStudio(broadcastId: number | undefined) {
   const chat = useChat(broadcastId, events)
   const pub = usePublisher(broadcastId)
   const media = useStudioMedia(env)
+  const updateBroadcast = useUpdateBroadcast(broadcastId)
   const [endConfirm, setEndConfirm] = useState(false)
   const [ending, setEnding] = useState(false)
   const data = broadcast.data
@@ -85,6 +87,13 @@ export function useStudio(broadcastId: number | undefined) {
     await media.flipCamera()
   }
 
+  /** 웹캠 PIP 위치: 서버에 저장하면 broadcast.updated로 시청자에게 반영된다 */
+  const setPipCorner = (pipCorner: PipCorner) =>
+    updateBroadcast.mutate(
+      { title: null, category: null, tags: null, record: null, pipCorner },
+      { onError: () => toast({ tone: 'error', message: '웹캠 위치를 바꾸지 못했어요.' }) },
+    )
+
   const stop = async () => {
     setEnding(true)
     await pub.stop()
@@ -115,6 +124,9 @@ export function useStudio(broadcastId: number | undefined) {
     /** 화면 소스 변경·화면 공유 중지 뒤 다시 공유 */
     reshare: () => media.captureVideo(),
     flipCamera,
+    pipOn: !!media.pipStream,
+    togglePip: (on: boolean) => (on ? media.capturePip() : media.stopPip()),
+    setPipCorner,
     goLive: () => pub.start(),
   }
 }

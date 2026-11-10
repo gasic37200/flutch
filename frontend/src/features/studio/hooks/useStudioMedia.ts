@@ -32,6 +32,8 @@ export function useStudioMedia(env: StudioEnv) {
   const ctx = useRef<AudioContext | null>(null)
   const nodes = useRef<Partial<Record<Channel, Node>>>({})
   const raw = useRef<{ video: MediaStreamTrack | null; screenAudio: MediaStreamTrack | null; mic: MediaStreamTrack | null }>({ video: null, screenAudio: null, mic: null })
+  const pipRaw = useRef<MediaStreamTrack | null>(null) // 화면 모드에서 따로 보내는 웹캠(PIP)
+  const [pipStream, setPipStream] = useState<MediaStream | null>(null)
   const [facing, setFacing] = useState<Facing>('user')
   const modeRef = useRef(mode)
   modeRef.current = mode
@@ -84,6 +86,31 @@ export function useStudioMedia(env: StudioEnv) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const stopPip = useCallback(() => {
+    pipRaw.current?.stop()
+    pipRaw.current = null
+    setPipStream(null)
+    setVersion((v) => v + 1)
+  }, [])
+
+  /** 웹캠 PIP 켜기: 360p30(대역폭). 사용자 클릭에서 부른다. */
+  const capturePip = useCallback(async () => {
+    setError(null)
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 360, frameRate: 30 } })
+      pipRaw.current?.stop()
+      const track = s.getVideoTracks()[0]
+      pipRaw.current = track
+      track.addEventListener('ended', () => {
+        if (pipRaw.current === track) stopPip()
+      })
+      setPipStream(new MediaStream([track]))
+      setVersion((v) => v + 1)
+    } catch {
+      setError('웹캠을 켜지 못했어요. 주소창 옆 권한 설정에서 카메라를 허용해 주세요.')
+    }
+  }, [stopPip])
+
   const captureVideo = useCallback(async (m: Mode = modeRef.current, face: Facing = facingRef.current) => {
     setError(null)
     try {
@@ -106,6 +133,7 @@ export function useStudioMedia(env: StudioEnv) {
         if (raw.current.video === video) setVideoEnded(true)
       })
       if (m === 'screen') feed('sys', audio)
+      else stopPip() // 웹캠 모드는 카메라가 메인 영상이라 PIP가 필요 없다
       setMode(m)
       setFacing(face)
       setStream(new MediaStream([video]))
@@ -120,7 +148,7 @@ export function useStudioMedia(env: StudioEnv) {
       return false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stopVideo])
+  }, [stopVideo, stopPip])
 
   /** 전·후면 전환. 모바일은 카메라를 동시에 두 번 열 수 없어 현재 트랙을 먼저 끄고, 실패하면 원래 카메라로 되돌린다. */
   const flipCamera = useCallback(async () => {
@@ -155,6 +183,9 @@ export function useStudioMedia(env: StudioEnv) {
   const stopAll = useCallback(() => {
     for (const t of [raw.current.video, raw.current.screenAudio, raw.current.mic]) t?.stop()
     raw.current = { video: null, screenAudio: null, mic: null }
+    pipRaw.current?.stop()
+    pipRaw.current = null
+    setPipStream(null)
     for (const n of Object.values(nodes.current)) n?.src?.disconnect()
     nodes.current = {}
     void ctx.current?.close()
@@ -172,6 +203,8 @@ export function useStudioMedia(env: StudioEnv) {
     const out: MediaItem[] = []
     const { video, mic } = raw.current
     if (video?.readyState === 'live') out.push({ source: modeRef.current === 'screen' ? Track.Source.ScreenShare : Track.Source.Camera, key: video.id, make: () => video.clone() })
+    const pip = pipRaw.current
+    if (modeRef.current === 'screen' && pip?.readyState === 'live') out.push({ source: Track.Source.Camera, key: pip.id, make: () => pip.clone() })
     const sysTrack = nodes.current.sys?.dest.stream.getAudioTracks()[0]
     // 화면 모드에서는 소리가 없어도 트랙을 보내 둔다(나중에 소리 있는 화면으로 바꿔도 이어지도록)
     if (modeRef.current === 'screen' && video?.readyState === 'live' && sysTrack) out.push({ source: Track.Source.ScreenShareAudio, key: sysTrack.id, make: () => sysTrack.clone() })
@@ -188,8 +221,12 @@ export function useStudioMedia(env: StudioEnv) {
     setMode: (m: Mode) => {
       if (m === modeRef.current) return
       stopVideo()
+      if (m === 'camera') stopPip()
       setMode(m)
     },
+    pipStream,
+    capturePip,
+    stopPip,
     stream,
     videoReady: !!stream && !videoEnded,
     videoEnded,
