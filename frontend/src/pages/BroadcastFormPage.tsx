@@ -14,24 +14,18 @@ export default function BroadcastFormPage() {
   const broadcast = useBroadcast(Number.isInteger(id) ? id : undefined)
   if (!me) return null
 
-  let body
-  if (id === undefined) {
-    body = <BroadcastForm />
-  } else if (broadcast.isError || !Number.isInteger(id)) {
-    body = <ErrorScreen {...errorKindOf(Number.isInteger(id) ? broadcast.error : undefined)} />
-  } else if (!broadcast.data) {
-    body = <Skeleton className='h-96 w-full' />
-  } else if (broadcast.data.owner.id !== me.id) {
-    // 서버도 PATCH를 403으로 막는다. 여기서는 빈 폼을 보여 주지 않을 뿐.
-    body = <ErrorScreen kind='notFound' />
-  } else {
-    body = <BroadcastForm key={broadcast.data.id} existing={broadcast.data} />
-  }
-
-  return (
-    <div className='mx-auto max-w-xl'>
-      <h1 className='mb-4 font-display text-2xl font-bold tracking-wide'>{id === undefined ? '방송 등록' : '방송 정보 수정'}</h1>
+  const heading = id === undefined ? '새 방송 등록' : '방송 정보 수정'
+  const wrap = (body: React.ReactNode) => (
+    <div className='max-w-xl'>
+      <h1 className='mb-4 text-2xl font-black sm:text-[26px]'>{heading}</h1>
       {body}
     </div>
   )
+
+  if (id === undefined) return <BroadcastForm heading={heading} owner={me} />
+  if (broadcast.isError || !Number.isInteger(id)) return wrap(<ErrorScreen {...errorKindOf(Number.isInteger(id) ? broadcast.error : undefined)} />)
+  if (!broadcast.data) return wrap(<Skeleton className='h-96 w-full' />)
+  // 서버도 PATCH를 403으로 막는다. 여기서는 빈 폼을 보여 주지 않을 뿐.
+  if (broadcast.data.owner.id !== me.id) return wrap(<ErrorScreen kind='notFound' />)
+  return <BroadcastForm key={broadcast.data.id} heading={heading} owner={me} existing={broadcast.data} />
 }
