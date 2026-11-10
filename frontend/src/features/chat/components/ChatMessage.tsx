@@ -4,6 +4,7 @@ import Button from '../../../components/ui/Button.tsx'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog.tsx'
 import Icon from '../../../components/ui/Icon.tsx'
 import { profileTone } from '../../../components/ui/mascot.ts'
+import ViewerPopup from '../../moderation/components/ViewerPopup.tsx'
 import type { ChatApi } from '../hooks/useChat.ts'
 import { MAX_CHAT } from '../hooks/useChatComposer.ts'
 import { useChatItem } from '../hooks/useChatItem.ts'
@@ -21,7 +22,15 @@ export default function ChatMessage({ chat, item, isOwner, live }: { chat: ChatA
       <div className='flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5'>
         {item.badges.includes('streamer') && <Badge tone='streamer' />}
         {item.badges.includes('donor') && <Badge tone='donor' />}
-        <b className={`break-all ${tone.nicknameClass}`}>{item.author.nickname}</b>
+        <button
+          type='button'
+          aria-label={`${item.author.nickname}님 정보`}
+          aria-haspopup='dialog'
+          onClick={m.openPopup}
+          className={`font-bold break-all hover:underline ${tone.nicknameClass}`}
+        >
+          {item.author.nickname}
+        </button>
         {item.deleted ? (
           <span className='text-text-dim italic'>삭제된 메시지입니다</span>
         ) : m.editing ? null : (
@@ -94,6 +103,8 @@ export default function ChatMessage({ chat, item, isOwner, live }: { chat: ChatA
           {m.error}
         </p>
       )}
+
+      {m.popup && <ViewerPopup user={item.author} badges={item.badges} ownerId={m.ownerId} onClose={m.closePopup} />}
 
       <ConfirmDialog
         open={m.confirming}
