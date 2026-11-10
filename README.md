@@ -87,7 +87,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 ## 오픈소스·에셋 출처
 | 항목 | 출처·라이선스 |
 |---|---|
-| Pretendard (본문 글꼴) | [orioncactus/pretendard](https://github.com/orioncactus/pretendard), SIL OFL 1.1, jsDelivr CDN |
+| Noto Sans KR (본문 글꼴) | [Google Fonts](https://fonts.google.com/noto/specimen/Noto+Sans+KR), SIL OFL 1.1 |
 | Chakra Petch (영문 제목 글꼴) | [Google Fonts](https://fonts.google.com/specimen/Chakra+Petch), SIL OFL 1.1 |
 | JetBrains Mono (숫자 글꼴) | [Google Fonts](https://fonts.google.com/specimen/JetBrains+Mono), SIL OFL 1.1 |
 | 욕설 목록 (`backend/data/profanity_ko.txt`) | [LDNOOBW List of Dirty, Naughty, Obscene, and Otherwise Bad Words](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words) `ko`, CC BY 4.0 — 오탐 항목 제거·일부 추가 |
