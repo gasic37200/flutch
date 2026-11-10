@@ -40,3 +40,4 @@
 | 2026-11-10 | T26 | 부분 | 2026-11-10 12:42 → 13:09 | 27분 | 238,051 | 92 | [#77](https://github.com/gasic37200/flutch/pull/77) | Sonnet·medium. `GET /users/{id}` 백엔드 없음 → T26b로 후속 |
 | 2026-11-10 | T17 | 완료 | 2026-11-10 12:26 → 13:10 | 44분 | 257,063 | 170 | [#78](https://github.com/gasic37200/flutch/pull/78) | Sonnet·medium. 두 사용자 실시간 채팅·차단 입력창 확인 |
 | 2026-11-10 | T21 | 완료 | 2026-11-10 12:26 → 13:11 | 45분 | 297,073 | 80 | [#79](https://github.com/gasic37200/flutch/pull/79) | Opus·high. ponytail-review: 지적 없음, 실제 토스 호출은 키 받은 뒤 |
+| 2026-11-10 | T26b | 완료 | 2026-11-10 13:10 → 13:22 | 12분 | 116,116 | 19 | [#82](https://github.com/gasic37200/flutch/pull/82) | Sonnet·medium. follow 도메인에 GET /users/{id} |
