@@ -17,6 +17,7 @@
 | **GitHub Secrets 4개**: `DEPLOY_HOST`(146.56.116.48) · `DEPLOY_USER`(ubuntu) · `DEPLOY_SSH_KEY`(서버 개인키 전체) · `GHCR_READ_TOKEN`(read:packages PAT). 넣은 뒤 Actions › Deploy › Run workflow(main) | T07 완료 확인 | 11/10 | ⬜ |
 | **HTTPS 인증서**: Let's Encrypt가 `kro.kr` 전체 주간 50개 한도로 거절(11/09 18:30·18:46). 서버에서 `cd ~/flutch && ./init-cert.sh` 재시도(22:11 KST 이후). **서버 cron이 5분마다 자동 재시도**(11/10 09:4x 30분→5분, 사용자 승인)(`~/flutch/cert-retry.sh`, 로그 `backups/cert.log`, 성공 시 `.cert-ok` 남기고 멈춤 — 사용자 승인 11/09 19:3x) | T07 완료 확인 | 11/10 | ⬜ |
 | Oracle Object Storage 버킷 2개(`recordings` 공개 읽기·목록 비공개, `backups` 비공개) + Customer Secret Key(S3 호환) + namespace·region | T07 백업, T25 | 11/11 | ⬜ |
+| **녹화 저장소 연결(T25 이후)**: `recordings` 버킷 공개 읽기 + CORS(`https://flutch.kro.kr` GET·HEAD) → 서버 `.env`에 `RECORDING_S3_ENDPOINT`(`https://<ns>.compat.objectstorage.<region>.oraclecloud.com`)·`RECORDING_S3_BUCKET`·`RECORDING_S3_REGION`·`RECORDING_S3_ACCESS_KEY`·`RECORDING_S3_SECRET_KEY`·`RECORDING_PUBLIC_BASE_URL`(`https://objectstorage.<region>.oraclecloud.com/n/<ns>/b/<bucket>/o`). 하나라도 비면 녹화 꺼짐(방송은 정상). LiveKit Cloud Egress 한도 확인 | T25 운영 확인 | 배포 후 | ⬜ |
 | LiveKit Cloud 가입, API key/secret, **대시보드 Settings › Project에서 Build 플랜 한도(분·Egress) 확인** | T08a 운영 확인 | 11/11 | ⬜ |
 | LiveKit 대시보드에 웹훅 URL 등록 `https://flutch.kro.kr/api/v1/livekit/webhook` | T08b 운영 확인 | T07 배포 후 | ⬜ |
 | 토스페이먼츠 개발자센터 가입, **결제위젯** 테스트 키(`test_gck`/`test_gsk`), 웹훅 URL 등록 | T21 | 11/14 | ⬜ |
@@ -82,6 +83,7 @@
 | 2026-11-10 | T15a | 송출 시작 직후 송출자가 LiveKit에 붙기 전 몇 초 동안 `reconnecting=true`(시청 화면에 "재연결 중"이 잠깐 보임), 그 사이 다른 기기가 시작하면 확인 없이 전환 | 미접속 시 유예를 시작하려고, 컬럼 추가 없이 | 별도 상태 컬럼 추가 | 대기 |
 | 2026-11-10 | T16 | 채팅 검사 순서 방송 상태 409 → 차단 403 → 본문 422 → 도배 429, 수정에는 1초·반복 제한 없음, 차단 사용자도 자기 글 삭제 가능 | 문서에 순서 없음 | handler 순서 | 대기 |
 | 2026-11-10 | T20 | 지갑 내역에서 숨긴 방송 제목은 "삭제된 방송", 같은 주문 재적립 신호는 `PAYMENT_ALREADY_CONFIRMED`(T21이 200 재응답으로 바꿈), 지갑 행이 없으면 잔액 0 | 원래 제목 숨김·멱등 | 응답 문구·코드 | 대기 |
+| 2026-11-10 | T25 | Egress는 송출자 첫 접속 웹훅에서 시작(방이 생긴 뒤), 객체 키 `recordings/{broadcastId}.mp4`, 크기 0이면 failed, 유예 중 방이 다시 만들어지면 앞 구간만 저장(자동 재시도 없음), 삭제는 상태 먼저 → 파일 삭제 재시도 | Egress는 방이 있어야 시작됨 | 재시작 로직 추가 | 대기 |
 
 ## Task
 > task 1개 = 서브에이전트 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "(병렬)" 표시 task끼리 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
@@ -147,8 +149,8 @@ T15 이후 **채팅(T16~) · 지갑(T20~) · 녹화(T25~) 세 줄을 동시에**
 | T22 | 후원 백엔드: 잔액 후원·익명·알림 이벤트(10초·스킵)·내역/합계·후원자 배지 + 시나리오 | 06 | T21 | Opus · high | ⬜ |
 | T23 | 후원 화면: 내 지갑·충전 창·후원 창·**후원 알림·후원자 배지·이 방송 후원 목록**·결제 결과·스트리머 후원 통계 | 06 | T22 | Sonnet · medium | ⬜ |
 | T24 | 유료 클러치·SUPER BURST + 시나리오 | 07 | T19, T22 | Opus · high | ⬜ |
-| T25 | 녹화: Egress → Object Storage, 처리 중/실패, 보관 정리(30일·16GB, `size_bytes`), 방송 삭제 시 객체 삭제 + 시나리오 (병렬) | 08 | T15 | Sonnet · medium | 🟨 |
-| T26 | 다시보기 목록·상세·플레이어·조회수·스트리머 페이지(다시보기 탭) | 08, 09 | T25 | Sonnet · medium | ⬜ |
+| T25 | 녹화: Egress → Object Storage, 처리 중/실패, 보관 정리(30일·16GB, `size_bytes`), 방송 삭제 시 객체 삭제 + 시나리오 (병렬) | 08 | T15 | Sonnet · medium | ✅ |
+| T26 | 다시보기 목록·상세·플레이어·조회수·스트리머 페이지(다시보기 탭) | 08, 09 | T25 | Sonnet · medium | 🟨 |
 
 ### 6. 확장 — 11/18 (시간이 되는 만큼, 위에서부터)
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |

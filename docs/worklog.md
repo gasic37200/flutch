@@ -36,3 +36,4 @@
 | 2026-11-10 | T15a | 완료 | 2026-11-10 11:09 → 11:52 | 44분 | 234,049 | 109 | [#68](https://github.com/gasic37200/flutch/pull/68) | Opus·high. must 2건 시나리오로 확인, hidden 시청자 웹훅 별도 LiveKit 컨테이너로 실측 |
 | 2026-11-10 | T20 | 완료 | 2026-11-10 11:59 → 12:22 | 24분 | 173,136 | 34 | [#72](https://github.com/gasic37200/flutch/pull/72) | Opus·high. ponytail-review: 지적 없음, 동시 차감 실제 2커넥션 시나리오 |
 | 2026-11-10 | T16 | 완료 | 2026-11-10 11:59 → 12:23 | 24분 | 178,094 | 37 | [#73](https://github.com/gasic37200/flutch/pull/73) | Sonnet·medium |
+| 2026-11-10 | T25 | 완료 | 2026-11-10 11:59 → 12:40 | 41분 | 219,293 | 61 | [#74](https://github.com/gasic37200/flutch/pull/74) | Sonnet·medium. 실제 Egress·S3 업로드는 배포 후 확인 |
