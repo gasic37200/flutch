@@ -1,5 +1,5 @@
 # Panel의 innerClassName으로 준 배경이 기본 배경에 덮임
-- task: T05d · PR: (PR 생성 후 번호) · 날짜: 2026-11-10
+- task: T05d · PR: #53 · 날짜: 2026-11-10
 - 영역: frontend/components/ui
 
 ## 증상
