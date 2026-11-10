@@ -157,7 +157,7 @@ T15 이후 **채팅(T16~) · 지갑(T20~) · 녹화(T25~) 세 줄을 동시에**
 | T20 | 원장·지갑 핵심: 조건부 차감, 유형, 잔액 일치 + 시나리오 (병렬) | 06 | T15 | Opus · high | ✅ |
 | T20b | 회원 탈퇴: 잔액 소멸 원장 기록, LIVE 중 불가, **시드(테스트) 계정은 탈퇴 불가(`AUTH_SEED_ACCOUNT_LOCKED`)**, 탈퇴 모달 + `auth_withdraw_forfeits_balance` | 01 | T20, T06a | Opus · high | ✅ |
 | T21 | 토스 결제: 주문·승인·웹훅(조회 API 재확인)·만료·"충전하고 후원하기"(max(부족분, 1,000))·종료 시 충전 전환 + 시나리오 | 06 | T20 | Opus · high | ✅ |
-| T21b | 탈퇴한 주문자의 토스 웹훅 확정 거절 + ERROR 로그(수동 환불) — T20b 리뷰 nice-to-have, 작은 수정 | 06 | T20b | Sonnet · medium | 🟨 |
+| T21b | 탈퇴한 주문자의 토스 웹훅 확정 거절 + ERROR 로그(수동 환불) — T20b 리뷰 nice-to-have, 작은 수정 | 06 | T20b | Sonnet · medium | ✅ |
 | T22 | 후원 백엔드: 잔액 후원·익명·알림 이벤트(10초·스킵)·내역/합계·후원자 배지 + 시나리오 | 06 | T21 | Opus · high | ✅ |
 | T23 | 후원 화면: 내 지갑·충전 창·후원 창·**후원 알림·후원자 배지·이 방송 후원 목록**·결제 결과·스트리머 후원 통계 | 06 | T22 | Sonnet · medium | ✅ |
 | T24 | 유료 클러치·SUPER BURST + 시나리오 + **T19의 `clutch.gauge` 묶음 상태를 전역 static에서 AppState로 이동**(conventions §1 위반 정리) | 07 | T19, T22 | Opus · high | 🟨 |
@@ -169,7 +169,7 @@ T15 이후 **채팅(T16~) · 지갑(T20~) · 녹화(T25~) 세 줄을 동시에**
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
 |---|---|---|---|---|---|
 | T27 | 팔로우·사이드바 PULSE·PULSE 페이지 | 09 | T26 | Sonnet · medium | ✅ |
-| T28 | 카카오 로그인 | 01 | T06a | Sonnet · medium | ⬜ |
+| T28 | 카카오 로그인 | 01 | T06a | Sonnet · medium | 🟨 |
 | T29 | SUPER CLUTCH 회전(30초·5분)·메인 히어로(`/home/hero`, 10초 폴링) + 시나리오 | 07 | T24 | Opus · high | ⬜ |
 | T30 | CLUTCH FEED 가상 클립 | 07 | T29, T25 | Sonnet · medium | ⬜ |
 
