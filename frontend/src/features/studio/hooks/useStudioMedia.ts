@@ -4,7 +4,8 @@ import type { MediaSource } from '../../live/hooks/usePublisher.ts'
 import type { StudioEnv } from '../environment.ts'
 
 export type Mode = 'screen' | 'camera'
-export type Channel = 'mic' | 'sys'
+export type Facing = 'user' | 'environment'
+export type Channel ='mic' | 'sys'
 export type MediaItem = { source: MediaSource; key: string; make: () => MediaStreamTrack }
 
 type Node = { gain: GainNode; analyser: AnalyserNode; dest: MediaStreamAudioDestinationNode; src: MediaStreamAudioSourceNode | null }
@@ -31,8 +32,11 @@ export function useStudioMedia(env: StudioEnv) {
   const ctx = useRef<AudioContext | null>(null)
   const nodes = useRef<Partial<Record<Channel, Node>>>({})
   const raw = useRef<{ video: MediaStreamTrack | null; screenAudio: MediaStreamTrack | null; mic: MediaStreamTrack | null }>({ video: null, screenAudio: null, mic: null })
+  const [facing, setFacing] = useState<Facing>('user')
   const modeRef = useRef(mode)
   modeRef.current = mode
+  const facingRef = useRef(facing)
+  facingRef.current = facing
 
   const bump = () => setVersion((v) => v + 1)
 
@@ -80,7 +84,7 @@ export function useStudioMedia(env: StudioEnv) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const captureVideo = useCallback(async (m: Mode = modeRef.current) => {
+  const captureVideo = useCallback(async (m: Mode = modeRef.current, face: Facing = facingRef.current) => {
     setError(null)
     try {
       const s =
@@ -92,7 +96,7 @@ export function useStudioMedia(env: StudioEnv) {
               systemAudio: 'include',
               surfaceSwitching: 'include',
             } as DisplayMediaStreamOptions)
-          : await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720, frameRate: 30 } })
+          : await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720, frameRate: 30, facingMode: { ideal: face } } })
       // 새 캡처가 성공한 뒤에야 이전 것을 끈다(취소하면 기존 화면 유지)
       stopVideo()
       const video = s.getVideoTracks()[0]
@@ -103,6 +107,7 @@ export function useStudioMedia(env: StudioEnv) {
       })
       if (m === 'screen') feed('sys', audio)
       setMode(m)
+      setFacing(face)
       setStream(new MediaStream([video]))
       setHasScreenAudio(!!audio)
       bump()
@@ -116,6 +121,14 @@ export function useStudioMedia(env: StudioEnv) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stopVideo])
+
+  /** 전·후면 전환. 모바일은 카메라를 동시에 두 번 열 수 없어 현재 트랙을 먼저 끄고, 실패하면 원래 카메라로 되돌린다. */
+  const flipCamera = useCallback(async () => {
+    const prev = facingRef.current
+    raw.current.video?.stop()
+    if (await captureVideo('camera', prev === 'user' ? 'environment' : 'user')) return
+    if (await captureVideo('camera', prev)) setError('카메라를 전환하지 못했어요.')
+  }, [captureVideo])
 
   const captureMic = useCallback(async () => {
     try {
@@ -187,7 +200,9 @@ export function useStudioMedia(env: StudioEnv) {
     volume,
     muted,
     version,
+    facing,
     captureVideo,
+    flipCamera,
     captureMic,
     changeVolume,
     toggleMute,

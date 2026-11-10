@@ -9,6 +9,7 @@ import Panel from '../components/ui/Panel.tsx'
 import Skeleton from '../components/ui/Skeleton.tsx'
 import { CATEGORY_LABEL } from '../features/broadcast/categories.ts'
 import AudioControl from '../features/studio/components/AudioControl.tsx'
+import MobileControls from '../features/studio/components/MobileControls.tsx'
 import StudioDialogs from '../features/studio/components/StudioDialogs.tsx'
 import StudioPreview from '../features/studio/components/StudioPreview.tsx'
 import { useStudio } from '../features/studio/hooks/useStudio.ts'
@@ -46,6 +47,8 @@ export default function StudioPage() {
 
   const live = phase === 'live'
   const screen = media.mode === 'screen'
+  const mobile = s.env.mobile
+  const bigSize = mobile ? 'lg' : 'md'
 
   return (
     <div className='flex flex-col gap-4 xl:flex-row'>
@@ -62,7 +65,7 @@ export default function StudioPage() {
                 <Icon name='eye' className='size-4' />
                 {data.viewerCount}
               </span>
-              <Button variant='danger' onClick={s.askEnd}>
+              <Button variant='danger' size={bigSize} onClick={s.askEnd}>
                 방송 종료
               </Button>
             </>
@@ -70,8 +73,12 @@ export default function StudioPage() {
         </header>
 
         <Panel innerClassName='p-3'>
-          <StudioPreview stream={media.stream} live={live} ended={media.videoEnded}>
-            {media.videoEnded && <Button onClick={() => void s.reshare()}>다시 공유하기</Button>}
+          <StudioPreview stream={media.stream} live={live} ended={media.videoEnded} tall={mobile}>
+            {media.videoEnded && (
+              <Button size={bigSize} onClick={() => void s.reshare()}>
+                {screen ? '다시 공유하기' : '카메라 다시 켜기'}
+              </Button>
+            )}
           </StudioPreview>
         </Panel>
 
@@ -87,6 +94,9 @@ export default function StudioPage() {
           </p>
         )}
 
+        {mobile ? (
+          <MobileControls s={s} live={live} />
+        ) : (
         <div className='grid gap-4 md:grid-cols-2'>
           <Panel innerClassName='space-y-3 p-4'>
             <h2 className='font-display text-sm font-bold tracking-wide'>영상</h2>
@@ -137,6 +147,7 @@ export default function StudioPage() {
             )}
           </Panel>
         </div>
+        )}
 
         {s.env.notices.length > 0 && (
           <ul className='space-y-2' aria-label='지원 환경 안내'>
@@ -151,7 +162,7 @@ export default function StudioPage() {
 
         {!live && (
           <div className='flex flex-wrap items-center gap-3'>
-            <Button onClick={() => void s.goLive()} loading={pub.status === 'starting'} disabled={!media.videoReady}>
+            <Button size={bigSize} className={mobile ? 'w-full' : ''} onClick={() => void s.goLive()} loading={pub.status === 'starting'} disabled={!media.videoReady}>
               {data.status === 'LIVE' ? '이어서 송출' : '방송 시작'}
             </Button>
             {!media.videoReady && <span className='text-xs text-text-dim'>미리보기를 켜면 방송을 시작할 수 있어요.</span>}
