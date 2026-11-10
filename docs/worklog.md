@@ -37,3 +37,4 @@
 | 2026-11-10 | T20 | 완료 | 2026-11-10 11:59 → 12:22 | 24분 | 173,136 | 34 | [#72](https://github.com/gasic37200/flutch/pull/72) | Opus·high. ponytail-review: 지적 없음, 동시 차감 실제 2커넥션 시나리오 |
 | 2026-11-10 | T16 | 완료 | 2026-11-10 11:59 → 12:23 | 24분 | 178,094 | 37 | [#73](https://github.com/gasic37200/flutch/pull/73) | Sonnet·medium |
 | 2026-11-10 | T25 | 완료 | 2026-11-10 11:59 → 12:40 | 41분 | 219,293 | 61 | [#74](https://github.com/gasic37200/flutch/pull/74) | Sonnet·medium. 실제 Egress·S3 업로드는 배포 후 확인 |
+| 2026-11-10 | T26 | 부분 | 2026-11-10 12:42 → 13:09 | 27분 | 238,051 | 92 | [#77](https://github.com/gasic37200/flutch/pull/77) | Sonnet·medium. `GET /users/{id}` 백엔드 없음 → T26b로 후속 |
