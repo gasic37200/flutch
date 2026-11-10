@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router'
 import type { Category } from '../../../api/generated/Category.ts'
+import { useRecordings } from '../../replay/hooks/useRecordings.ts'
 import { isCategory } from '../categories.ts'
 import { useSearchBroadcasts } from './useBroadcasts.ts'
 
@@ -16,6 +17,7 @@ export function useExplore() {
   // 입력 전에는 URL의 q를 따라가서 헤더 검색으로 q가 바뀌어도 입력창이 맞는다
   const draft = typed ?? q ?? ''
   const results = useSearchBroadcasts({ category, q })
+  const replays = useRecordings({ category, q })
 
   const update = (next: { category?: Category; q?: string }) => {
     const p = new URLSearchParams()
@@ -40,6 +42,7 @@ export function useExplore() {
       setDraft(null)
     },
     results,
+    replays,
     items: results.data?.pages.flatMap((p) => p.items) ?? [],
   }
 }

@@ -17,11 +17,13 @@ type Props = {
   viewerCount?: number
   /** 다시보기 카드: 재생 시간 표시(예: 1:02:33) */
   durationLabel?: string
+  /** 카드 맨 아래 보조 한 줄(다시보기: 조회수·날짜) */
+  meta?: string
   className?: string
 }
 
 // 라이브·다시보기 공용 카드. 썸네일이 없으면 배경 텍스처 + 카테고리 이름 + 졸린 고양이(DESIGN §5).
-export default function LiveCard({ to, title, streamerId, streamerName, streamerAvatarUrl, category, thumbnailUrl, live, viewerCount, durationLabel, className }: Props) {
+export default function LiveCard({ to, title, streamerId, streamerName, streamerAvatarUrl, category, thumbnailUrl, live, viewerCount, durationLabel, meta, className }: Props) {
   return (
     <Panel interactive className={className} innerClassName='overflow-hidden'>
       <Link to={to} className='block'>
@@ -52,6 +54,7 @@ export default function LiveCard({ to, title, streamerId, streamerName, streamer
             <Avatar userId={streamerId} nickname={streamerName} src={streamerAvatarUrl} size='xs' />
             <span className='truncate'>{streamerName}</span>
           </div>
+          {meta && <span className='truncate text-xs text-text-dim'>{meta}</span>}
         </div>
       </Link>
     </Panel>

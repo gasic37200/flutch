@@ -59,6 +59,9 @@ export function useBroadcastEvents(broadcastId: number | undefined) {
           }))
           refetch()
           break
+        case 'recording.updated':
+          patch((d) => ({ ...d, recording: e.data }))
+          break
         case 'viewer.count':
           patch((d) => ({ ...d, viewerCount: e.data.count }))
           break
