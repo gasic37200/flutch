@@ -75,6 +75,8 @@
 | 2026-11-10 | T14 | README 시청 지원 브라우저를 "최신 Chrome·Edge·Safari·Firefox"로 기재 | 문서에 시청 지원 범위 없음 | README 한 줄 | 대기 |
 | 2026-11-10 | T12 | 썸네일 버전 문자열은 갱신 시각(ms), 숨김(DELETE) 때만 파일 삭제·ENDED 파일은 다시보기용으로 유지, 서버는 JPEG 시그니처만 확인(디코딩 안 함) | 단순화 | 정리 작업·검증 추가 | 대기 |
 | 2026-11-10 | T11b | 시청 화면 재연결 상태에 시안의 경과 타이머 대신 "60초 안에 돌아오지 않으면 방송이 종료돼요"만(상세 응답에 시작 시각 없음), 종료 화면 두 번째 버튼을 "홈으로" → "스트리머 페이지", 모바일 "후원" 탭은 T23 전까지 숨김 | 데이터 없음·시안 우선·"준비 중" 금지 | Broadcast에 since 추가 시 타이머 | 대기 |
+| 2026-11-10 | T06c | 홈 메인 라이브는 시청자 수 1위의 썸네일 카드(자동재생 아님, 게이지 1위·CLUTCH TIME 패널은 T29), 로그인·가입은 앱 셸 안 2단, 방송 폼은 "등록"·"취소" 유지(시안의 "등록하고 스튜디오로"·"대기 방송으로 저장" 2버튼 아님) | 기능 범위·공용 router 변경 회피 | HomePage·router·BroadcastForm 수정 | 대기 |
+| 2026-11-10 | T09c | 스튜디오: 방송 정보 수정·마이크 장치 선택·후원 알림·PIP는 숨김, 3시간 자동 종료는 고정 안내 문구, 볼륨 0~150% 유지, 시안의 STUDIO 전용 헤더 대신 앱 셸 헤더 | 기능 없음·동작 보존 | 각 기능 task에서 추가 | 대기 |
 
 ## Task
 > task 1개 = 서브에이전트 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "(병렬)" 표시 task끼리 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
@@ -96,7 +98,7 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | T06a | 인증 화면: 로그인·가입·약관 2장·테스트 로그인 버튼·내 정보 (병렬) | 01 | T03, T05 | Sonnet · medium | ✅ |
 | T06b | 방송 화면: 등록·수정·**삭제**·**내 방송 관리**(READY 목록), 홈 그리드, **탐색·검색** (병렬) | 02 | T04, T05 | Sonnet · medium | ✅ |
 | T05d | **디자인 맞춤 · 공통**: 시안 보드 `Main`·`Components`·`Guest`·`Errors`(docs/design-refs/boards)에 토큰·공통 컴포넌트·헤더·사이드바·비로그인 상태·에러 화면을 맞춤 (11/10 추가 — T05가 시안 아티팩트를 열지 못해 home.webp만 보고 만듦) | DESIGN, boards | T05 | Sonnet · medium | ✅ |
-| T06c | **디자인 맞춤 · 홈·탐색·방송 폼·인증**: 보드 `Home`·`HomeMobile`·`Explore`·`BroadcastForm`·`Auth`·`Signup`·`SmallScreens`(내 정보·약관) (병렬) | DESIGN, boards | T05d | Sonnet · medium | 🟨 |
+| T06c | **디자인 맞춤 · 홈·탐색·방송 폼·인증**: 보드 `Home`·`HomeMobile`·`Explore`·`BroadcastForm`·`Auth`·`Signup`·`SmallScreens`(내 정보·약관) (병렬) | DESIGN, boards | T05d | Sonnet · medium | ✅ |
 
 ### 1. 송출·시청 — 11/11~12
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
@@ -114,7 +116,7 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
 |---|---|---|---|---|---|
 | T12 | 썸네일: 브라우저 1분 캡처 + `PUT /thumbnail` + 디스크 볼륨 + nginx `/media/thumbs` + 기본 썸네일 | 02 | T09, T07 | Sonnet · medium | ✅ |
-| T09c | **디자인 맞춤 · 스튜디오**: 보드 `Studio`·`StudioPrelive`·`StudioMobile`·`SmallScreens`(스튜디오 모달) (스튜디오 파일을 건드려서 T12 뒤) | DESIGN, boards | T05d, T10, T12 | Sonnet · medium | 🟨 |
+| T09c | **디자인 맞춤 · 스튜디오**: 보드 `Studio`·`StudioPrelive`·`StudioMobile`·`SmallScreens`(스튜디오 모달) (스튜디오 파일을 건드려서 T12 뒤) | DESIGN, boards | T05d, T10, T12 | Sonnet · medium | ✅ |
 | T13 | 모니터링: 메트릭·Alloy·Loki·Grafana 대시보드 (T12와 같은 배포 파일을 건드려서 직렬) | 10 | T12 | Sonnet · medium | 🟨 |
 | T14 | README 필수 4항목(서비스 주소 포함)·지원 환경 표·수동 확인 절차 + **시나리오 이름 ↔ README 절차 대응표** (병렬) | spec 6 | T07, T09, T10, T11 | Sonnet · medium | ✅ |
 | T15 | 권한 시나리오 점검, **메인 세션이** `/ponytail-audit` 실행 후 must fix 반영 → **필수 완료** | 전체 | T12, T13, T14, T06c, T11b, T09c, U1 | 메인 세션 | ⬜ |
