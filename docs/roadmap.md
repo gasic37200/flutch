@@ -15,7 +15,7 @@
 | 내도메인 `flutch.kro.kr` 발급 → 인스턴스 IP 연결 (A 146.56.116.48 확인) | T07 | 11/10 | ✅ |
 | GHCR 이미지 pull용 토큰(`read:packages`) + 서버 SSH 키 → GitHub Secrets | T07 | 11/10 | ⬜ |
 | **GitHub Secrets 4개**: `DEPLOY_HOST`(146.56.116.48) · `DEPLOY_USER`(ubuntu) · `DEPLOY_SSH_KEY`(서버 개인키 전체) · `GHCR_READ_TOKEN`(read:packages PAT). 넣은 뒤 Actions › Deploy › Run workflow(main) | T07 완료 확인 | 11/10 | ⬜ |
-| **HTTPS 인증서**: Let's Encrypt가 `kro.kr` 전체 주간 50개 한도로 거절(11/09 18:30·18:46). 서버에서 `cd ~/flutch && ./init-cert.sh` 재시도(22:11 KST 이후). **서버 cron이 30분마다 자동 재시도**(`~/flutch/cert-retry.sh`, 로그 `backups/cert.log`, 성공 시 `.cert-ok` 남기고 멈춤 — 사용자 승인 11/09 19:3x) | T07 완료 확인 | 11/10 | ⬜ |
+| **HTTPS 인증서**: Let's Encrypt가 `kro.kr` 전체 주간 50개 한도로 거절(11/09 18:30·18:46). 서버에서 `cd ~/flutch && ./init-cert.sh` 재시도(22:11 KST 이후). **서버 cron이 5분마다 자동 재시도**(11/10 09:4x 30분→5분, 사용자 승인)(`~/flutch/cert-retry.sh`, 로그 `backups/cert.log`, 성공 시 `.cert-ok` 남기고 멈춤 — 사용자 승인 11/09 19:3x) | T07 완료 확인 | 11/10 | ⬜ |
 | Oracle Object Storage 버킷 2개(`recordings` 공개 읽기·목록 비공개, `backups` 비공개) + Customer Secret Key(S3 호환) + namespace·region | T07 백업, T25 | 11/11 | ⬜ |
 | LiveKit Cloud 가입, API key/secret, **대시보드 Settings › Project에서 Build 플랜 한도(분·Egress) 확인** | T08a 운영 확인 | 11/11 | ⬜ |
 | LiveKit 대시보드에 웹훅 URL 등록 `https://flutch.kro.kr/api/v1/livekit/webhook` | T08b 운영 확인 | T07 배포 후 | ⬜ |
@@ -70,6 +70,9 @@
 | 2026-11-09 | T08b | 3시간 10분 전 경고 중복 방지는 메모리(재시작 시 1회 더 갈 수 있음), LIVE 목록 커서는 순위 위치(offset) | 단순화, LIVE 수 수십 개 | DB 컬럼 추가·커서 방식 변경 | 대기 |
 | 2026-11-09 | T08b | 유예·최대 길이를 환경변수 `LIVE_GRACE_SECS`·`LIVE_MAX_DURATION_SECS`로 조정 가능(기본 60·10800) | 수동 확인용 | 없음 | 대기 |
 | 2026-11-10 | T10 | 모바일 판정은 UA(Android·iPhone·iPad·Mobile) — 태블릿도 모바일 화면, 전후면 전환은 기존 트랙을 끄고 새로 잡음(시청자 쪽 짧은 끊김 가능) | 모바일은 카메라 동시 2개를 못 여는 기기가 있음 | replaceTrack 적용 시 무중단 | 대기 |
+| 2026-11-10 | T05d | 글꼴을 시안대로 Pretendard → **Noto Sans KR**, 잔액 단위는 시안의 "Beats" 대신 "비트"(decisions §1) | 시안 우선, 화폐 표기는 decisions 우선 | BeatAmount 한 줄 | 대기 |
+| 2026-11-10 | T05d | 툴팁은 아래로 열림(헤더 맨 위에서 위로 열면 잘림), 비로그인 방송하기 아이콘은 `/login`으로 | 화면 밖 잘림 방지 | Tooltip·Header 한 줄 | 대기 |
+| 2026-11-10 | T14 | README 시청 지원 브라우저를 "최신 Chrome·Edge·Safari·Firefox"로 기재 | 문서에 시청 지원 범위 없음 | README 한 줄 | 대기 |
 
 ## Task
 > task 1개 = 서브에이전트 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "(병렬)" 표시 task끼리 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
@@ -90,8 +93,8 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | T07 | 배포: 서버 세팅·nginx·certbot·compose.prod·`ubuntu-24.04-arm` 러너 이미지 빌드·GHCR·SSH 배포·health 확인·DB 백업 (병렬, 서버·도메인 준비 후) | 10, architecture §10 | T01 | Sonnet · medium | 🟨 |
 | T06a | 인증 화면: 로그인·가입·약관 2장·테스트 로그인 버튼·내 정보 (병렬) | 01 | T03, T05 | Sonnet · medium | ✅ |
 | T06b | 방송 화면: 등록·수정·**삭제**·**내 방송 관리**(READY 목록), 홈 그리드, **탐색·검색** (병렬) | 02 | T04, T05 | Sonnet · medium | ✅ |
-| T05d | **디자인 맞춤 · 공통**: 시안 보드 `Main`·`Components`·`Guest`·`Errors`(docs/design-refs/boards)에 토큰·공통 컴포넌트·헤더·사이드바·비로그인 상태·에러 화면을 맞춤 (11/10 추가 — T05가 시안 아티팩트를 열지 못해 home.webp만 보고 만듦) | DESIGN, boards | T05 | Sonnet · medium | 🟨 |
-| T06c | **디자인 맞춤 · 홈·탐색·방송 폼·인증**: 보드 `Home`·`HomeMobile`·`Explore`·`BroadcastForm`·`Auth`·`Signup`·`SmallScreens`(내 정보·약관) (병렬) | DESIGN, boards | T05d | Sonnet · medium | ⬜ |
+| T05d | **디자인 맞춤 · 공통**: 시안 보드 `Main`·`Components`·`Guest`·`Errors`(docs/design-refs/boards)에 토큰·공통 컴포넌트·헤더·사이드바·비로그인 상태·에러 화면을 맞춤 (11/10 추가 — T05가 시안 아티팩트를 열지 못해 home.webp만 보고 만듦) | DESIGN, boards | T05 | Sonnet · medium | ✅ |
+| T06c | **디자인 맞춤 · 홈·탐색·방송 폼·인증**: 보드 `Home`·`HomeMobile`·`Explore`·`BroadcastForm`·`Auth`·`Signup`·`SmallScreens`(내 정보·약관) (병렬) | DESIGN, boards | T05d | Sonnet · medium | 🟨 |
 
 ### 1. 송출·시청 — 11/11~12
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
@@ -103,7 +106,7 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | T09 | PC 송출 화면: 송출 전 확인·화면 공유·탭/시스템 소리·마이크·볼륨 슬라이더·레벨 미터·웹캠 모드·환경 안내·이어하기/기기 전환 모달 (병렬) | 03 | T08d | Sonnet · medium | ✅ |
 | T10 | 모바일 송출 화면: 카메라 전환·음소거·Wake Lock (병렬) | 03 | T08d | Sonnet · medium | ✅ |
 | T11 | 시청 화면: 플레이어·상태 4종(대기·재연결·화면 공유 중단·종료)·실시간 정보 변경·게이지 바 자리 (병렬) | 03 | T08d | Sonnet · medium | ✅ |
-| T11b | **디자인 맞춤 · 시청**: 보드 `Watch`·`WatchMobile`·`WatchStates` (병렬) | DESIGN, boards | T05d, T11 | Sonnet · medium | ⬜ |
+| T11b | **디자인 맞춤 · 시청**: 보드 `Watch`·`WatchMobile`·`WatchStates` (병렬) | DESIGN, boards | T05d, T11 | Sonnet · medium | 🟨 |
 
 ### 2. 필수 마무리 — 11/13
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
@@ -111,7 +114,7 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | T12 | 썸네일: 브라우저 1분 캡처 + `PUT /thumbnail` + 디스크 볼륨 + nginx `/media/thumbs` + 기본 썸네일 | 02 | T09, T07 | Sonnet · medium | 🟨 |
 | T09c | **디자인 맞춤 · 스튜디오**: 보드 `Studio`·`StudioPrelive`·`StudioMobile`·`SmallScreens`(스튜디오 모달) (스튜디오 파일을 건드려서 T12 뒤) | DESIGN, boards | T05d, T10, T12 | Sonnet · medium | ⬜ |
 | T13 | 모니터링: 메트릭·Alloy·Loki·Grafana 대시보드 (T12와 같은 배포 파일을 건드려서 직렬) | 10 | T12 | Sonnet · medium | ⬜ |
-| T14 | README 필수 4항목(서비스 주소 포함)·지원 환경 표·수동 확인 절차 + **시나리오 이름 ↔ README 절차 대응표** (병렬) | spec 6 | T07, T09, T10, T11 | Sonnet · medium | 🟨 |
+| T14 | README 필수 4항목(서비스 주소 포함)·지원 환경 표·수동 확인 절차 + **시나리오 이름 ↔ README 절차 대응표** (병렬) | spec 6 | T07, T09, T10, T11 | Sonnet · medium | ✅ |
 | T15 | 권한 시나리오 점검, **메인 세션이** `/ponytail-audit` 실행 후 must fix 반영 → **필수 완료** | 전체 | T12, T13, T14, T06c, T11b, T09c, U1 | 메인 세션 | ⬜ |
 
 ### 3·4·5. 선택 기능 — 11/14~17
