@@ -6,6 +6,7 @@ import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import Skeleton from '../components/ui/Skeleton.tsx'
 import Tabs from '../components/ui/Tabs.tsx'
 import { BroadcastCard, GridSkeleton, SectionTitle } from '../features/broadcast/components/BroadcastGrid.tsx'
+import BanList from '../features/moderation/components/BanList.tsx'
 import ReplayGrid from '../features/replay/components/ReplayGrid.tsx'
 import { count } from '../features/replay/format.ts'
 import PastBroadcasts from '../features/streamer/components/PastBroadcasts.tsx'
@@ -27,6 +28,7 @@ export default function StreamerPage() {
   const tabs: { id: StreamerTab; label: string }[] = [
     { id: 'broadcasts', label: '방송' },
     { id: 'replays', label: '다시보기' },
+    ...(s.isSelf ? [{ id: 'bans' as const, label: '차단 목록' }] : []),
   ]
 
   return (
@@ -80,6 +82,8 @@ export default function StreamerPage() {
               )}
             </section>
           </>
+        ) : s.tab === 'bans' && s.isSelf ? (
+          <BanList ownerId={user.id} />
         ) : (
           <ReplayGrid query={replays} empty={<EmptyState title='다시보기가 없어요' description='녹화가 끝난 방송이 여기에 모여요.' />} />
         )}

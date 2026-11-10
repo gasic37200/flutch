@@ -19,6 +19,7 @@ export function useChatItem(chat: Pick<ChatApi, 'edit' | 'remove'>, item: Chat, 
   const [busy, setBusy] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string>()
+  const [popup, setPopup] = useState(false) // 닉네임을 눌러 연 시청자 창
 
   const canDelete = !item.deleted && (mine || isOwner)
   const hasMenu = !item.deleted && (mine || isOwner)
@@ -38,6 +39,11 @@ export function useChatItem(chat: Pick<ChatApi, 'edit' | 'remove'>, item: Chat, 
   }
 
   return {
+    popup,
+    openPopup: () => setPopup(true),
+    closePopup: () => setPopup(false),
+    /** 방송 소유자 본인 id(차단 메뉴를 열 수 있을 때만) */
+    ownerId: isOwner && me ? me.id : undefined,
     hasMenu,
     menu,
     toggleMenu: () => {

@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 import { ApiRequestError } from '../../../api/client.ts'
@@ -42,6 +43,19 @@ export function useChatComposer(broadcast: BroadcastDetail | undefined, chat: Pi
   const ban = blocked ?? broadcast?.viewer?.ban ?? null
   const remainMs = useRemaining(ban && !ban.permanent ? ban.until : null)
   const banned = ban !== null && (ban.permanent || remainMs > 0)
+
+  // 해제는 실시간 이벤트가 없으므로, 차단된 동안만 가끔 상세를 다시 받아 풀렸는지 본다
+  const qc = useQueryClient()
+  const broadcastId = broadcast?.id
+  useEffect(() => {
+    if (!banned || broadcastId === undefined) return
+    const key = ['broadcast', broadcastId]
+    const t = setInterval(async () => {
+      await qc.refetchQueries({ queryKey: key })
+      if (!qc.getQueryData<BroadcastDetail>(key)?.viewer?.ban) setBlocked(null)
+    }, 10_000)
+    return () => clearInterval(t)
+  }, [banned, broadcastId, qc])
 
   const mode = isPending ? 'pending' : !me ? 'guest' : broadcast?.status !== 'LIVE' ? 'closed' : banned ? 'banned' : 'open'
 
