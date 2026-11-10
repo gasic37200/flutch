@@ -29,6 +29,11 @@ const paths = {
   spinner: 'M21 12a9 9 0 1 1-6.2-8.6',
   screenOff: 'M4 4h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM8 20h8M12 16v4M4 4l16 12',
   eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  send: 'M4 12 20 4l-6 16-3-7z',
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
+  lock: 'M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3',
+  clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
+  arrowDown: 'M12 5v14M6 13l6 6 6-6',
 }
 
 export type IconName = keyof typeof paths

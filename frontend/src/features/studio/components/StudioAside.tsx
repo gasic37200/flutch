@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { CATEGORY_LABEL } from '../../broadcast/categories.ts'
+import ChatCard from '../../chat/components/ChatCard.tsx'
 import { Chip } from '../../../components/ui/Chip.tsx'
 import Icon from '../../../components/ui/Icon.tsx'
 import Panel from '../../../components/ui/Panel.tsx'
@@ -25,7 +26,7 @@ function Check({ done, children }: { done: boolean; children: ReactNode }) {
   )
 }
 
-// 송출 전: 시작 전 확인 · 권한 안내 · 지원 환경. 방송 중: 방송 정보(읽기 전용) · 채팅 자리(T17).
+// 송출 전: 시작 전 확인 · 권한 안내 · 지원 환경. 방송 중: 방송 정보(읽기 전용) · 채팅.
 export default function StudioAside({ s, live }: { s: S; live: boolean }) {
   const { data, media } = s
   if (!data) return null
@@ -88,9 +89,7 @@ export default function StudioAside({ s, live }: { s: S; live: boolean }) {
         </dl>
         <p className='text-xs text-text-dim'>{data.record ? '방송이 끝나면 다시보기로 남아요.' : '녹화하지 않는 방송이에요.'}</p>
       </Card>
-      <Card title='채팅'>
-        <p className='text-[13px] text-text-dim'>아직 채팅이 없어요.</p>
-      </Card>
+      <ChatCard chat={s.chat} broadcast={data} className='h-96' />
     </>
   )
 }

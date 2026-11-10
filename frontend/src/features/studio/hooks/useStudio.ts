@@ -1,6 +1,7 @@
 import { Track } from 'livekit-client'
 import { useEffect, useRef, useState } from 'react'
 import { useRequireLogin } from '../../auth/hooks/useAuth.ts'
+import { useChat } from '../../chat/hooks/useChat.ts'
 import { useBroadcast } from '../../broadcast/hooks/useBroadcasts.ts'
 import { useBroadcastEvents } from '../../live/hooks/useBroadcastEvents.ts'
 import { usePublisher, type MediaSource } from '../../live/hooks/usePublisher.ts'
@@ -20,6 +21,7 @@ export function useStudio(broadcastId: number | undefined) {
   const [env] = useState(detectEnv)
   const broadcast = useBroadcast(broadcastId)
   const events = useBroadcastEvents(broadcastId)
+  const chat = useChat(broadcastId, events)
   const pub = usePublisher(broadcastId)
   const media = useStudioMedia(env)
   const [endConfirm, setEndConfirm] = useState(false)
@@ -94,6 +96,7 @@ export function useStudio(broadcastId: number | undefined) {
     me,
     env,
     broadcast,
+    chat,
     data,
     isOwner,
     phase,

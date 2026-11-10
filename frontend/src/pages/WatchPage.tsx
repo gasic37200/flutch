@@ -3,6 +3,8 @@ import ClutchGauge from '../components/ui/ClutchGauge.tsx'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import Panel from '../components/ui/Panel.tsx'
 import Tabs from '../components/ui/Tabs.tsx'
+import ChatCard from '../features/chat/components/ChatCard.tsx'
+import { useChat } from '../features/chat/hooks/useChat.ts'
 import Player from '../features/watch/components/Player.tsx'
 import WatchInfo from '../features/watch/components/WatchInfo.tsx'
 import { usePlayer } from '../features/watch/hooks/usePlayer.ts'
@@ -11,22 +13,11 @@ import { errorKindOf } from '../hooks/errorKind.ts'
 import { useMediaQuery } from '../hooks/useMediaQuery.ts'
 import ShellBody from '../layouts/ShellBody.tsx'
 
-// 채팅 자리(T17): 데스크톱은 오른쪽 패널, 모바일은 아래 탭. 한 곳만 렌더하므로 T17은 이 컴포넌트를 교체하면 된다.
-function ChatSlot() {
-  return (
-    <Panel aria-label='채팅' className='h-full' innerClassName='flex h-full min-h-64 flex-col xl:min-h-175'>
-      <div className='hidden border-b border-surface-2 px-4 py-3.5 xl:block'>
-        <b className='text-[15px]'>채팅</b>
-      </div>
-      <p className='flex grow items-center justify-center p-4 text-sm text-text-dim'>채팅은 곧 열려요</p>
-    </Panel>
-  )
-}
-
 // 슬롯: 클러치 버튼·SUPER BURST(T19·T24)는 게이지 Panel 오른쪽, 후원하기(T23)·팔로우(T27)는 WatchInfo 오른쪽 끝, 후원 목록(T23)은 모바일 탭 추가 + 데스크톱 영상 아래 패널.
 export default function WatchPage() {
   const id = Number(useParams().broadcastId) || undefined
-  const { broadcast, error, refetch, view, viewer } = useWatch(id)
+  const { broadcast, error, refetch, view, viewer, events } = useWatch(id)
+  const chat = useChat(id, events)
   const player = usePlayer(viewer.tracks, viewer.muted)
   const desktop = useMediaQuery('(min-width: 1280px)')
 
@@ -37,8 +28,11 @@ export default function WatchPage() {
     return <ErrorScreen {...e} onRetry={e.kind === 'notFound' ? undefined : () => void refetch()} />
   }
 
+  // 채팅은 데스크톱 aside 또는 모바일 탭 한 곳에만 렌더한다(상태는 위의 useChat이 들고 있어 전환해도 유지)
+  const chatCard = <ChatCard chat={chat} broadcast={broadcast} className='h-[30rem] xl:h-175' headerClassName={desktop ? '' : 'hidden'} />
+
   return (
-    <ShellBody aside={desktop ? <ChatSlot /> : undefined}>
+    <ShellBody aside={desktop ? chatCard : undefined}>
       <div className='flex flex-col gap-3.5'>
         <Player view={view} broadcast={broadcast} player={player} onUnmute={() => void viewer.unmute()} />
         {broadcast && (
@@ -53,7 +47,7 @@ export default function WatchPage() {
           <div>
             <Tabs label='채팅' tabs={[{ id: 'chat', label: '채팅' }]} value='chat' onChange={() => {}} />
             <div role='tabpanel' className='pt-3'>
-              <ChatSlot />
+              {chatCard}
             </div>
           </div>
         )}
