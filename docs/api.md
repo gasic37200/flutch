@@ -120,11 +120,11 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 |---|---|---|---|---|
 | POST `/auth/signup` | 누구나 | `{loginId, password, nickname, agreeTerms: true, agreePrivacy: true, over14: true}` | 201 `Me` + 세션 쿠키(7일) | 422 `VALIDATION_FAILED`, 409 `AUTH_LOGIN_ID_TAKEN`·`AUTH_NICKNAME_TAKEN`, 429 `RATE_LIMITED`(IP 1시간 5회) |
 | POST `/auth/login` | 누구나 | `{loginId, password, remember: boolean}` | 200 `Me` + 쿠키(7일, remember면 30일) | 401 `AUTH_INVALID_CREDENTIALS`, 429 `AUTH_LOCKED`(+`retryAfterSec`)·`RATE_LIMITED`(IP 1분 20회) |
-| POST `/auth/test-login` | 누구나 | `{account: 'streamer1' \| 'streamer2' \| 'viewer'}` | 200 `Me` + 쿠키 | 422 |
+| POST `/auth/test-login` | 누구나 | `{account: 'streamer1' \| 'streamer2' \| 'viewer'}` | 200 `Me` + 쿠키 | 422, 429 `RATE_LIMITED`(로그인과 같은 IP 한도) |
 | POST `/auth/logout` | 누구나 | — | 204, 세션 삭제·쿠키 만료(세션 없어도 204) | — |
 | GET `/me` | 로그인 | — | 200 `Me` + 쿠키 만료 갱신(7일/30일) | 401 |
-| PATCH `/me` | 로그인 | `{nickname}` | 200 `Me` (지금과 같은 닉네임이면 변경 없이 200) | 401, 422, 409 `AUTH_NICKNAME_TAKEN`·`AUTH_NICKNAME_CHANGE_TOO_SOON` |
-| PUT `/me/password` | 로그인·비밀번호 계정 | `{currentPassword, newPassword}` | 204, **현재 세션 외 전부 삭제** | 401, 403 `FORBIDDEN`(카카오 계정), 422 `VALIDATION_FAILED`·`AUTH_WRONG_PASSWORD` |
+| PATCH `/me` | 로그인 | `{nickname}` | 200 `Me` (지금과 같은 닉네임이면 변경 없이 200) | 401, 403 `AUTH_SEED_ACCOUNT_LOCKED`(테스트 계정), 422, 409 `AUTH_NICKNAME_TAKEN`·`AUTH_NICKNAME_CHANGE_TOO_SOON` |
+| PUT `/me/password` | 로그인·비밀번호 계정 | `{currentPassword, newPassword}` | 204, **현재 세션 외 전부 삭제** | 401, 403 `FORBIDDEN`(카카오 계정), 403 `AUTH_SEED_ACCOUNT_LOCKED`(테스트 계정), 422 `VALIDATION_FAILED`·`AUTH_WRONG_PASSWORD` |
 | DELETE `/me` | 로그인 | `{password, confirmForfeit: boolean}` | 204, 세션 전부 삭제 | 401, 422 `AUTH_WRONG_PASSWORD`, 409 `AUTH_WITHDRAW_WHILE_LIVE`·`AUTH_WITHDRAW_CONFIRM_FORFEIT` |
 
 검증 규칙 (실패 시 `fields.<이름>`에 이유):
@@ -369,6 +369,7 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 | `AUTH_INVALID_CREDENTIALS` | 401 | 아이디 또는 비밀번호가 올바르지 않아요. | login |
 | `AUTH_LOCKED` | 429 | 로그인 시도가 많아 잠겼어요. N분 후 다시 시도해 주세요. (+`retryAfterSec`) | login |
 | `AUTH_NICKNAME_CHANGE_TOO_SOON` | 409 | 닉네임은 N일 후에 바꿀 수 있어요. | PATCH /me |
+| `AUTH_SEED_ACCOUNT_LOCKED` | 403 | 테스트 계정은 바꿀 수 없어요. | PATCH /me, PUT /me/password |
 | `AUTH_WRONG_PASSWORD` | 422 | 현재 비밀번호가 올바르지 않아요. | PUT /me/password, DELETE /me |
 | `AUTH_WITHDRAW_WHILE_LIVE` | 409 | 방송을 먼저 종료해 주세요. | DELETE /me |
 | `AUTH_WITHDRAW_CONFIRM_FORFEIT` | 409 | 남은 N비트는 사라지고 되돌릴 수 없어요. | DELETE /me |

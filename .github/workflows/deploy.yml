@@ -89,10 +89,10 @@ jobs:
           # 비공개 저장소라 서버가 git clone 하지 않고 필요한 파일만 올린다.
           $SSH 'mkdir -p ~/flutch'
           scp -i ~/.ssh/deploy_key deploy/compose.prod.yml deploy/backup.sh deploy/init-cert.sh "$DEPLOY_USER@$DEPLOY_HOST:flutch/"
-          # 모니터링 설정·대시보드(compose가 상대 경로로 마운트)
+          # 모니터링 설정·대시보드(compose가 상대 경로로 마운트). 설정 파일만 바뀌면 이미지가 같아 up -d가 재시작하지 않으므로 아래에서 직접 restart 한다.
           scp -r -i ~/.ssh/deploy_key deploy/monitoring "$DEPLOY_USER@$DEPLOY_HOST:flutch/"
           printf '%s' "$GHCR_READ_TOKEN" | $SSH "docker login ghcr.io -u $GHCR_USER --password-stdin"
-          $SSH "cd ~/flutch && chmod +x backup.sh init-cert.sh && export FLUTCH_TAG=$GITHUB_SHA && docker compose -f compose.prod.yml pull && docker compose -f compose.prod.yml up -d --remove-orphans && docker image prune -f"
+          $SSH "cd ~/flutch && chmod +x backup.sh init-cert.sh && export FLUTCH_TAG=$GITHUB_SHA && docker compose -f compose.prod.yml pull && docker compose -f compose.prod.yml up -d --remove-orphans && docker compose -f compose.prod.yml restart prometheus loki alloy grafana && docker image prune -f"
       - name: health 확인
         run: |
           for i in $(seq 1 12); do

@@ -22,10 +22,10 @@ loki.source.docker "flutch" {
   forward_to = [loki.process.level.receiver]
 }
 
-// 백엔드 JSON(`"level":"INFO"`)과 logfmt(`level=info`) 모두에서 레벨을 뽑는다. 못 찾으면 라벨 없이 보낸다.
+// 백엔드 JSON(`"level":"INFO"`)과 logfmt(`level=info`) 모두에서 레벨을 뽑는다. 고정 값만 라벨로 쓴다(접속 로그의 `?level=임의값`이 라벨이 되지 않게). 못 찾으면 라벨 없이 보낸다.
 loki.process "level" {
   stage.regex {
-    expression = "(?i)\"?level\"?[=:]\\s*\"?(?P<level>[a-z]+)"
+    expression = "(?i)\"?level\"?[=:]\\s*\"?(?P<level>trace|debug|info|warn|warning|error|fatal)\\b"
   }
   stage.template {
     source   = "level"

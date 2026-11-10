@@ -171,10 +171,17 @@ pub async fn login(
     ))
 }
 
+fn is_seed(login_id: Option<&str>) -> bool {
+    login_id.is_some_and(|l| SEED_ACCOUNTS.iter().any(|(id, _)| *id == l))
+}
+
 pub async fn test_login(
     State(state): State<Arc<AppState>>,
+    Extension(limits): Extension<Arc<Limits>>,
+    headers: HeaderMap,
     JsonBody(req): JsonBody<TestLoginRequest>,
 ) -> Result<impl IntoResponse, AppError> {
+    limits.login.hit(&client_ip(&headers))?;
     let Some((login_id, _)) = SEED_ACCOUNTS.iter().find(|(id, _)| *id == req.account) else {
         let mut fields = Fields::new();
         fields.insert("account".into(), "테스트 계정을 골라 주세요.".into());
@@ -230,6 +237,9 @@ pub async fn update_me(
     validated(fields)?;
 
     let current = load_me(&state, user.id).await?;
+    if is_seed(current.login_id.as_deref()) {
+        return Err(AuthError::SeedAccountLocked.into());
+    }
     if current.nickname == nickname {
         return Ok(Json(current));
     }
@@ -257,6 +267,10 @@ pub async fn change_password(
     let (Some(login_id), Some(hash)) = (creds.login_id, creds.password_hash) else {
         return Err(AppError::Forbidden);
     };
+    // 공용 테스트 계정: 누가 바꾸면 같은 계정으로 방송 중인 다른 심사자 세션이 끊긴다.
+    if is_seed(Some(&login_id)) {
+        return Err(AuthError::SeedAccountLocked.into());
+    }
     let mut fields = Fields::new();
     check(
         &mut fields,
