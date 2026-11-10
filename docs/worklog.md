@@ -34,3 +34,5 @@
 | 2026-11-10 | T15c | 완료 | 2026-11-10 11:09 → 11:30 | 21분 | 145,617 | 52 | [#65](https://github.com/gasic37200/flutch/pull/65) | Sonnet·medium. ponytail-review: backup.sh 실행 권한 1건 → 메인 수정 후 머지 |
 | 2026-11-10 | T15b | 완료 | 2026-11-10 11:09 → 11:33 | 24분 | 142,531 | 65 | [#66](https://github.com/gasic37200/flutch/pull/66) | Sonnet·high. 모바일 카메라 전환은 U1 |
 | 2026-11-10 | T15a | 완료 | 2026-11-10 11:09 → 11:52 | 44분 | 234,049 | 109 | [#68](https://github.com/gasic37200/flutch/pull/68) | Opus·high. must 2건 시나리오로 확인, hidden 시청자 웹훅 별도 LiveKit 컨테이너로 실측 |
+| 2026-11-10 | T20 | 완료 | 2026-11-10 11:59 → 12:22 | 24분 | 173,136 | 34 | [#72](https://github.com/gasic37200/flutch/pull/72) | Opus·high. ponytail-review: 지적 없음, 동시 차감 실제 2커넥션 시나리오 |
+| 2026-11-10 | T16 | 완료 | 2026-11-10 11:59 → 12:23 | 24분 | 178,094 | 37 | [#73](https://github.com/gasic37200/flutch/pull/73) | Sonnet·medium |
