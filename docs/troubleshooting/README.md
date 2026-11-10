@@ -45,3 +45,5 @@
 | [T21-concurrent-test-overlap.md](T21-concurrent-test-overlap.md) | T21 | 동시 confirm 시나리오가 단독 실행에선 겹치지 않아 실패 → FakeToss 승인 지연으로 겹침 보장 |
 | [T22-pg-stat-activity-snapshot-in-tx.md](T22-pg-stat-activity-snapshot-in-tx.md) | T22 | 트랜잭션 안 pg_stat_activity 폴링은 스냅숏이 고정돼 겹침 확인이 멈춤 → pg_stat_clear_snapshot, 잠금은 풀 밖 커넥션 |
 | [T09b-trackunsubscribed-stale-track.md](T09b-trackunsubscribed-stale-track.md) | T09b | livekit-client는 TrackUnsubscribed를 pub.track 비우기 전에 발행 → sync에서 떠나는 트랙을 직접 제외 |
+| [T20b-withdraw-redirects-to-login.md](T20b-withdraw-redirects-to-login.md) | T20b | 탈퇴 성공 후 `me`를 먼저 비우면 `/me`의 로그인 확인이 로그인 화면으로 보냄 → 홈을 새로 불러옴 |
+| [T20b-sqlx-prepare-drops-test-queries.md](T20b-sqlx-prepare-drops-test-queries.md) | T20b | `cargo sqlx prepare`는 테스트 타깃 쿼리 캐시를 지움 → `-- --all-targets`로 모은다 |

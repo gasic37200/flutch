@@ -11,7 +11,7 @@ use chrono::{DateTime, Duration, Utc};
 use super::rate_limit::{RateLimiter, client_ip};
 use super::{
     AuthError, ChangePasswordRequest, LoginRequest, Me, SEED_ACCOUNTS, SignupRequest,
-    TestLoginRequest, UpdateMeRequest, db, rules, session,
+    TestLoginRequest, UpdateMeRequest, WithdrawRequest, db, rules, session,
 };
 use crate::AppState;
 use crate::error::AppError;
@@ -288,4 +288,32 @@ pub async fn change_password(
         "password changed, other sessions revoked"
     );
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// 회원 탈퇴(api.md §2). 확인 순서: 테스트 계정 403 → 비밀번호 422 → LIVE 409 → 잔액 확인 409.
+pub async fn withdraw(
+    State(state): State<Arc<AppState>>,
+    Extension(limits): Extension<Arc<Limits>>,
+    user: CurrentUser,
+    JsonBody(req): JsonBody<WithdrawRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let creds = db::credentials(&state.db, user.id).await?;
+    if is_seed(creds.login_id.as_deref()) {
+        return Err(AuthError::SeedAccountLocked.into());
+    }
+    // 비밀번호 변경과 같은 사용자별 한도(탈취한 세션으로 비밀번호 대입 방지).
+    limits.login.hit(&format!("pw:{}", user.id))?;
+    // shortcut: 카카오 계정(비밀번호 없음)은 거절, T28에서 password 없이 confirmForfeit만 받게 바꾼다.
+    let Some(hash) = creds.password_hash else {
+        return Err(AppError::Forbidden);
+    };
+    if !session::verify_password(req.password, hash).await? {
+        return Err(AuthError::WrongPassword.into());
+    }
+    let forfeited = db::withdraw(&state.db, user.id, req.confirm_forfeit).await?;
+    tracing::info!(user_id = user.id, forfeited, "user withdrew");
+    Ok((
+        StatusCode::NO_CONTENT,
+        [(header::SET_COOKIE, session::cookie("", Duration::zero())?)],
+    ))
 }

@@ -1,9 +1,10 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { ApiRequestError } from '../../../api/client.ts'
 import type { TestLoginRequest } from '../../../api/generated/TestLoginRequest.ts'
 import { useToast } from '../../../hooks/useToast.ts'
 import { formError } from './formError.ts'
-import { useChangePassword, useLogin, useMe, useSignup, useTestLogin, useUpdateNickname } from './useAuth.ts'
+import { ME_KEY, useChangePassword, useLogin, useMe, useSignup, useTestLogin, useUpdateNickname, useWithdraw } from './useAuth.ts'
 
 const prevent = (fn: () => void) => (e: FormEvent) => {
   e.preventDefault()
@@ -96,6 +97,47 @@ export function usePasswordForm() {
             setCurrent('')
             setNew('')
             toast({ tone: 'success', message: '비밀번호를 바꿨어요. 다른 기기에서는 로그아웃돼요.' })
+          },
+        },
+      ),
+    ),
+  }
+}
+
+/** 탈퇴 모달. 잔액이 있으면 소멸 확인 체크가 있어야 보낼 수 있다. 성공하면 홈으로. */
+export function useWithdrawForm(balance: number) {
+  const [open, setOpen] = useState(false)
+  const [password, setPassword] = useState('')
+  const [agreed, setAgreed] = useState(false)
+  const qc = useQueryClient()
+  const withdraw = useWithdraw()
+  const code = withdraw.error instanceof ApiRequestError ? withdraw.error.code : null
+  const error = withdraw.isError ? formError(withdraw.error, ['password']) : null
+  const close = () => {
+    setOpen(false)
+    setPassword('')
+    setAgreed(false)
+    withdraw.reset()
+  }
+  return {
+    open,
+    show: () => setOpen(true),
+    close,
+    values: { password, agreed },
+    set: { password: setPassword, agreed: setAgreed },
+    needsAgree: balance > 0,
+    canSubmit: password !== '' && (balance === 0 || agreed),
+    pending: withdraw.isPending,
+    // 비밀번호가 틀린 경우는 필드 아래, 테스트 계정 문구는 탈퇴 맥락에 맞게 바꿔 보여 준다
+    passwordError: code === 'AUTH_WRONG_PASSWORD' ? '비밀번호가 올바르지 않아요.' : error?.fields.password,
+    message: code === 'AUTH_WRONG_PASSWORD' ? undefined : code === 'AUTH_SEED_ACCOUNT_LOCKED' ? '테스트 계정은 탈퇴할 수 없어요.' : error?.message,
+    submit: prevent(() =>
+      withdraw.mutate(
+        { password, confirmForfeit: agreed },
+        {
+          // 그 사이 잔액이 바뀌었으면 최신 잔액으로 확인 체크를 다시 받는다
+          onError: (e) => {
+            if (e instanceof ApiRequestError && e.code === 'AUTH_WITHDRAW_CONFIRM_FORFEIT') void qc.invalidateQueries({ queryKey: ME_KEY })
           },
         },
       ),

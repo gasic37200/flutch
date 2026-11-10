@@ -125,7 +125,7 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 | GET `/me` | 로그인 | — | 200 `Me` + 쿠키 만료 갱신(7일/30일) | 401 |
 | PATCH `/me` | 로그인 | `{nickname}` | 200 `Me` (지금과 같은 닉네임이면 변경 없이 200) | 401, 403 `AUTH_SEED_ACCOUNT_LOCKED`(테스트 계정), 422, 409 `AUTH_NICKNAME_TAKEN`·`AUTH_NICKNAME_CHANGE_TOO_SOON` |
 | PUT `/me/password` | 로그인·비밀번호 계정 | `{currentPassword, newPassword}` | 204, **현재 세션 외 전부 삭제** | 401, 403 `FORBIDDEN`(카카오 계정), 403 `AUTH_SEED_ACCOUNT_LOCKED`(테스트 계정), 422 `VALIDATION_FAILED`·`AUTH_WRONG_PASSWORD` |
-| DELETE `/me` | 로그인 | `{password, confirmForfeit: boolean}` | 204, 세션 전부 삭제 | 401, 422 `AUTH_WRONG_PASSWORD`, 409 `AUTH_WITHDRAW_WHILE_LIVE`·`AUTH_WITHDRAW_CONFIRM_FORFEIT` |
+| DELETE `/me` | 로그인 | `{password, confirmForfeit: boolean}` | 204, 세션 전부 삭제·쿠키 만료 | 401, 403 `AUTH_SEED_ACCOUNT_LOCKED`(테스트 계정), 422 `VALIDATION_FAILED`·`AUTH_WRONG_PASSWORD`, 409 `AUTH_WITHDRAW_WHILE_LIVE`·`AUTH_WITHDRAW_CONFIRM_FORFEIT`, 429 `RATE_LIMITED` |
 
 검증 규칙 (실패 시 `fields.<이름>`에 이유):
 - `loginId`: `^[a-z0-9]{4,20}$`(서버가 소문자로 바꾼 뒤 검사). 탈퇴한 아이디 포함 영구 중복 불가 → `AUTH_LOGIN_ID_TAKEN`.
@@ -137,6 +137,7 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 - 세션: 7일(사용 시 연장) / remember 30일. LIVE 송출 중인 사용자의 세션은 만료되지 않는다. 쿠키 `HttpOnly; Secure; SameSite=Lax; Path=/`(로컬 `http://localhost`도 브라우저가 Secure 쿠키를 받는다).
 - 닉네임 변경: `nicknameChangedAt + 30일` 전이면 `AUTH_NICKNAME_CHANGE_TOO_SOON`(message에 남은 일수). 가입 시 설정은 기록하지 않는다.
 - 탈퇴: 내 방송이 LIVE면 `AUTH_WITHDRAW_WHILE_LIVE`. 잔액 > 0이고 `confirmForfeit=false`면 `AUTH_WITHDRAW_CONFIRM_FORFEIT`(message "남은 N비트는 사라지고 되돌릴 수 없어요") → 확인 후 원장 `withdraw_forfeit -N` 추가하고 탈퇴. 카카오 계정은 `password` 없이 `confirmForfeit`만(T28).
+  - 구현(T20b): 확인 순서 테스트 계정 403 → 비밀번호 422(비밀번호 변경과 같은 사용자별 1분 20회 한도) → 한 트랜잭션에서 지갑 `FOR UPDATE` → **내 READY 방송 삭제** → LIVE 409 → 잔액 확인 409 → 소멸 원장(잔액 0이면 없음) → `withdrawn_at` → 세션 전부 삭제. 409면 롤백(READY 방송도 그대로). READY 삭제가 그 행을 잠그므로 동시에 온 송출 시작은 기다렸다가 행이 없어 실패하고, 먼저 LIVE가 됐으면 409가 된다. ENDED 방송·채팅·후원·원장은 남고 이름은 "탈퇴한 사용자", 스트리머 페이지(`GET /users/{id}`)는 404.
 - 테스트 로그인: 시드 계정 3개(서버 시작 시 없으면 생성, 비밀번호 `SEED_PASSWORD`)만. 다른 값은 422 `fields.account`. 쿠키는 7일.
 - 시나리오: `auth_signup_login_logout` `auth_lockout` `auth_password_change_revokes_other_sessions` `auth_nickname_change_30day_limit` `auth_withdraw_forfeits_balance`
 
@@ -392,7 +393,7 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 | `AUTH_INVALID_CREDENTIALS` | 401 | 아이디 또는 비밀번호가 올바르지 않아요. | login |
 | `AUTH_LOCKED` | 429 | 로그인 시도가 많아 잠겼어요. N분 후 다시 시도해 주세요. (+`retryAfterSec`) | login |
 | `AUTH_NICKNAME_CHANGE_TOO_SOON` | 409 | 닉네임은 N일 후에 바꿀 수 있어요. | PATCH /me |
-| `AUTH_SEED_ACCOUNT_LOCKED` | 403 | 테스트 계정은 바꿀 수 없어요. | PATCH /me, PUT /me/password |
+| `AUTH_SEED_ACCOUNT_LOCKED` | 403 | 테스트 계정은 바꿀 수 없어요. | PATCH /me, PUT /me/password, DELETE /me |
 | `AUTH_WRONG_PASSWORD` | 422 | 현재 비밀번호가 올바르지 않아요. | PUT /me/password, DELETE /me |
 | `AUTH_WITHDRAW_WHILE_LIVE` | 409 | 방송을 먼저 종료해 주세요. | DELETE /me |
 | `AUTH_WITHDRAW_CONFIRM_FORFEIT` | 409 | 남은 N비트는 사라지고 되돌릴 수 없어요. | DELETE /me |

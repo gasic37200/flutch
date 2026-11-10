@@ -3,6 +3,7 @@ use sqlx::PgPool;
 
 use super::AuthError;
 use crate::error::AppError;
+use crate::wallet::{self, DebitKind};
 
 pub struct LoginRow {
     pub id: i64,
@@ -280,4 +281,52 @@ pub async fn update_nickname(db: &PgPool, user_id: i64, nickname: &str) -> Resul
     .await
     .map_err(unique_violation)?;
     Ok(())
+}
+
+/// 탈퇴 한 트랜잭션: 잔액 소멸 원장(잔액 > 0일 때만) → `withdrawn_at` → 세션 전부 삭제. 소멸한 비트 수를 돌려준다.
+/// LIVE 방송이 있거나 잔액이 있는데 확인이 없으면 에러(롤백).
+pub async fn withdraw(db: &PgPool, user_id: i64, confirm_forfeit: bool) -> Result<i64, AppError> {
+    let mut tx = db.begin().await?;
+    // 지갑을 잠가 같은 사용자의 동시 차감·충전이 이 트랜잭션 뒤로 줄 서게 한다.
+    let balance = sqlx::query_scalar!(
+        "SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE",
+        user_id
+    )
+    .fetch_optional(&mut *tx)
+    .await?
+    .unwrap_or(0);
+    // READY 방송(채팅·후원 기록이 생길 수 없는 행)은 지운다. 동시에 온 송출 시작은 이 행 잠금을
+    // 기다렸다가 행이 없어 실패하고, 먼저 LIVE가 됐으면 아래 확인에서 409가 된다.
+    sqlx::query!(
+        "DELETE FROM broadcasts WHERE owner_id = $1 AND status = 'READY'",
+        user_id
+    )
+    .execute(&mut *tx)
+    .await?;
+    let live = sqlx::query_scalar!(
+        r#"SELECT EXISTS (SELECT 1 FROM broadcasts WHERE owner_id = $1 AND status = 'LIVE') AS "e!""#,
+        user_id
+    )
+    .fetch_one(&mut *tx)
+    .await?;
+    if live {
+        return Err(AuthError::WithdrawWhileLive.into());
+    }
+    if balance > 0 {
+        if !confirm_forfeit {
+            return Err(AuthError::WithdrawConfirmForfeit(wallet::bits(balance)).into());
+        }
+        wallet::debit(&mut tx, user_id, balance, DebitKind::WithdrawForfeit).await?;
+    }
+    sqlx::query!(
+        "UPDATE users SET withdrawn_at = now() WHERE id = $1",
+        user_id
+    )
+    .execute(&mut *tx)
+    .await?;
+    sqlx::query!("DELETE FROM sessions WHERE user_id = $1", user_id)
+        .execute(&mut *tx)
+        .await?;
+    tx.commit().await?;
+    Ok(balance)
 }
