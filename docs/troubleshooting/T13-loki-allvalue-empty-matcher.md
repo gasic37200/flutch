@@ -1,5 +1,5 @@
 # Grafana 로그 대시보드에서 변수 All 이 Loki 쿼리 오류를 낸다
-- task: T13 · PR: (생성 후) · 날짜: 2026-11-10
+- task: T13 · PR: #62 · 날짜: 2026-11-10
 - 영역: deploy/monitoring (Grafana·Loki·node-exporter)
 
 ## 증상
