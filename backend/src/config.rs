@@ -4,6 +4,7 @@
 
 use std::env;
 use std::fmt;
+use std::path::PathBuf;
 
 pub struct Config {
     pub backend_port: u16,
@@ -14,6 +15,7 @@ pub struct Config {
     pub livekit: LiveKitConfig,
     pub auth: AuthConfig,
     pub live: LiveConfig,
+    pub broadcast: BroadcastConfig,
 }
 
 /// 송출 시간 규칙(features/03). 수동 확인용으로 환경변수로 줄일 수 있다.
@@ -31,6 +33,23 @@ impl LiveConfig {
             grace_secs: secs_or("LIVE_GRACE_SECS", 60)?,
             max_duration_secs: secs_or("LIVE_MAX_DURATION_SECS", 3 * 60 * 60)?,
         })
+    }
+}
+
+/// 방송 도메인 설정.
+#[derive(Debug, Clone)]
+pub struct BroadcastConfig {
+    /// `THUMB_DIR`: 썸네일 JPEG 저장 폴더(기본 `./thumbs`). 운영은 nginx와 공유하는 볼륨.
+    pub thumb_dir: PathBuf,
+}
+
+impl BroadcastConfig {
+    pub fn from_env() -> Self {
+        Self {
+            thumb_dir: required("THUMB_DIR")
+                .unwrap_or_else(|_| "./thumbs".into())
+                .into(),
+        }
     }
 }
 
@@ -90,6 +109,7 @@ impl Config {
             livekit: LiveKitConfig::from_env()?,
             auth: AuthConfig::from_env(),
             live: LiveConfig::from_env()?,
+            broadcast: BroadcastConfig::from_env(),
         })
     }
 }
@@ -127,6 +147,7 @@ impl fmt::Debug for Config {
             .field("livekit", &self.livekit)
             .field("auth", &self.auth)
             .field("live", &self.live)
+            .field("broadcast", &self.broadcast)
             .finish()
     }
 }

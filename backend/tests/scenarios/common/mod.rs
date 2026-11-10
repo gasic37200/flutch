@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
 use axum::http::{HeaderMap, Request, StatusCode};
-use flutch::config::{AuthConfig, Config, LiveConfig, LiveKitConfig};
+use flutch::config::{AuthConfig, BroadcastConfig, Config, LiveConfig, LiveKitConfig};
 use flutch::livekit::{LiveKitApi, LiveKitError};
 use flutch::toss::TossApi;
 use flutch::{AppState, realtime};
@@ -87,6 +87,9 @@ pub fn test_state(db: PgPool, livekit: Arc<FakeLiveKit>) -> Arc<AppState> {
         live: LiveConfig {
             grace_secs: 60,
             max_duration_secs: 3 * 60 * 60,
+        },
+        broadcast: BroadcastConfig {
+            thumb_dir: std::env::temp_dir().join("flutch-test-thumbs"),
         },
     };
     Arc::new(AppState {

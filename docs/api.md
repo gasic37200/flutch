@@ -150,7 +150,7 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 | GET `/broadcasts/{id}` | 누구나(READY도 링크로 열림) | — | 200 `BroadcastDetail` | 404(없음·숨김) |
 | PATCH `/broadcasts/{id}` | 소유자 | `{title?, category?, tags?, record?, pipCorner?}` | 200 `BroadcastDetail`, `broadcast.updated` 발행 | 401, 404, 403 `BROADCAST_NOT_OWNER`, 422, 409 `BROADCAST_FIELD_LOCKED` |
 | DELETE `/broadcasts/{id}` | 소유자 | — | 204 | 401, 404, 403 `BROADCAST_NOT_OWNER` |
-| PUT `/broadcasts/{id}/thumbnail` | 소유자·LIVE | 본문 이미지 바이트, `Content-Type: image/jpeg`, 최대 512KB | 204 (최신 1장만 덮어씀) | 401, 404, 403, 422 `BROADCAST_THUMBNAIL_INVALID`, 409 `BROADCAST_NOT_LIVE` |
+| PUT `/broadcasts/{id}/thumbnail` | 소유자·LIVE | 본문 이미지 바이트, `Content-Type: image/jpeg`, 최대 512KB | 204 (최신 1장만 덮어씀, `thumbnailUrl`의 `?v=`가 바뀌고 `broadcast.updated` 발행) | 401, 404, 403, 422 `BROADCAST_THUMBNAIL_INVALID`, 409 `BROADCAST_NOT_LIVE` |
 | GET `/me/broadcasts` | 로그인 | `?status=READY\|LIVE\|ENDED&cursor=&limit=` | 200 `Page<Broadcast>` — 내 방송(미숨김) 최신 등록순, READY 포함 | 401 |
 | GET `/users/{id}/broadcasts` | 누구나 | `?cursor=&limit=` | 200 `Page<Broadcast>` — 그 스트리머의 **ENDED·미숨김** 최신순(다시보기는 `recording`) | 404 |
 
@@ -167,7 +167,7 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 - 등록 한도: 내 READY가 이미 5개면 `BROADCAST_READY_LIMIT`. "이전 방송 정보 복사"는 별도 API 없이 프론트가 `GET /me/broadcasts`의 값을 등록 폼에 채운다.
 - 삭제: READY → 행 삭제. LIVE → 송출 종료(§3-1 종료 절차, `broadcast.ended` reason `deleted`) 후 ENDED 규칙. ENDED → `hiddenAt` 기록(이후 모든 조회·하위 리소스·WebSocket 404) + 녹화 파일 삭제(`recordings.status=deleted`). 채팅·후원·원장은 보존.
 - 방송 길이: LIVE 3시간(설정값 `LIVE_MAX_DURATION_SECS`)에 자동 종료(reason `max_duration`), 10분 전 `broadcast.duration_warning` 한 번(서버 메모리로 중복 방지 — 경고 구간에 서버가 재시작하면 한 번 더 갈 수 있다). 판정은 5초 주기 작업이라 최대 5초 늦다.
-- 시나리오: `broadcast_owner_crud` `broadcast_other_user_forbidden` `broadcast_public_read` `broadcast_state_transitions` `broadcast_limits` `broadcast_delete_live_ends_first` `broadcast_persists_after_restart`
+- 시나리오: `broadcast_owner_crud` `broadcast_other_user_forbidden` `broadcast_public_read` `broadcast_state_transitions` `broadcast_limits` `broadcast_delete_live_ends_first` `broadcast_persists_after_restart` `broadcast_thumbnail_owner_live_only`
 
 ### 3-1. 송출·시청 토큰 (f03)
 | 메서드·경로 | 권한 | 요청 | 응답 | 에러 |

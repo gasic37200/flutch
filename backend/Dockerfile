@@ -20,5 +20,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
     && useradd --system --uid 10001 flutch
 ENV TZ=Asia/Seoul
 COPY --from=build /app/target/release/flutch /usr/local/bin/flutch
+# 썸네일 볼륨(compose의 thumbs)이 처음 만들어질 때 이 폴더의 소유자를 물려받는다.
+RUN mkdir /thumbs && chown flutch /thumbs
+ENV THUMB_DIR=/thumbs
 USER flutch
 CMD ["flutch"]
