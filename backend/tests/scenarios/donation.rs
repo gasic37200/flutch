@@ -180,6 +180,17 @@ async fn donation_live_only(db: PgPool) {
     assert_eq!(res.json["donation"]["amount"], 1000);
     assert_eq!(res.json["donation"]["kind"], "donation");
     assert_eq!(res.json["donation"]["donor"]["id"], viewer_id);
+    // 후원 비트 × 10점이 게이지에 들어간다(1,000비트 = 10,000점 = SUPER CLUTCH 발동 → 쿨다운)
+    let points: i64 = sqlx::query_scalar(
+        "SELECT points FROM clutch_events WHERE broadcast_id = $1 AND source = 'donation'",
+    )
+    .bind(b)
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    assert_eq!(points, 10_000);
+    let detail = send(&app, empty_req("GET", &format!("{B}/{b}"), None)).await;
+    assert_eq!(detail.json["gauge"]["phase"], "cooldown", "{}", detail.json);
     end_live(&app, &owner, b).await;
     let res = donate(&app, Some(&viewer), b, gift(1000)).await;
     assert_eq!(code(&res), (StatusCode::CONFLICT, "BROADCAST_NOT_LIVE"));
@@ -761,6 +772,10 @@ async fn donation_created_on_charge_and_donate(db: PgPool) {
         next_donation_event(&mut guest_ws).await["type"],
         "donation.skipped"
     );
+    // 충전하고 후원하기도 게이지에 들어간다(재시도해도 한 번)
+    let gauge_rows =
+        "SELECT count(*) FROM clutch_events WHERE broadcast_id = $1 AND source = 'donation'";
+    assert_eq!(scalar(&db, gauge_rows, b).await, 1);
     assert_consistent(&db).await;
 }
 

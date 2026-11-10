@@ -236,6 +236,7 @@ type Ban = { user: UserSummary; permanent: boolean; until: string | null; create
   | 무료 클러치 (§7) | 가능 | 가능 |
   | 유료 클러치·SUPER BURST (§7) | 가능 | 403 `MODERATION_BANNED` |
   | 후원·후원 주문 (§6) | 가능 | 403 `MODERATION_BANNED` |
+- 차단은 새 `bans` 행으로 덮어써서 다시 차단하면 목록에서 맨 위로 온다(커서 = 행 id). 해제는 차단이 있었을 때만 `unban` 이력을 남긴다. 시청자 채팅 기록은 숨긴 방송을 제외하고 오래된→최신(`Chat` 목록과 같음).
 - 입력창 표시는 `BroadcastDetail.viewer.ban`으로("n분 후 채팅할 수 있어요" / "이 채널에서 채팅이 제한되었어요").
 - 시나리오: `ban_blocks_chat_across_broadcasts` `timeout_expires_automatically` `ban_effects_matrix` `ban_only_by_owner` `permanent_ban_hides_current_messages`
 
@@ -286,7 +287,14 @@ type DonationStats = Page<{ broadcast: BroadcastRef & { startedAt: string }; tot
   - 확정(confirm·웹훅 공통): 주문 행 `FOR UPDATE` → 토스가 DONE이면 **만료와 상관없이 적립**(돈이 나갔으므로) → 후원 주문이면 방송을 `FOR SHARE`로 읽어 LIVE·미밴일 때만 후원. `notice`: 종료 `"방송이 종료되어 잔액으로 충전했어요"`, 영구 밴 `"이 채널에서는 후원할 수 없어 잔액으로 충전했어요"`, 주문 뒤 잔액을 다른 데 써서 모자람 `"잔액이 부족해 후원하지 못하고 충전만 했어요"`. 재시도 응답은 같은 계산으로 다시 만든다(`balance`는 그 시점 잔액).
   - 웹훅: 본문 `{eventType, createdAt, data: Payment}`에서 `eventType=PAYMENT_STATUS_CHANGED`만 본다. `data.paymentKey`로 조회한 결제의 `secret`이 본문 `data.secret`과 다르거나 DONE이 아니거나 금액이 주문과 다르면 무시(200). 조회 통신 실패·DB 오류만 500.
   - `Donation.kind` TS 타입은 `donation | clutch | burst`(후원 기록 공용). 목록·이벤트에는 clutch가 나오지 않는다.
-- 시나리오: `donation_confirm_idempotent` `donation_amount_mismatch_rejected` `donation_balance_conditional_debit` `donation_live_only` `donation_after_end_becomes_charge` `donation_anonymous_name_visibility` `charge_limits_and_order_expiry` `banned_user_cannot_donate` · 결제(T21): `payment_toss_rejected_or_unavailable` `payment_confirm_owner_only` `payment_webhook_secret_mismatch_ignored` `payment_concurrent_confirm_credits_once` · 지갑·원장(T20): `wallet_concurrent_debit_only_one_succeeds` `wallet_charge_limit_and_idempotent` `wallet_list_filters_and_clutch_grouping` `wallet_month_filter_kst_boundary` `wallet_requires_login_and_hides_others`
+- 구현(T22):
+  - 잔액 후원 검사 순서: 방송 404 → `DONATION_SELF` → 영구 밴 `MODERATION_BANNED`(임시차단은 후원 가능) → 금액·메시지 422 → `BROADCAST_NOT_LIVE` → `WALLET_INSUFFICIENT_BALANCE`. 한 트랜잭션: 방송 `FOR SHARE`(LIVE 재확인, 커밋 전 종료 방지) → 조건부 차감 → 후원 기록 → 게이지 점수(비트 × `points_per_bit`, `clutch_events source=donation`). 커밋 뒤 `donation.created`(split)·`clutch.gauge`/`clutch.super`. 응답 `balance`는 차감 후 잔액.
+  - 충전하고 후원하기(`finalize`)도 후원까지 확정된 그 확정에서만 `donation.created`·게이지 점수를 낸다(같은 승인 재시도·웹훅은 다시 내지 않음).
+  - 공개형/소유자형은 `Donation::visible_to(is_owner)` 하나로 만든다. 목록의 소유자 판정은 요청 세션(후원자 본인도 소유자가 아니면 익명 `donor=null`).
+  - 목록 `cursor`는 이전 페이지 마지막 후원 id, `limit` 기본 20·최대 50, 형식이 틀리면 422 `fields.cursor`·`fields.limit`. `count`는 donation·burst 건수, `total`은 clutch 포함.
+  - 스킵: 숨긴 방송의 후원·없는 후원 404, 소유자 아님 403 `BROADCAST_NOT_OWNER`. 방송 상태와 상관없이 `donation.skipped {id}`만 보낸다. 알림 표시 큐(10초·순서대로·10,000비트 이상 큰 연출)는 클라이언트가 `donation.created`/`donation.skipped`로 관리한다.
+  - 통계: 내가 송출한 적 있는(`startedAt` 있는) 방송을 id 최신순, 커서 = 마지막 방송 id. 받은 기록이 없는 숨긴 방송은 빼고, 있으면 `title: "삭제된 방송"`·`hidden: true`. `total`은 clutch 포함, `count`는 donation·burst. `last7Days`는 KST 달력 기준 오늘 포함 7일(6일 전 00:00 KST 이후).
+- 시나리오: `donation_confirm_idempotent` `donation_amount_mismatch_rejected` `donation_balance_conditional_debit` `donation_live_only` `donation_after_end_becomes_charge` `donation_anonymous_name_visibility` `charge_limits_and_order_expiry` `banned_user_cannot_donate` · 후원(T22): `donation_input_rules` `donation_skip_owner_only` `donation_list_totals_and_pages` `donation_stats_kst_7_days` `donation_stats_only_mine` `donation_created_on_charge_and_donate` · 결제(T21): `payment_toss_rejected_or_unavailable` `payment_confirm_owner_only` `payment_webhook_secret_mismatch_ignored` `payment_concurrent_confirm_credits_once` · 지갑·원장(T20): `wallet_concurrent_debit_only_one_succeeds` `wallet_charge_limit_and_idempotent` `wallet_list_filters_and_clutch_grouping` `wallet_month_filter_kst_boundary` `wallet_requires_login_and_hides_others`
 
 ## 7. Clutch (f07)
 | 메서드·경로 | 권한 | 요청 | 응답 | 에러 |
@@ -306,9 +314,10 @@ type Hero = {
 }
 type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: string; broadcast: Broadcast; startSec: number; durationSec: number; triggeredAt: string }
 ```
-- 클러치: 사용자·방송별 **최근 30초 무료 5회**, 6번째부터 1회 1비트 조건부 차감(원장 `clutch`, 후원 기록 kind `clutch`, 알림 없음). 점수: 클러치 50점, 후원·버스트 1비트당 10점(설정값).
+- 클러치: 사용자·방송별 **최근 30초 무료 5회**(DB 기준, 재시작 안전), 6번째부터 1회 1비트 조건부 차감(원장 `clutch`, 후원 기록 kind `clutch`, 알림 없음). 점수: 클러치 50점, 후원·버스트 1비트당 10점(설정값).
 - 버스트: 가격 `burstPrice`(설정값 1,000) 차감, 원장 `burst` + 후원 기록 kind `burst`(표시 이름은 `anonymous`).
 - 게이지는 최근 5분 슬라이딩 합계 / 10,000점. 100% 도달 시 쿨다운(진행 중이거나 마지막 발동 30분 이내)이 아니면 SUPER CLUTCH: 게이지 0, `super_clutches` 추가(5분, 회전 바로 다음 순서), `clutch.super` 발행. 쿨다운 중이면 게이지만 오르고 phase `cooldown`.
+- 점수는 마지막 SUPER CLUTCH 이후 이벤트만 센다. 시연용으로 환경변수 `CLUTCH_GAUGE_TARGET`·`CLUTCH_POINTS`가 기준·클러치 점수를 바꾼다. 감소(5분 창 밖으로 빠짐)는 이벤트가 없어 클라이언트가 20초마다 상세를 다시 받는다.
 - 히어로: 진행 중 SUPER CLUTCH가 있으면 30초씩 회전(`mode=super_clutch`, 서버 1초 스케줄러가 DB 기준으로 진행), 없으면 게이지 1위 LIVE(`top_gauge`), 모두 0이면 시청자 수 1위(`top_viewers`), LIVE가 없으면 `empty`. 홈은 10초 폴링하고 `slot.nextSwitchAt`이 더 이르면 그때 다시 조회.
 - 클립: 녹화 `ready`인 방송의 SUPER CLUTCH마다 `startSec = max(0, 발동시각 − startedAt − 30)`, `durationSec = 45`. 클립이 없으면 홈은 `GET /recordings`(최근 다시보기)를 보여준다.
 - 시나리오: `clutch_free_combo_then_paid` `clutch_gauge_decay_window` `super_clutch_trigger_reset_and_cooldown` `clutch_rotation` `clutch_banned_rules`
@@ -334,6 +343,7 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 | DELETE `/users/{id}/follow` | 로그인 | — | 200 `{following: false, followerCount}` | 401, 404 |
 | GET `/pulse` | 로그인 | `?limit=<기본 10, 최대 50>` | 200 `{live: Broadcast[] /* 시청자 수 순 */, offline: {user: UserSummary, followerCount, lastEndedAt: string \| null}[], total: number}` — live 먼저, 합쳐서 `limit`개 | 401 |
 
+- TS 타입: `GET /users/{id}` 응답은 `UserProfile`(T26b). `followerCount`는 `follows` 행 수, `liveBroadcast`는 그 사용자의 LIVE·미숨김 방송(시청자 수 포함).
 - 팔로워 목록 API는 없다(숫자만). 사이드바 "인기 라이브"는 `GET /broadcasts?limit=5`(팔로우 0개면 3), "추천 라이브 채널"은 `GET /broadcasts?limit=3`.
 - 스트리머 페이지 관리 탭(본인만): 방송 관리 `GET /me/broadcasts`, 후원 내역·통계 `GET /me/donation-stats` + `GET /broadcasts/{id}/donations`, 차단 목록 `GET /users/{id}/bans`.
 - 시나리오: `follow_toggle_and_count` `follow_self_rejected`

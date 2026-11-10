@@ -14,6 +14,7 @@ use ts_rs::TS;
 
 use crate::AppState;
 use crate::auth::UserSummary;
+use crate::clutch::ClutchGauge;
 use crate::error::AppError;
 use crate::extract::CurrentUser;
 use crate::realtime::{Event, WsEvent};
@@ -121,26 +122,6 @@ pub struct RecordingRef {
     pub status: RecordingStatus,
 }
 
-/// shortcut: 클러치 task(T19)가 clutch 도메인으로 옮긴다. 지금은 `BroadcastDetail.gauge` 타입용.
-#[derive(Debug, Clone, Copy, Serialize, TS)]
-#[serde(rename_all = "snake_case")]
-#[ts(export)]
-pub enum ClutchPhase {
-    Charging,
-    Imminent,
-    Cooldown,
-}
-
-#[derive(Debug, Clone, Serialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct ClutchGauge {
-    /// 0~100 정수
-    pub percent: i32,
-    pub phase: ClutchPhase,
-    pub cooldown_until: Option<DateTime<Utc>>,
-}
-
 /// 커서 페이지 응답. 다른 도메인의 목록도 이 타입을 쓴다.
 #[derive(Serialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -171,7 +152,7 @@ pub struct Broadcast {
     pub ended_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub reconnecting: bool,
-    /// shortcut: 항상 null, T19/T29가 채운다.
+    /// SUPER CLUTCH 진행 중이면 종료 시각
     pub super_clutch_until: Option<DateTime<Utc>>,
     /// record=false거나 아직 없으면 null
     pub recording: Option<RecordingRef>,
@@ -184,7 +165,7 @@ pub struct BroadcastDetail {
     #[serde(flatten)]
     #[ts(flatten)]
     pub broadcast: Broadcast,
-    /// shortcut: 항상 percent 0·charging, T19가 채운다(`handlers::detail`).
+    /// LIVE가 아니면 percent 0·charging
     pub gauge: ClutchGauge,
     pub burst_price: i64,
     /// 비로그인은 null
@@ -196,9 +177,9 @@ pub struct BroadcastDetail {
 #[ts(export)]
 pub struct ViewerState {
     pub is_owner: bool,
-    /// shortcut: 항상 null, T18이 채운다.
+    /// 이 스트리머에게 차단된 상태(풀린 임시차단은 null)
     pub ban: Option<BanState>,
-    /// shortcut: 항상 5, T19가 채운다.
+    /// 최근 30초 창에서 남은 무료 클러치(0~5)
     pub free_clutches_left: i32,
 }
 
@@ -359,7 +340,7 @@ pub async fn detail_of(
     id: i64,
     viewer: Option<&CurrentUser>,
 ) -> Result<BroadcastDetail, AppError> {
-    handlers::detail(state, handlers::load(state, id).await?, viewer)
+    handlers::detail(state, handlers::load(state, id).await?, viewer).await
 }
 
 async fn missing_or_invalid(db: &PgPool, id: i64) -> AppError {
@@ -368,4 +349,20 @@ async fn missing_or_invalid(db: &PgPool, id: i64) -> AppError {
         Ok(None) => AppError::NotFound,
         Err(e) => e.into(),
     }
+}
+
+/// 그 사용자의 LIVE·미숨김 방송(없으면 `None`). 스트리머 페이지용.
+pub async fn live_of_owner(state: &AppState, owner_id: i64) -> Result<Option<Broadcast>, AppError> {
+    let f = db::Filter {
+        owner_id: Some(owner_id),
+        status: Some("LIVE"),
+        limit: 1,
+        ..db::Filter::default()
+    };
+    db::find(&state.db, &f)
+        .await?
+        .into_iter()
+        .next()
+        .map(|r| handlers::into_broadcast(state, r))
+        .transpose()
 }

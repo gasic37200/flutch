@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO ban_events (streamer_id, user_id, action) VALUES ($1, $2, 'unban')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "64366e973833c50f61df3b3b57c24e2964076192a517c27a82504d2747dca357"
+}

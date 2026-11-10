@@ -17,7 +17,7 @@ use crate::auth::rate_limit::RateLimiter;
 use crate::broadcast::BanState;
 use crate::error::AppError;
 
-mod db;
+pub(crate) mod db;
 mod handlers;
 
 pub fn routes() -> Router<Arc<AppState>> {

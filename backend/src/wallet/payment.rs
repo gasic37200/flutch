@@ -18,6 +18,7 @@ use super::{
     WalletError, check_amount, check_donation_input, donation_target,
 };
 use crate::AppState;
+use crate::clutch;
 use crate::error::AppError;
 use crate::extract::{CurrentUser, JsonBody};
 use crate::toss::{self, TossApi, TossError, TossPayment, key_hint};
@@ -293,7 +294,7 @@ async fn approve(
 
 /// 토스가 DONE이라고 확인한 결제를 확정한다(승인·웹훅 공통, 멱등). 만료 시각은 보지 않는다 — 토스가
 /// 승인했으면 돈이 나갔으니 적립한다. 커밋 전에는 응답·이벤트를 내지 않는다.
-async fn finalize(state: &AppState, p: &TossPayment) -> Result<PaymentResult, AppError> {
+async fn finalize(state: &Arc<AppState>, p: &TossPayment) -> Result<PaymentResult, AppError> {
     let mut tx = state.db.begin().await?;
     let order = db::lock_order(&mut tx, &p.order_id)
         .await?
@@ -329,7 +330,8 @@ async fn finalize(state: &AppState, p: &TossPayment) -> Result<PaymentResult, Ap
     }
     db::mark_done(&mut tx, order.id, &p.payment_key).await?;
 
-    let mut donated = false;
+    // 후원까지 했으면 (방송, 게이지 결과) — 커밋 뒤 발행
+    let mut donated = None;
     if let (Some(broadcast_id), Some(amount), Some(anonymous)) = (
         order.broadcast_id,
         order.donation_amount,
@@ -364,8 +366,18 @@ async fn finalize(state: &AppState, p: &TossPayment) -> Result<PaymentResult, Ap
                         },
                     )
                     .await?;
-                    // shortcut: 후원 비트 게이지 점수(clutch_events source=donation)는 T19 게이지 함수가 생기면 여기서 같은 tx로 추가
-                    donated = true;
+                    // 잠금 순서: 방송 FOR SHARE → 지갑 → 게이지(T19 클러치와 같은 순서)
+                    let cfg = &state.config.clutch;
+                    let gauge = clutch::add_points(
+                        &mut tx,
+                        cfg,
+                        broadcast_id,
+                        order.user_id,
+                        clutch::Source::Donation,
+                        amount * cfg.points_per_bit,
+                    )
+                    .await?;
+                    donated = Some((broadcast_id, gauge));
                 }
                 // 주문 뒤 잔액을 다른 데 써서 모자라면 충전만 한다(notice).
                 Err(WalletError::Insufficient) => {}
@@ -374,14 +386,15 @@ async fn finalize(state: &AppState, p: &TossPayment) -> Result<PaymentResult, Ap
         }
     }
     tx.commit().await?;
-    if donated {
-        metrics::counter!("donations_total").increment(1);
-    }
-    tracing::info!(order_id = %order.order_id, amount = order.amount, purpose = %order.purpose, donated, "payment confirmed");
+    tracing::info!(order_id = %order.order_id, amount = order.amount, purpose = %order.purpose, donated = donated.is_some(), "payment confirmed");
     let result = result_of(state, &order).await?;
     // 이번 확정이 후원까지 했을 때만(재시도·웹훅 재확정은 위에서 이미 돌아가 다시 발행하지 않는다)
-    if let Some(d) = result.donation.as_ref().filter(|_| donated) {
-        super::publish_donation(state, d.clone()).await;
+    if let Some((broadcast_id, gauge)) = donated {
+        metrics::counter!("donations_total").increment(1);
+        if let Some(d) = &result.donation {
+            super::publish_donation(state, d.clone()).await;
+        }
+        clutch::publish(state, broadcast_id, &gauge);
     }
     Ok(result)
 }

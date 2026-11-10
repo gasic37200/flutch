@@ -18,6 +18,56 @@ pub struct Config {
     pub broadcast: BroadcastConfig,
     pub recording: RecordingConfig,
     pub toss: TossConfig,
+    pub clutch: ClutchConfig,
+}
+
+/// Clutch Time 수치(features/07 "수치" 표). 시연용으로 `CLUTCH_GAUGE_TARGET`·`CLUTCH_POINTS`만 환경변수로 낮출 수 있다.
+#[derive(Debug, Clone)]
+pub struct ClutchConfig {
+    /// 100% 기준 점수
+    pub gauge_target: i64,
+    /// 게이지 슬라이딩 창(초)
+    pub window_secs: i64,
+    /// 클러치(무료·유료) 1회 점수
+    pub clutch_points: i64,
+    /// 후원·버스트 1비트당 점수
+    pub points_per_bit: i64,
+    /// 임박 기준(%)
+    pub imminent_percent: i32,
+    /// 마지막 발동 후 재발동 쿨다운(초)
+    pub cooldown_secs: i64,
+    /// SUPER CLUTCH 진행 중 유지(초)
+    pub super_secs: i64,
+    /// 무료 클러치 창(초)·창당 횟수
+    pub free_window_secs: i64,
+    pub free_per_window: i64,
+}
+
+impl Default for ClutchConfig {
+    fn default() -> Self {
+        Self {
+            gauge_target: 10_000,
+            window_secs: 5 * 60,
+            clutch_points: 50,
+            points_per_bit: 10,
+            imminent_percent: 80,
+            cooldown_secs: 30 * 60,
+            super_secs: 5 * 60,
+            free_window_secs: 30,
+            free_per_window: 5,
+        }
+    }
+}
+
+impl ClutchConfig {
+    pub fn from_env() -> Result<Self, ConfigError> {
+        let d = Self::default();
+        Ok(Self {
+            gauge_target: secs_or("CLUTCH_GAUGE_TARGET", d.gauge_target)?,
+            clutch_points: secs_or("CLUTCH_POINTS", d.clutch_points)?,
+            ..d
+        })
+    }
 }
 
 /// 토스페이먼츠 결제위젯 연동 키. 없으면 서버는 뜨지만 결제 승인·조회가 502가 된다.
@@ -206,6 +256,7 @@ impl Config {
             broadcast: BroadcastConfig::from_env(),
             recording: RecordingConfig::from_env(),
             toss: TossConfig::from_env(),
+            clutch: ClutchConfig::from_env()?,
         })
     }
 }
@@ -246,6 +297,7 @@ impl fmt::Debug for Config {
             .field("broadcast", &self.broadcast)
             .field("recording", &self.recording)
             .field("toss", &self.toss)
+            .field("clutch", &self.clutch)
             .finish()
     }
 }

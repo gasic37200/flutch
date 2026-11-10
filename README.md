@@ -204,7 +204,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 3. 욕설(예: 일반 비속어)은 `***`로 가려 보이고, FLUTCH 금지어는 전송되지 않는다.
 4. 내 메시지 오른쪽 "⋯" 메뉴(모바일은 항상 보임)에서 5분 안에 "수정"하면 "(수정됨)"이 붙고, "삭제"하면 확인 창 뒤에 "삭제된 메시지입니다"가 된다. 방송 소유자(A)는 남의 메시지에도 "삭제"가 보이고 지울 수 있다.
 5. 목록 맨 위로 스크롤하면 이전 기록이 이어서 불러와지고, 위를 보는 중에 새 메시지가 오면 "새 메시지 n개" 버튼이 나온다. PC 스튜디오의 방송 중 오른쪽 창과 모바일 송출 화면(최근 5개 반투명)에도 같은 채팅이 보인다.
-6. 차단 확인(T18 차단 화면 이후): 차단된 사용자의 입력창은 "n분 후 채팅할 수 있어요"(임시, 남은 시간이 줄어듦) 또는 "이 채널에서 채팅이 제한되었어요"(영구)로 바뀐다. 허용·거절은 서버가 구분한다.
+6. 차단: 방송 소유자(A)가 채팅 닉네임을 누르면 창이 뜨고 임시차단(1분·10분·1시간)·영구 밴(확인 창)·차단 해제·"이 시청자의 채팅 기록"이 보인다(시청자 화면의 창에는 관리 메뉴가 없다). 차단하면 채팅창에 "OOO님의 채팅이 10분간 제한되었어요"/"OOO님이 차단되었어요"가 뜨고, 차단된 사용자의 입력창은 "n분 후 채팅할 수 있어요"(임시, 남은 시간이 줄어듦) 또는 "이 채널에서 채팅이 제한되었어요"(영구)로 바뀐다. 영구 밴이면 그 사람의 메시지가 모두 "삭제된 메시지입니다"가 된다. 해제하면 차단된 쪽 입력창이 10초 안에 다시 열린다. 내 스트리머 페이지 "차단 목록" 탭에서 남은 시간을 보고 해제할 수 있다.
 
 **P14. 다시보기**
 1. 녹화를 켠 방송을 송출하고 종료한다(배포 환경에서만 영상이 만들어진다). 종료 화면에 "다시보기 준비 중"이 보이다가 준비되면 "다시보기 보기"로 바뀐다.
@@ -231,6 +231,10 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `chat_edit_author_only_within_5min`, `chat_delete_author_or_owner` | 수정(작성자·5분)·삭제(작성자·방송 소유자) | P13 |
 | `chat_rate_limit_and_repeat`, `chat_profanity_masked_banned_word_blocked` | 도배 제한, 욕설 가림·금지어 차단 | P13 |
 | `chat_banned_user_cannot_write` | 임시·영구 차단 사용자 작성·수정 거절 | P13 |
+| `ban_blocks_chat_across_broadcasts`, `timeout_expires_automatically` | 차단은 그 스트리머의 모든 방송에 적용, 임시차단은 시간이 지나면 자동 해제 | P13 |
+| `ban_effects_matrix`, `ban_only_by_owner` | 차단 효과 표(작성·수정 불가, 시청 가능), 본인만 차단 가능 | P13 |
+| `permanent_ban_hides_current_messages` | 영구 밴 시 현재 방송 글 삭제 표시 + 시스템 알림 | P13 |
+| `ban_history_unban_and_validation`, `viewer_chat_history` | 이력 추가만·해제·자기 자신 거절, 시청자 채팅 기록 | P13 |
 | `chat_badges_streamer_and_donor`, `chat_events_published` | 배지, 실시간 이벤트 | P13 |
 | `broadcast_other_user_forbidden` | 다른 사용자 403, 비로그인 401 | P11 |
 | `broadcast_public_read` | 비로그인 목록·상세 200 | P4, P11 |
@@ -264,8 +268,18 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `schema_one_live_per_user` | DB 제약: 사용자당 LIVE 1개 | P2 |
 | `schema_ledger_is_append_only`, `schema_payment_key_unique`, `schema_rejects_negative_balance` | DB 제약: 원장·결제·잔액 | (후원 절차 추가 시) |
 | `donation_confirm_idempotent`, `payment_concurrent_confirm_credits_once` | 같은 승인·웹훅 반복·동시 승인 → 한 번만 적립, 같은 결과 | (후원 절차 추가 시) |
+| `clutch_access_rules` | 비로그인 401, 내 방송 403, 비LIVE 409 | (클러치 절차 추가 시) |
+| `clutch_free_combo_then_paid` | 30초 무료 5회(COMBO) → 6번째 1비트 차감·원장·후원 기록, 잔액 0이면 409 | (클러치 절차 추가 시) |
+| `clutch_gauge_decay_window` | 5분 지난 점수는 게이지에서 빠짐, 80% 임박 | (클러치 절차 추가 시) |
+| `super_clutch_trigger_reset_and_cooldown` | 100% 동시 요청에도 발동 1회, 게이지 0, 쿨다운 중 재발동 없음 | (클러치 절차 추가 시) |
+| `clutch_banned_rules`, `clutch_super_event_published` | 영구 밴은 무료만 허용·임시차단은 둘 다, `clutch.super` 이벤트 | (클러치 절차 추가 시) |
 | `donation_amount_mismatch_rejected` | 주문과 다른 금액 승인 거절(토스 호출 없음) | (후원 절차 추가 시) |
 | `donation_after_end_becomes_charge`, `banned_user_cannot_donate` | 승인 시 방송 종료·영구 밴이면 충전만, 주문 단계 거절 | (후원 절차 추가 시) |
+| `donation_live_only`, `donation_input_rules`, `banned_user_cannot_donate` | 잔액 후원: LIVE 중에만, 자기 방송·금지어·금액·잔액 부족·영구 밴 거절, 게이지 반영 | (후원 절차 추가 시) |
+| `donation_balance_conditional_debit` | 동시 잔액 후원 2건 → 잔액만큼만 성공, 음수 잔액 없음 | (서버 내부) |
+| `donation_anonymous_name_visibility` | 익명 후원: 공개 목록·비로그인·다른 사용자 이벤트는 익명, 소유자만 실명, 후원자 배지 | (후원 절차 추가 시) |
+| `donation_skip_owner_only`, `donation_created_on_charge_and_donate` | 알림 스킵은 소유자만, 충전하고 후원하기도 알림 | (후원 절차 추가 시) |
+| `donation_list_totals_and_pages`, `donation_stats_kst_7_days`, `donation_stats_only_mine` | 방송별 후원 내역·합계, 스트리머 통계(KST 최근 7일) | (후원 절차 추가 시) |
 | `charge_limits_and_order_expiry` | 충전 1,000~1,000,000·보유 3,000,000, 30분 주문 만료 | (후원 절차 추가 시) |
 | `payment_toss_rejected_or_unavailable`, `payment_webhook_secret_mismatch_ignored`, `payment_confirm_owner_only` | 토스 거절·통신 실패 복구, 웹훅 재확인, 주문자만 확정 | (서버 내부) |
 | `health_check_reports_ok_with_request_id`, `health_check_reports_503_when_db_is_down` | 헬스체크 | 배포 후 `GET /api/v1/health` |

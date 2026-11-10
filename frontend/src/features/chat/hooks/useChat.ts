@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../../../api/client.ts'
 import type { Chat } from '../../../api/generated/Chat.ts'
 import type { ChatPage } from '../../../api/generated/ChatPage.ts'
+import { useAuth } from '../../auth/hooks/useAuth.ts'
 import type { OnEvent } from '../../live/hooks/useBroadcastEvents.ts'
 
 /** `useBroadcastEvents`가 돌려준 값. WebSocket은 화면당 하나라 같은 연결에 구독한다. */
@@ -10,6 +11,10 @@ export type ChatEvents = { onEvent: OnEvent; connected: boolean }
 export type ChatApi = ReturnType<typeof useChat>
 
 const NONE: Chat[] = []
+
+/** 차단 알림 줄. 저장되지 않는 실시간 전용이라 이 화면 상태로만 들고, `afterId` 채팅 바로 뒤에 그린다(없으면 맨 앞). */
+export type SystemLine = { key: number; afterId: number | null; text: string }
+let nextSystemKey = 1
 
 /** 다시 조회한 최신 페이지에, 이미 불러온 더 오래된 기록을 이어 붙인다. */
 function mergeLatest(prev: ChatPage, fresh: ChatPage): ChatPage {
@@ -24,7 +29,9 @@ function mergeLatest(prev: ChatPage, fresh: ChatPage): ChatPage {
  */
 export function useChat(broadcastId: number | undefined, { onEvent, connected }: ChatEvents) {
   const qc = useQueryClient()
+  const meId = useAuth().me?.id
   const key = useMemo(() => ['chats', broadcastId], [broadcastId])
+  const [systems, setSystems] = useState<SystemLine[]>([])
   const [loadingMore, setLoadingMore] = useState(false)
   const [moreFailed, setMoreFailed] = useState(false)
 
@@ -56,10 +63,19 @@ export function useChat(broadcastId: number | undefined, { onEvent, connected }:
       onEvent('chat.created', upsert),
       onEvent('chat.updated', upsert),
       onEvent('chat.deleted', ({ id }) => markDeleted(id)),
+      onEvent('chat.system', ({ kind, user, until }) => {
+        const mins = Math.max(1, Math.round((Date.parse(until ?? '') - Date.now()) / 60_000))
+        const text = kind === 'ban' ? `${user.nickname}님이 차단되었어요` : `${user.nickname}님의 채팅이 ${mins}분간 제한되었어요`
+        const afterId = qc.getQueryData<ChatPage>(key)?.items.at(-1)?.id ?? null
+        setSystems((s) => [...s.slice(-49), { key: nextSystemKey++, afterId, text }])
+        if (kind === 'ban') setPage((d) => ({ ...d, items: d.items.map((x) => (x.author.id === user.id ? { ...x, body: null, deleted: true } : x)) }))
+        // 차단된 본인 화면은 상세의 viewer.ban을 다시 받아 입력창을 바꾼다
+        if (user.id === meId) void qc.invalidateQueries({ queryKey: ['broadcast', broadcastId] })
+      }),
       onEvent('resync', () => void qc.invalidateQueries({ queryKey: key })),
     ]
     return () => offs.forEach((off) => off())
-  }, [onEvent, upsert, markDeleted, qc, key])
+  }, [onEvent, upsert, markDeleted, setPage, qc, key, meId, broadcastId])
 
   // 끊겼다가 다시 연결되면 그 사이 놓친 채팅을 보충한다(첫 연결은 처음 조회가 맡는다)
   const wasConnected = useRef(false)
@@ -86,6 +102,7 @@ export function useChat(broadcastId: number | undefined, { onEvent, connected }:
 
   return {
     items: data?.items ?? NONE,
+    systems,
     hasMore: data?.hasMore ?? false,
     loading: query.isPending,
     error: query.error,

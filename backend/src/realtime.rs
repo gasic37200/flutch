@@ -19,11 +19,14 @@ use tokio::sync::broadcast::{self, error::RecvError};
 use ts_rs::TS;
 
 use crate::AppState;
+use crate::auth::UserSummary;
 use crate::broadcast::{Broadcast, BroadcastEnded, RecordingRef};
 use crate::chat::Chat;
+use crate::clutch::{ClutchGauge, SuperClutch};
 use crate::error::AppError;
 use crate::extract::OptionalUser;
 use crate::middleware::origin_allowed;
+use crate::moderation::SystemKind;
 use crate::wallet::DonationCreated;
 
 /// 방송당 버퍼. 느린 연결이 이만큼 밀리면 `Lagged` → `resync`.
@@ -64,6 +67,13 @@ pub enum WsEvent {
     ChatUpdated(Chat),
     #[serde(rename = "chat.deleted")]
     ChatDeleted { id: i64 },
+    /// 차단 알림("OOO님의 채팅이 10분간 제한되었어요"). kind ban이면 그 사용자 메시지 전부 삭제 표시
+    #[serde(rename = "chat.system")]
+    ChatSystem {
+        kind: SystemKind,
+        user: UserSummary,
+        until: Option<DateTime<Utc>>,
+    },
     /// 녹화 상태 변경(다시보기 준비 완료·실패)
     #[serde(rename = "recording.updated")]
     RecordingUpdated(RecordingRef),
@@ -73,6 +83,12 @@ pub enum WsEvent {
     /// 소유자가 표시 중인 후원 알림을 넘김
     #[serde(rename = "donation.skipped")]
     DonationSkipped { id: i64 },
+    /// 게이지 변경(방송당 초당 최대 2회)
+    #[serde(rename = "clutch.gauge")]
+    ClutchGauge(ClutchGauge),
+    /// SUPER CLUTCH 발동 — 3초 전체 화면 연출
+    #[serde(rename = "clutch.super")]
+    ClutchSuper(SuperClutch),
     /// 서버 채널 지연으로 이벤트를 놓침 → 상세·채팅을 다시 조회
     #[serde(rename = "resync")]
     Resync {},

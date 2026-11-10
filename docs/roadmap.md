@@ -20,7 +20,7 @@
 | **녹화 저장소 연결(T25 이후)**: `recordings` 버킷 공개 읽기 + CORS(`https://flutch.kro.kr` GET·HEAD) → 서버 `.env`에 `RECORDING_S3_ENDPOINT`(`https://<ns>.compat.objectstorage.<region>.oraclecloud.com`)·`RECORDING_S3_BUCKET`·`RECORDING_S3_REGION`·`RECORDING_S3_ACCESS_KEY`·`RECORDING_S3_SECRET_KEY`·`RECORDING_PUBLIC_BASE_URL`(`https://objectstorage.<region>.oraclecloud.com/n/<ns>/b/<bucket>/o`). 하나라도 비면 녹화 꺼짐(방송은 정상). LiveKit Cloud Egress 한도 확인 | T25 운영 확인 | 배포 후 | ⬜ |
 | LiveKit Cloud 가입, API key/secret, **대시보드 Settings › Project에서 Build 플랜 한도(분·Egress) 확인** | T08a 운영 확인 | 11/11 | ⬜ |
 | LiveKit 대시보드에 웹훅 URL 등록 `https://flutch.kro.kr/api/v1/livekit/webhook` | T08b 운영 확인 | T07 배포 후 | ⬜ |
-| 토스페이먼츠 개발자센터 가입, **결제위젯** 테스트 키(`test_gck`/`test_gsk`), 웹훅 URL 등록 | T21 | 11/14 | ⬜ |
+| 토스페이먼츠 개발자센터 가입, **결제위젯** 테스트 키 → 서버 `.env`에 `TOSS_CLIENT_KEY=test_gck_…`·`TOSS_SECRET_KEY=test_gsk_…`, 웹훅 URL `https://flutch.kro.kr/api/v1/payments/webhook`(이벤트 `PAYMENT_STATUS_CHANGED`) 등록 | T21 운영 확인 | 11/14 | ⬜ |
 | **수동 송출 확인 U1**: 배포 URL에서 PC 화면 공유(탭/시스템 소리) → 휴대폰 시청, 휴대폰 카메라 → PC 시청, 종료. 함께 볼 것: 송출 탭을 백그라운드로 두고 1~2분 뒤 홈 카드 썸네일 갱신(T12), 모바일 Wake Lock·후면 카메라(T10), 소리 켜기·볼륨·전체화면(T11) | T15 | 11/12~13 | ⬜ |
 | 카카오 개발자 앱(REST 키, Redirect URI `https://flutch.kro.kr/api/v1/auth/kakao/callback`) | T28 | 11/17 | ⬜ |
 - 키·비밀값은 채팅에 붙여 넣지 않고 `.env`·GitHub Secrets에 직접 넣는다.
@@ -85,6 +85,11 @@
 | 2026-11-10 | T20 | 지갑 내역에서 숨긴 방송 제목은 "삭제된 방송", 같은 주문 재적립 신호는 `PAYMENT_ALREADY_CONFIRMED`(T21이 200 재응답으로 바꿈), 지갑 행이 없으면 잔액 0 | 원래 제목 숨김·멱등 | 응답 문구·코드 | 대기 |
 | 2026-11-10 | T25 | Egress는 송출자 첫 접속 웹훅에서 시작(방이 생긴 뒤), 객체 키 `recordings/{broadcastId}.mp4`, 크기 0이면 failed, 유예 중 방이 다시 만들어지면 앞 구간만 저장(자동 재시도 없음), 삭제는 상태 먼저 → 파일 삭제 재시도 | Egress는 방이 있어야 시작됨 | 재시작 로직 추가 | 대기 |
 | 2026-11-10 | T26 | 다시보기 재생은 브라우저 기본 `<video controls>`(배속·전체화면 포함), 스트리머 페이지 탭은 "방송"·"다시보기" 2개(관리 탭은 T18u·T23 전까지 숨김, 본인은 "내 방송 관리" 링크), 팔로워 수는 표시·팔로우 버튼은 T27 | 동작하지 않는 탭은 숨김 | 탭 추가 | 대기 |
+| 2026-11-10 | T21 | 확정된 주문 재시도는 만료보다 먼저 판단(만료 뒤에도 같은 결과), 토스가 DONE이면 만료된 주문도 적립, 승인 실패 시 주문은 pending 유지, notice 3종(방송 종료·밴·잔액 부족), orderName "N비트 충전"·"N비트 충전 후 후원" | 돈이 나간 결제는 반드시 적립 | 문구·상태값 | 대기 |
+| 2026-11-10 | T17 | 채팅 메시지 메뉴는 "⋯" 버튼으로 줄 아래 펼침(스크롤 안 드롭다운 잘림 회피), 시각은 마우스 올릴 때만(터치 기기 숨김), 모바일 송출 오버레이는 읽기 전용 최근 5개 | 스크롤 영역 제약 | 컴포넌트 수정 | 대기 |
+| 2026-11-10 | T18 | 차단 덮어쓰기는 새 행(목록 최상단), 없는 차단 해제는 이력 안 남김, 영구 밴 시 채팅 일괄 삭제는 현재 LIVE 방송만·알림은 `chat.system` 하나로 | 단순화 | 이력·삭제 범위 | 대기 |
+| 2026-11-10 | T19 | 유료 클러치 후원 기록은 익명·메시지 없음, 무료 콤보 표시는 마지막 클릭 후 30초 타이머로 근사(서버는 슬라이딩 창), 5분 창 감소는 이벤트가 없어 시청 화면이 20초마다 재조회, SUPER CLUTCH 연출은 로고 + 그라데이션으로 단순 구현(시안 정밀 대조 안 함) | 단순화 | 연출·주기 | 대기 |
+| 2026-11-10 | T18u | 차단 해제 알림 이벤트가 없어 차단된 입력창은 차단 중에만 10초마다 상세 재조회, 영구 밴 해제 버튼은 항상 노출(DELETE 멱등), 모바일 송출 오버레이에는 닉네임 팝업 없음 | 이벤트 추가 회피 | `chat.system` kind 확장 시 폴링 제거 | 대기 |
 
 ## Task
 > task 1개 = 서브에이전트 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "(병렬)" 표시 task끼리 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
@@ -139,20 +144,20 @@ T15 이후 **채팅(T16~) · 지갑(T20~) · 녹화(T25~) 세 줄을 동시에**
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
 |---|---|---|---|---|---|
 | T16 | 채팅 백엔드: 작성·수정·삭제·커서 조회·욕설/금지어·도배 제한·차단 여부 확인 + 시나리오 | 04 | T15 | Sonnet · medium | ✅ |
-| T17 | 채팅 화면 (비로그인 읽기 전용, 차단 입력창 포함) | 04 | T16 | Sonnet · medium | 🟨 |
-| T18 | 모더레이션 백엔드: 임시차단·영구 밴·이력·시청자 채팅 기록 API·관리 탭 + 시나리오 (병렬) | 05 | T16 | Sonnet · medium | ⬜ |
-| T18u | 모더레이션 화면: 채팅 닉네임 팝업(차단·채팅 기록), 시스템 메시지 | 05 | T17, T18 | Sonnet · medium | ⬜ |
-| T19 | 클러치 버튼(무료 콤보)·게이지 계산·게이지 바 + 시나리오 | 07 | T17 | Sonnet · medium | ⬜ |
-| T09b | 화면+웹캠 PIP (시청·스튜디오 화면을 건드려서 채팅 화면 작업 뒤에) | 03, architecture §9 | T19 | Sonnet · medium | ⬜ |
+| T17 | 채팅 화면 (비로그인 읽기 전용, 차단 입력창 포함) | 04 | T16 | Sonnet · medium | ✅ |
+| T18 | 모더레이션 백엔드: 임시차단·영구 밴·이력·시청자 채팅 기록 API·관리 탭 + 시나리오 (병렬) | 05 | T16 | Sonnet · medium | ✅ |
+| T18u | 모더레이션 화면: 채팅 닉네임 팝업(차단·채팅 기록), 시스템 메시지 | 05 | T17, T18 | Sonnet · medium | ✅ |
+| T19 | 클러치 버튼(무료 콤보)·게이지 계산·게이지 바 + 시나리오 | 07 | T17 | Sonnet · medium | ✅ |
+| T09b | 화면+웹캠 PIP (시청·스튜디오 화면을 건드려서 채팅 화면 작업 뒤에) | 03, architecture §9 | T19 | Sonnet · medium | 🟨 |
 | T20 | 원장·지갑 핵심: 조건부 차감, 유형, 잔액 일치 + 시나리오 (병렬) | 06 | T15 | Opus · high | ✅ |
-| T20b | 회원 탈퇴: 잔액 소멸 원장 기록, LIVE 중 불가, **시드(테스트) 계정은 탈퇴 불가(`AUTH_SEED_ACCOUNT_LOCKED`)**, 탈퇴 모달 + `auth_withdraw_forfeits_balance` | 01 | T20, T06a | Opus · high | ⬜ |
-| T21 | 토스 결제: 주문·승인·웹훅(조회 API 재확인)·만료·"충전하고 후원하기"(max(부족분, 1,000))·종료 시 충전 전환 + 시나리오 | 06 | T20 | Opus · high | 🟨 |
-| T22 | 후원 백엔드: 잔액 후원·익명·알림 이벤트(10초·스킵)·내역/합계·후원자 배지 + 시나리오 | 06 | T21 | Opus · high | ⬜ |
+| T20b | 회원 탈퇴: 잔액 소멸 원장 기록, LIVE 중 불가, **시드(테스트) 계정은 탈퇴 불가(`AUTH_SEED_ACCOUNT_LOCKED`)**, 탈퇴 모달 + `auth_withdraw_forfeits_balance` | 01 | T20, T06a | Opus · high | 🟨 |
+| T21 | 토스 결제: 주문·승인·웹훅(조회 API 재확인)·만료·"충전하고 후원하기"(max(부족분, 1,000))·종료 시 충전 전환 + 시나리오 | 06 | T20 | Opus · high | ✅ |
+| T22 | 후원 백엔드: 잔액 후원·익명·알림 이벤트(10초·스킵)·내역/합계·후원자 배지 + 시나리오 | 06 | T21 | Opus · high | 🟨 |
 | T23 | 후원 화면: 내 지갑·충전 창·후원 창·**후원 알림·후원자 배지·이 방송 후원 목록**·결제 결과·스트리머 후원 통계 | 06 | T22 | Sonnet · medium | ⬜ |
-| T24 | 유료 클러치·SUPER BURST + 시나리오 | 07 | T19, T22 | Opus · high | ⬜ |
+| T24 | 유료 클러치·SUPER BURST + 시나리오 + **T19의 `clutch.gauge` 묶음 상태를 전역 static에서 AppState로 이동**(conventions §1 위반 정리) | 07 | T19, T22 | Opus · high | ⬜ |
 | T25 | 녹화: Egress → Object Storage, 처리 중/실패, 보관 정리(30일·16GB, `size_bytes`), 방송 삭제 시 객체 삭제 + 시나리오 (병렬) | 08 | T15 | Sonnet · medium | ✅ |
 | T26 | 다시보기 목록·상세·플레이어·조회수·스트리머 페이지(다시보기 탭) | 08, 09 | T25 | Sonnet · medium | ✅ |
-| T26b | 스트리머 프로필 API `GET /users/{id}`(T26 화면이 쓰는데 백엔드에 없었음 — 확장 T27과 분리) | 09 | T26 | Sonnet · medium | 🟨 |
+| T26b | 스트리머 프로필 API `GET /users/{id}`(T26 화면이 쓰는데 백엔드에 없었음 — 확장 T27과 분리) | 09 | T26 | Sonnet · medium | ✅ |
 
 ### 6. 확장 — 11/18 (시간이 되는 만큼, 위에서부터)
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |

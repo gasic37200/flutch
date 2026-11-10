@@ -23,6 +23,7 @@ pub struct Row {
     pub created_at: DateTime<Utc>,
     pub recording_id: Option<i64>,
     pub recording_status: Option<String>,
+    pub super_clutch_until: Option<DateTime<Utc>>,
 }
 
 impl Row {
@@ -51,7 +52,7 @@ impl Row {
             ended_at: self.ended_at,
             created_at: self.created_at,
             reconnecting: self.disconnected_at.is_some(),
-            super_clutch_until: None,
+            super_clutch_until: self.super_clutch_until,
             recording: match (self.recording_id, self.recording_status) {
                 (Some(id), Some(status)) => Some(RecordingRef {
                     id,
@@ -86,7 +87,9 @@ pub async fn find(db: &PgPool, f: &Filter) -> Result<Vec<Row>, sqlx::Error> {
                   b.status, b.title, b.category, b.tags, b.record, b.pip_corner,
                   b.started_at, b.ended_at, b.disconnected_at, b.peak_viewers,
                   b.thumbnail_path, b.created_at,
-                  r.id AS "recording_id?", r.status AS "recording_status?"
+                  r.id AS "recording_id?", r.status AS "recording_status?",
+                  (SELECT MAX(s.expires_at) FROM super_clutches s
+                   WHERE s.broadcast_id = b.id AND s.expires_at > now()) AS "super_clutch_until?"
            FROM broadcasts b JOIN users u ON u.id = b.owner_id
            LEFT JOIN recordings r ON r.broadcast_id = b.id
            WHERE b.hidden_at IS NULL

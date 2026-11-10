@@ -2,9 +2,14 @@
 import type { Broadcast } from "./Broadcast";
 import type { BroadcastEnded } from "./BroadcastEnded";
 import type { Chat } from "./Chat";
+import type { ClutchGauge } from "./ClutchGauge";
+import type { DonationCreated } from "./DonationCreated";
 import type { RecordingRef } from "./RecordingRef";
+import type { SuperClutch } from "./SuperClutch";
+import type { SystemKind } from "./SystemKind";
+import type { UserSummary } from "./UserSummary";
 
 /**
  * WebSocket 메시지 `{type, data}`. 이벤트를 추가하는 task가 여기에 변형 하나를 더한다(api.md §11 표의 이름 그대로).
  */
-export type WsEvent = { "type": "broadcast.updated", "data": Broadcast } | { "type": "broadcast.ended", "data": BroadcastEnded } | { "type": "broadcast.reconnecting", "data": { since: string, } } | { "type": "broadcast.resumed", "data": Record<symbol, never> } | { "type": "broadcast.duration_warning", "data": { endsAt: string, } } | { "type": "viewer.count", "data": { count: number, } } | { "type": "chat.created", "data": Chat } | { "type": "chat.updated", "data": Chat } | { "type": "chat.deleted", "data": { id: number, } } | { "type": "recording.updated", "data": RecordingRef } | { "type": "resync", "data": Record<symbol, never> };
+export type WsEvent = { "type": "broadcast.updated", "data": Broadcast } | { "type": "broadcast.ended", "data": BroadcastEnded } | { "type": "broadcast.reconnecting", "data": { since: string, } } | { "type": "broadcast.resumed", "data": Record<symbol, never> } | { "type": "broadcast.duration_warning", "data": { endsAt: string, } } | { "type": "viewer.count", "data": { count: number, } } | { "type": "chat.created", "data": Chat } | { "type": "chat.updated", "data": Chat } | { "type": "chat.deleted", "data": { id: number, } } | { "type": "chat.system", "data": { kind: SystemKind, user: UserSummary, until: string | null, } } | { "type": "recording.updated", "data": RecordingRef } | { "type": "donation.created", "data": DonationCreated } | { "type": "donation.skipped", "data": { id: number, } } | { "type": "clutch.gauge", "data": ClutchGauge } | { "type": "clutch.super", "data": SuperClutch } | { "type": "resync", "data": Record<symbol, never> };

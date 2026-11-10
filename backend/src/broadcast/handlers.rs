@@ -10,11 +10,12 @@ use serde::Deserialize;
 use super::db::{self, Filter, Patch};
 use super::{
     BROADCAST_READY_LIMIT, BURST_PRICE, Broadcast, BroadcastDetail, BroadcastError,
-    BroadcastStatus, Category, ClutchGauge, ClutchPhase, CreateBroadcastRequest, EndReason, Page,
-    UpdateBroadcastRequest, ViewerState, end_live, enum_str, parse_enum,
+    BroadcastStatus, Category, CreateBroadcastRequest, EndReason, Page, UpdateBroadcastRequest,
+    ViewerState, end_live, enum_str, parse_enum,
 };
 use crate::AppState;
 use crate::auth::{contains_banned_word, contains_profanity};
+use crate::clutch;
 use crate::error::AppError;
 use crate::extract::{CurrentUser, JsonBody, OptionalUser};
 use crate::live::LiveError;
@@ -94,7 +95,7 @@ fn filter_from(q: &ListQuery) -> Result<(Filter, i64), AppError> {
     }
 }
 
-fn into_broadcast(state: &AppState, row: db::Row) -> Result<Broadcast, AppError> {
+pub(super) fn into_broadcast(state: &AppState, row: db::Row) -> Result<Broadcast, AppError> {
     let n = state.live.viewer_count(row.id);
     row.into_broadcast(n)
 }
@@ -185,25 +186,36 @@ pub(super) async fn load(state: &AppState, id: i64) -> Result<db::Row, AppError>
         .ok_or(AppError::NotFound)
 }
 
-/// 상세 응답. shortcut: gauge·burstPrice·ban·freeClutchesLeft는 기본값, T19·T24·T18이 이 함수에서 채운다.
-pub(super) fn detail(
+/// 상세 응답. shortcut: burstPrice는 기본값, T24가 이 함수에서 채운다.
+pub(super) async fn detail(
     state: &AppState,
     row: db::Row,
     viewer: Option<&CurrentUser>,
 ) -> Result<BroadcastDetail, AppError> {
+    let id = row.id;
     let is_owner = viewer.is_some_and(|u| u.id == row.owner_id);
+    let cfg = &state.config.clutch;
+    let gauge = if row.status == "LIVE" {
+        clutch::gauge_of(&state.db, cfg, id).await?
+    } else {
+        clutch::idle_gauge()
+    };
+    let free_clutches_left = match viewer {
+        Some(u) => clutch::free_left(&state.db, cfg, u.id, id).await?,
+        None => 0,
+    };
+    let ban = match viewer {
+        Some(u) => crate::chat::ban_state(&state.db, row.owner_id, u.id).await?,
+        None => None,
+    };
     Ok(BroadcastDetail {
         broadcast: into_broadcast(state, row)?,
-        gauge: ClutchGauge {
-            percent: 0,
-            phase: ClutchPhase::Charging,
-            cooldown_until: None,
-        },
+        gauge,
         burst_price: BURST_PRICE,
         viewer: viewer.map(|_| ViewerState {
             is_owner,
-            ban: None,
-            free_clutches_left: 5,
+            ban,
+            free_clutches_left,
         }),
     })
 }
@@ -213,11 +225,9 @@ pub async fn get_one(
     OptionalUser(user): OptionalUser,
     Path(id): Path<i64>,
 ) -> Result<Json<BroadcastDetail>, AppError> {
-    Ok(Json(detail(
-        &state,
-        load(&state, id).await?,
-        user.as_ref(),
-    )?))
+    Ok(Json(
+        detail(&state, load(&state, id).await?, user.as_ref()).await?,
+    ))
 }
 
 fn check_title(title: &str) -> Result<String, &'static str> {
@@ -279,7 +289,7 @@ pub async fn create(
     .await?
     .ok_or(BroadcastError::ReadyLimit)?;
     tracing::info!(broadcast_id = id, owner_id = user.id, "broadcast created");
-    let d = detail(&state, load(&state, id).await?, Some(&user))?;
+    let d = detail(&state, load(&state, id).await?, Some(&user)).await?;
     Ok((StatusCode::CREATED, Json(d)))
 }
 
@@ -333,7 +343,7 @@ pub async fn update(
     if !db::update_fields(&state.db, id, status, &patch).await? {
         return Err(BroadcastError::InvalidTransition.into());
     }
-    let d = detail(&state, load(&state, id).await?, Some(&user))?;
+    let d = detail(&state, load(&state, id).await?, Some(&user)).await?;
     let event = WsEvent::BroadcastUpdated(d.broadcast.clone());
     state.realtime.publish(id, Event::public(event));
     Ok(Json(d))
@@ -383,7 +393,7 @@ pub async fn put_thumbnail(
     if !db::set_thumbnail(&state.db, id, &version).await? {
         return Err(LiveError::NotLive.into());
     }
-    let d = detail(&state, load(&state, id).await?, Some(&user))?;
+    let d = detail(&state, load(&state, id).await?, Some(&user)).await?;
     let event = WsEvent::BroadcastUpdated(d.broadcast);
     state.realtime.publish(id, Event::public(event));
     Ok(StatusCode::NO_CONTENT)

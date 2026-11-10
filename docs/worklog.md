@@ -38,3 +38,9 @@
 | 2026-11-10 | T16 | 완료 | 2026-11-10 11:59 → 12:23 | 24분 | 178,094 | 37 | [#73](https://github.com/gasic37200/flutch/pull/73) | Sonnet·medium |
 | 2026-11-10 | T25 | 완료 | 2026-11-10 11:59 → 12:40 | 41분 | 219,293 | 61 | [#74](https://github.com/gasic37200/flutch/pull/74) | Sonnet·medium. 실제 Egress·S3 업로드는 배포 후 확인 |
 | 2026-11-10 | T26 | 부분 | 2026-11-10 12:42 → 13:09 | 27분 | 238,051 | 92 | [#77](https://github.com/gasic37200/flutch/pull/77) | Sonnet·medium. `GET /users/{id}` 백엔드 없음 → T26b로 후속 |
+| 2026-11-10 | T17 | 완료 | 2026-11-10 12:26 → 13:10 | 44분 | 257,063 | 170 | [#78](https://github.com/gasic37200/flutch/pull/78) | Sonnet·medium. 두 사용자 실시간 채팅·차단 입력창 확인 |
+| 2026-11-10 | T21 | 완료 | 2026-11-10 12:26 → 13:11 | 45분 | 297,073 | 80 | [#79](https://github.com/gasic37200/flutch/pull/79) | Opus·high. ponytail-review: 지적 없음, 실제 토스 호출은 키 받은 뒤 |
+| 2026-11-10 | T26b | 완료 | 2026-11-10 13:10 → 13:22 | 12분 | 116,116 | 19 | [#82](https://github.com/gasic37200/flutch/pull/82) | Sonnet·medium. follow 도메인에 GET /users/{id} |
+| 2026-11-10 | T18 | 완료 | 2026-11-10 13:17 → 13:36 | 19분 | 156,036 | 43 | [#84](https://github.com/gasic37200/flutch/pull/84) | Sonnet·medium |
+| 2026-11-10 | T19 | 완료 | 2026-11-10 13:23 → 14:09 | 46분 | 241,214 | 92 | [#86](https://github.com/gasic37200/flutch/pull/86) | Sonnet·medium. 동시 발동 advisory lock, 게이지 묶음 static은 T24에서 정리 |
+| 2026-11-10 | T18u | 완료 | 2026-11-10 13:37 → 14:12 | 35분 | 185,131 | 120 | [#87](https://github.com/gasic37200/flutch/pull/87) | Sonnet·medium. 두 사용자로 차단·해제·영구 밴 확인 |

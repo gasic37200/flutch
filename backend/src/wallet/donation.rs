@@ -18,6 +18,7 @@ use super::{
 };
 use crate::AppState;
 use crate::broadcast::BroadcastError;
+use crate::clutch;
 use crate::error::AppError;
 use crate::extract::{CurrentUser, JsonBody, OptionalUser};
 use crate::realtime::{Event, WsEvent};
@@ -154,11 +155,22 @@ pub async fn donate(
         },
     )
     .await?;
-    // shortcut: 후원 비트 게이지 점수(clutch_events source=donation)는 T19 게이지 함수가 생기면 여기서 같은 tx로 추가
+    // 잠금 순서: 방송 FOR SHARE → 지갑 차감 → 게이지(T19 클러치와 같은 순서라 교착 없음)
+    let cfg = &state.config.clutch;
+    let gauge = clutch::add_points(
+        &mut tx,
+        cfg,
+        broadcast_id,
+        user.id,
+        clutch::Source::Donation,
+        req.amount * cfg.points_per_bit,
+    )
+    .await?;
     tx.commit().await?;
 
     metrics::counter!("donations_total").increment(1);
     publish_donation(&state, donation.clone()).await;
+    clutch::publish(&state, broadcast_id, &gauge);
     Ok((
         StatusCode::CREATED,
         Json(DonateResponse {
