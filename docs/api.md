@@ -334,6 +334,7 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 | DELETE `/users/{id}/follow` | 로그인 | — | 200 `{following: false, followerCount}` | 401, 404 |
 | GET `/pulse` | 로그인 | `?limit=<기본 10, 최대 50>` | 200 `{live: Broadcast[] /* 시청자 수 순 */, offline: {user: UserSummary, followerCount, lastEndedAt: string \| null}[], total: number}` — live 먼저, 합쳐서 `limit`개 | 401 |
 
+- TS 타입: `GET /users/{id}` 응답은 `UserProfile`(T26b). `followerCount`는 `follows` 행 수, `liveBroadcast`는 그 사용자의 LIVE·미숨김 방송(시청자 수 포함).
 - 팔로워 목록 API는 없다(숫자만). 사이드바 "인기 라이브"는 `GET /broadcasts?limit=5`(팔로우 0개면 3), "추천 라이브 채널"은 `GET /broadcasts?limit=3`.
 - 스트리머 페이지 관리 탭(본인만): 방송 관리 `GET /me/broadcasts`, 후원 내역·통계 `GET /me/donation-stats` + `GET /broadcasts/{id}/donations`, 차단 목록 `GET /users/{id}/bans`.
 - 시나리오: `follow_toggle_and_count` `follow_self_rejected`

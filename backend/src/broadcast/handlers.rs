@@ -94,7 +94,7 @@ fn filter_from(q: &ListQuery) -> Result<(Filter, i64), AppError> {
     }
 }
 
-fn into_broadcast(state: &AppState, row: db::Row) -> Result<Broadcast, AppError> {
+pub(super) fn into_broadcast(state: &AppState, row: db::Row) -> Result<Broadcast, AppError> {
     let n = state.live.viewer_count(row.id);
     row.into_broadcast(n)
 }

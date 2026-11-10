@@ -369,3 +369,19 @@ async fn missing_or_invalid(db: &PgPool, id: i64) -> AppError {
         Err(e) => e.into(),
     }
 }
+
+/// 그 사용자의 LIVE·미숨김 방송(없으면 `None`). 스트리머 페이지용.
+pub async fn live_of_owner(state: &AppState, owner_id: i64) -> Result<Option<Broadcast>, AppError> {
+    let f = db::Filter {
+        owner_id: Some(owner_id),
+        status: Some("LIVE"),
+        limit: 1,
+        ..db::Filter::default()
+    };
+    db::find(&state.db, &f)
+        .await?
+        .into_iter()
+        .next()
+        .map(|r| handlers::into_broadcast(state, r))
+        .transpose()
+}
