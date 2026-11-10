@@ -1,13 +1,15 @@
 //! 계정·인증 시나리오 (features/01, api.md §2).
 
+use std::sync::Arc;
+
 use axum::Router;
 use axum::http::StatusCode;
 use serde_json::json;
 use sqlx::PgPool;
 
 use crate::common::{
-    PASSWORD, SEED_PASSWORD, TestResponse, empty_req, json_req, login_as, send, session_cookie,
-    signup, test_app,
+    FakeKakao, PASSWORD, SEED_PASSWORD, TestResponse, empty_req, json_req, login_as, send,
+    session_cookie, signup, test_app, test_app_with_kakao,
 };
 
 async fn login(app: &Router, login_id: &str, password: &str, remember: bool) -> TestResponse {
@@ -729,4 +731,300 @@ async fn auth_withdraw_rules(db: PgPool) {
     .await;
     assert_eq!(res.status, StatusCode::OK);
     assert_eq!(res.json["owner"]["nickname"], "탈퇴한 사용자");
+}
+
+// ---- 카카오 로그인 (T28) ----
+
+const KAKAO_ID: i64 = 777_001;
+
+/// `Set-Cookie`들 중 이름이 `name`인 것의 `이름=값`(없으면 None).
+fn cookie_named(res: &TestResponse, name: &str) -> Option<String> {
+    res.headers
+        .get_all("set-cookie")
+        .iter()
+        .filter_map(|v| v.to_str().ok())
+        .find(|c| c.starts_with(&format!("{name}=")))
+        .and_then(|c| c.split(';').next())
+        .map(str::to_owned)
+}
+
+fn location(res: &TestResponse) -> &str {
+    res.headers["location"].to_str().unwrap()
+}
+
+/// start를 부르고 `(Location, state 쿠키 "이름=값", state 값)`.
+async fn kakao_start(app: &Router) -> (String, String, String) {
+    let res = send(app, empty_req("GET", "/api/v1/auth/kakao/start", None)).await;
+    assert_eq!(res.status, StatusCode::FOUND);
+    let cookie = cookie_named(&res, "flutch_kakao_state").expect("state cookie");
+    let state = cookie.split_once('=').unwrap().1.to_owned();
+    (location(&res).to_owned(), cookie, state)
+}
+
+async fn kakao_callback(
+    app: &Router,
+    state_cookie: Option<&str>,
+    state_param: &str,
+) -> TestResponse {
+    let uri = format!("/api/v1/auth/kakao/callback?code=authcode&state={state_param}");
+    send(app, empty_req("GET", &uri, state_cookie)).await
+}
+
+/// 카카오 로그인 → 닉네임 설정 화면까지 가서 임시 가입 쿠키("이름=값")를 돌려준다.
+async fn kakao_pending_cookie(app: &Router) -> String {
+    let (_, cookie, state) = kakao_start(app).await;
+    let res = kakao_callback(app, Some(&cookie), &state).await;
+    assert_eq!(res.status, StatusCode::FOUND);
+    assert_eq!(location(&res), "/signup/kakao");
+    cookie_named(&res, "flutch_kakao_signup").expect("signup cookie")
+}
+
+fn kakao_signup_req(
+    cookie: Option<&str>,
+    nickname: &str,
+    agree: bool,
+) -> axum::http::Request<axum::body::Body> {
+    let body = json!({
+        "nickname": nickname, "agreeTerms": agree, "agreePrivacy": true, "over14": true,
+    });
+    json_req("POST", "/api/v1/auth/kakao/signup", cookie, body)
+}
+
+#[sqlx::test]
+async fn auth_kakao_new_user_signup(db: PgPool) {
+    let kakao = Arc::new(FakeKakao::default());
+    kakao.set_profile(KAKAO_ID, Some("카카오 곰"));
+    let app = test_app_with_kakao(db.clone(), kakao.clone());
+
+    // start: 닉네임만 요청, 임시 state 쿠키는 카카오 라우트에만, 콜백 주소는 설정값
+    let res = send(&app, empty_req("GET", "/api/v1/auth/kakao/start", None)).await;
+    assert_eq!(res.status, StatusCode::FOUND);
+    let url = location(&res);
+    assert!(
+        url.starts_with("https://kauth.kakao.com/oauth/authorize?"),
+        "{url}"
+    );
+    for part in [
+        "client_id=kakao-rest",
+        "response_type=code",
+        "scope=profile_nickname",
+        "redirect_uri=https%3A%2F%2Fflutch.test%2Fapi%2Fv1%2Fauth%2Fkakao%2Fcallback",
+    ] {
+        assert!(url.contains(part), "{part} in {url}");
+    }
+    let set = res.headers["set-cookie"].to_str().unwrap();
+    for attr in [
+        "HttpOnly",
+        "Secure",
+        "SameSite=Lax",
+        "Path=/api/v1/auth/kakao",
+        "Max-Age=600",
+    ] {
+        assert!(set.contains(attr), "{attr} in {set}");
+    }
+    let state_cookie = cookie_named(&res, "flutch_kakao_state").unwrap();
+    let state = state_cookie.split_once('=').unwrap().1;
+    assert!(url.contains(&format!("state={state}")));
+
+    // callback: 처음이면 세션 없이 닉네임 설정 화면으로, 닉네임 후보는 규칙에 맞게 줄인다
+    let res = kakao_callback(&app, Some(&state_cookie), state).await;
+    assert_eq!(res.status, StatusCode::FOUND);
+    assert_eq!(location(&res), "/signup/kakao");
+    assert!(cookie_named(&res, "flutch_session").is_none());
+    assert_eq!(*kakao.codes.lock().unwrap(), ["authcode"]);
+    let pending = cookie_named(&res, "flutch_kakao_signup").unwrap();
+    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM users")
+        .fetch_one(&db)
+        .await
+        .unwrap();
+    assert_eq!(count, 0, "가입 전에는 사용자를 만들지 않는다");
+
+    let res = send(
+        &app,
+        empty_req("GET", "/api/v1/auth/kakao/signup", Some(&pending)),
+    )
+    .await;
+    assert_eq!(res.status, StatusCode::OK);
+    assert_eq!(res.json["nickname"], "카카오곰");
+
+    // signup: 닉네임 확정 → 201 Me + 세션, 지갑 행 생성
+    let res = send(&app, kakao_signup_req(Some(&pending), "카카오곰", true)).await;
+    assert_eq!(res.status, StatusCode::CREATED, "{}", res.json);
+    assert!(res.json["loginId"].is_null());
+    assert_eq!(res.json["nickname"], "카카오곰");
+    assert_eq!(res.json["hasPassword"], false);
+    assert_eq!(res.json["balance"], 0);
+    let session = cookie_named(&res, "flutch_session").unwrap();
+    assert_eq!(me(&app, &session).await.json["id"], res.json["id"]);
+    let uid = res.json["id"].as_i64().unwrap();
+    let wallets: i64 = sqlx::query_scalar("SELECT count(*) FROM wallets WHERE user_id = $1")
+        .bind(uid)
+        .fetch_one(&db)
+        .await
+        .unwrap();
+    assert_eq!(wallets, 1);
+    let stored: i64 = sqlx::query_scalar("SELECT kakao_id FROM users WHERE id = $1")
+        .bind(uid)
+        .fetch_one(&db)
+        .await
+        .unwrap();
+    assert_eq!(stored, KAKAO_ID);
+
+    // 같은 임시 쿠키로 한 번 더(다른 탭): 이미 가입된 카카오 계정이라 409
+    let res = send(&app, kakao_signup_req(Some(&pending), "카카오곰둘", true)).await;
+    assert_eq!(res.status, StatusCode::CONFLICT);
+    assert_eq!(res.json["error"]["code"], "AUTH_KAKAO_ALREADY_REGISTERED");
+
+    // 카카오 계정은 비밀번호를 바꿀 수 없다
+    let body = json!({ "currentPassword": PASSWORD, "newPassword": "newpass1234" });
+    let res = send(
+        &app,
+        json_req("PUT", "/api/v1/me/password", Some(&session), body),
+    )
+    .await;
+    assert_eq!(res.status, StatusCode::FORBIDDEN);
+}
+
+#[sqlx::test]
+async fn auth_kakao_existing_user_login(db: PgPool) {
+    let kakao = Arc::new(FakeKakao::default());
+    kakao.set_profile(KAKAO_ID, Some("카카오곰"));
+    let app = test_app_with_kakao(db.clone(), kakao);
+    let pending = kakao_pending_cookie(&app).await;
+    let res = send(&app, kakao_signup_req(Some(&pending), "카카오곰", true)).await;
+    let uid = res.json["id"].as_i64().unwrap();
+
+    // 다시 로그인하면 닉네임 화면 없이 같은 계정으로 세션 발급 후 홈으로
+    let (_, cookie, state) = kakao_start(&app).await;
+    let res = kakao_callback(&app, Some(&cookie), &state).await;
+    assert_eq!(res.status, StatusCode::FOUND);
+    assert_eq!(location(&res), "/");
+    assert!(cookie_named(&res, "flutch_kakao_signup").is_none());
+    let session = cookie_named(&res, "flutch_session").unwrap();
+    let res = me(&app, &session).await;
+    assert_eq!(res.status, StatusCode::OK);
+    assert_eq!(res.json["id"], uid);
+}
+
+#[sqlx::test]
+async fn auth_kakao_state_mismatch_rejected(db: PgPool) {
+    let kakao = Arc::new(FakeKakao::default());
+    kakao.set_profile(KAKAO_ID, Some("카카오곰"));
+    let app = test_app_with_kakao(db, kakao.clone());
+    let (_, cookie, state) = kakao_start(&app).await;
+
+    // state 값이 쿠키와 다름 / 쿠키 없음 / 동의 취소(code 없음) → 로그인 화면 에러, 카카오 호출 없음
+    let bad = kakao_callback(&app, Some(&cookie), "forged").await;
+    let no_cookie = kakao_callback(&app, None, &state).await;
+    let denied = send(
+        &app,
+        empty_req(
+            "GET",
+            "/api/v1/auth/kakao/callback?error=access_denied",
+            Some(&cookie),
+        ),
+    )
+    .await;
+    for res in [bad, no_cookie, denied] {
+        assert_eq!(res.status, StatusCode::FOUND);
+        assert_eq!(location(&res), "/login?kakao=error");
+        assert!(cookie_named(&res, "flutch_session").is_none());
+        assert!(cookie_named(&res, "flutch_kakao_signup").is_none());
+    }
+    assert!(kakao.codes.lock().unwrap().is_empty());
+
+    // 카카오가 토큰 교환을 거절해도 같은 화면
+    *kakao.profile.lock().unwrap() = None;
+    let res = kakao_callback(&app, Some(&cookie), &state).await;
+    assert_eq!(location(&res), "/login?kakao=error");
+}
+
+#[sqlx::test]
+async fn auth_kakao_signup_rules_and_forged_cookie(db: PgPool) {
+    let kakao = Arc::new(FakeKakao::default());
+    kakao.set_profile(KAKAO_ID, Some("카카오곰"));
+    let app = test_app_with_kakao(db.clone(), kakao);
+    signup(&app, "other01", "먼저온사람").await;
+    let pending = kakao_pending_cookie(&app).await;
+
+    // 임시 쿠키가 없거나 위조·변조되면 401
+    let res = send(&app, empty_req("GET", "/api/v1/auth/kakao/signup", None)).await;
+    assert_eq!(res.status, StatusCode::UNAUTHORIZED);
+    assert_eq!(res.json["error"]["code"], "AUTH_KAKAO_SIGNUP_EXPIRED");
+    let (name_value, sig) = pending.rsplit_once('.').unwrap();
+    // 서명 자리를 바꾸거나, 다른 카카오 id로 바꿔 서명을 새로 만들 수 없게 한다
+    let tampered_sig = format!("{name_value}.{}", sig.chars().rev().collect::<String>());
+    let other_id = pending.replacen("=777001.", "=1.", 1);
+    for bad in [
+        tampered_sig,
+        other_id,
+        "flutch_kakao_signup=x.y.z.w".to_owned(),
+    ] {
+        let res = send(&app, kakao_signup_req(Some(&bad), "카카오곰", true)).await;
+        assert_eq!(res.status, StatusCode::UNAUTHORIZED, "{bad}");
+    }
+
+    // 닉네임 규칙·동의 검사(아이디 가입과 같은 규칙), 아무것도 만들어지지 않는다
+    for (nickname, agree) in [
+        ("관리자", true),
+        ("a", true),
+        ("카카오 곰", true),
+        ("카카오곰", false),
+    ] {
+        let res = send(&app, kakao_signup_req(Some(&pending), nickname, agree)).await;
+        assert_eq!(res.status, StatusCode::UNPROCESSABLE_ENTITY, "{nickname}");
+    }
+    let res = send(&app, kakao_signup_req(Some(&pending), "먼저온사람", true)).await;
+    assert_eq!(res.status, StatusCode::CONFLICT);
+    assert_eq!(res.json["error"]["code"], "AUTH_NICKNAME_TAKEN");
+    let kakao_users: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM users WHERE kakao_id IS NOT NULL")
+            .fetch_one(&db)
+            .await
+            .unwrap();
+    assert_eq!(kakao_users, 0);
+}
+
+#[sqlx::test]
+async fn auth_kakao_withdraw_unlinks(db: PgPool) {
+    let kakao = Arc::new(FakeKakao::default());
+    kakao.set_profile(KAKAO_ID, Some("카카오곰"));
+    let app = test_app_with_kakao(db.clone(), kakao.clone());
+    let pending = kakao_pending_cookie(&app).await;
+    let res = send(&app, kakao_signup_req(Some(&pending), "카카오곰", true)).await;
+    let session = cookie_named(&res, "flutch_session").unwrap();
+    let uid = res.json["id"].as_i64().unwrap();
+    fund(&db, uid, 3000).await;
+
+    // 비밀번호 없이 잔액 소멸 확인만으로 탈퇴한다. 확인이 없으면 409.
+    let body = json!({ "confirmForfeit": false });
+    let res = send(&app, json_req("DELETE", "/api/v1/me", Some(&session), body)).await;
+    assert_eq!(res.status, StatusCode::CONFLICT);
+    assert_eq!(res.json["error"]["code"], "AUTH_WITHDRAW_CONFIRM_FORFEIT");
+    assert!(kakao.unlinked.lock().unwrap().is_empty());
+
+    let body = json!({ "confirmForfeit": true });
+    let res = send(&app, json_req("DELETE", "/api/v1/me", Some(&session), body)).await;
+    assert_eq!(res.status, StatusCode::NO_CONTENT, "{}", res.json);
+    assert_eq!(*kakao.unlinked.lock().unwrap(), [KAKAO_ID]);
+    assert_eq!(me(&app, &session).await.status, StatusCode::UNAUTHORIZED);
+
+    // 같은 카카오 계정으로 다시 로그인하면 새 계정 가입 화면. 탈퇴 닉네임은 30일 보류.
+    let pending = kakao_pending_cookie(&app).await;
+    let res = send(&app, kakao_signup_req(Some(&pending), "카카오곰", true)).await;
+    assert_eq!(res.status, StatusCode::CONFLICT);
+    assert_eq!(res.json["error"]["code"], "AUTH_NICKNAME_TAKEN");
+    let res = send(&app, kakao_signup_req(Some(&pending), "카카오곰새", true)).await;
+    assert_eq!(res.status, StatusCode::CREATED, "{}", res.json);
+    assert_ne!(res.json["id"].as_i64().unwrap(), uid);
+}
+
+#[sqlx::test]
+async fn auth_password_account_withdraw_needs_password(db: PgPool) {
+    let app = test_app(db);
+    let cookie = signup(&app, "quit02", "떠날사람").await;
+    let body = json!({ "confirmForfeit": true });
+    let res = send(&app, json_req("DELETE", "/api/v1/me", Some(&cookie), body)).await;
+    assert_eq!(res.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(res.json["error"]["code"], "AUTH_WRONG_PASSWORD");
 }

@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH u AS (\n               INSERT INTO users (kakao_id, nickname) VALUES ($1, $2) RETURNING id\n           ), w AS (\n               INSERT INTO wallets (user_id) SELECT id FROM u\n           )\n           SELECT id AS \"id!\" FROM u",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "dd5f18438723058d6b82bd27555495ea0b71a5f61762d5032278c75f0e57c8e2"
+}

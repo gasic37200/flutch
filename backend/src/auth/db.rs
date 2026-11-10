@@ -31,6 +31,7 @@ pub struct MeRow {
 pub struct CredentialRow {
     pub login_id: Option<String>,
     pub password_hash: Option<String>,
+    pub kakao_id: Option<i64>,
 }
 
 /// 사용자와 지갑 행을 함께 만든다(지갑은 가입 시 생성 — 다른 도메인은 행이 있다고 가정).
@@ -56,11 +57,40 @@ pub async fn insert_user(
     .map_err(unique_violation)
 }
 
+/// 카카오 계정 가입. 아이디 가입과 같이 지갑 행도 함께 만든다.
+pub async fn insert_kakao_user(
+    db: &PgPool,
+    kakao_id: i64,
+    nickname: &str,
+) -> Result<i64, AppError> {
+    sqlx::query_scalar!(
+        r#"WITH u AS (
+               INSERT INTO users (kakao_id, nickname) VALUES ($1, $2) RETURNING id
+           ), w AS (
+               INSERT INTO wallets (user_id) SELECT id FROM u
+           )
+           SELECT id AS "id!" FROM u"#,
+        kakao_id,
+        nickname
+    )
+    .fetch_one(db)
+    .await
+    .map_err(unique_violation)
+}
+
+/// 이 카카오 계정의 활성 사용자. 탈퇴하면 `kakao_id`를 비우므로 탈퇴 계정은 나오지 않는다.
+pub async fn find_kakao(db: &PgPool, kakao_id: i64) -> Result<Option<i64>, sqlx::Error> {
+    sqlx::query_scalar!("SELECT id FROM users WHERE kakao_id = $1", kakao_id)
+        .fetch_optional(db)
+        .await
+}
+
 /// 동시 가입·변경이 앞의 중복 확인을 지나쳐도 유니크 제약에서 같은 에러로 바꾼다.
 fn unique_violation(e: sqlx::Error) -> AppError {
     match e.as_database_error().and_then(|d| d.constraint()) {
         Some("users_login_id_key") => AuthError::LoginIdTaken.into(),
         Some("users_nickname_active_key") => AuthError::NicknameTaken.into(),
+        Some("users_kakao_id_key") => AuthError::KakaoAlreadyRegistered.into(),
         _ => e.into(),
     }
 }
@@ -239,7 +269,7 @@ pub async fn me(db: &PgPool, user_id: i64) -> Result<MeRow, sqlx::Error> {
 pub async fn credentials(db: &PgPool, user_id: i64) -> Result<CredentialRow, sqlx::Error> {
     sqlx::query_as!(
         CredentialRow,
-        "SELECT login_id, password_hash FROM users WHERE id = $1",
+        "SELECT login_id, password_hash, kakao_id FROM users WHERE id = $1",
         user_id
     )
     .fetch_one(db)
@@ -283,7 +313,7 @@ pub async fn update_nickname(db: &PgPool, user_id: i64, nickname: &str) -> Resul
     Ok(())
 }
 
-/// 탈퇴 한 트랜잭션: 잔액 소멸 원장(잔액 > 0일 때만) → `withdrawn_at` → 세션 전부 삭제. 소멸한 비트 수를 돌려준다.
+/// 탈퇴 한 트랜잭션: 잔액 소멸 원장(잔액 > 0일 때만) → `withdrawn_at`(카카오 연결 id 비움) → 세션 전부 삭제. 소멸한 비트 수를 돌려준다.
 /// LIVE 방송이 있거나 잔액이 있는데 확인이 없으면 에러(롤백).
 pub async fn withdraw(db: &PgPool, user_id: i64, confirm_forfeit: bool) -> Result<i64, AppError> {
     let mut tx = db.begin().await?;
@@ -319,7 +349,7 @@ pub async fn withdraw(db: &PgPool, user_id: i64, confirm_forfeit: bool) -> Resul
         wallet::debit(&mut tx, user_id, balance, DebitKind::WithdrawForfeit).await?;
     }
     sqlx::query!(
-        "UPDATE users SET withdrawn_at = now() WHERE id = $1",
+        "UPDATE users SET withdrawn_at = now(), kakao_id = NULL WHERE id = $1",
         user_id
     )
     .execute(&mut *tx)

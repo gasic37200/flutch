@@ -41,6 +41,7 @@ export const router = createBrowserRouter([
           { path: 'payments/fail', element: <PaymentResultPage result='fail' /> },
           { path: 'login', element: <AuthPage mode="login" /> },
           { path: 'signup', element: <AuthPage mode="signup" /> },
+          { path: 'signup/kakao', element: <AuthPage mode="kakao" /> },
           { path: 'me', element: <MePage /> },
           { path: 'terms', element: <LegalPage doc="terms" /> },
           { path: 'privacy', element: <LegalPage doc="privacy" /> },

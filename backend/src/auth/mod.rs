@@ -16,6 +16,7 @@ use crate::scheduler::Scheduler;
 
 mod db;
 mod handlers;
+mod oauth;
 pub(crate) mod rate_limit;
 pub mod rules;
 pub(crate) mod session;
@@ -42,6 +43,12 @@ pub fn routes() -> Router<Arc<AppState>> {
             get(handlers::me)
                 .patch(handlers::update_me)
                 .delete(handlers::withdraw),
+        )
+        .route("/auth/kakao/start", get(oauth::start))
+        .route("/auth/kakao/callback", get(oauth::callback))
+        .route(
+            "/auth/kakao/signup",
+            get(oauth::pending).post(oauth::signup),
         )
         .route("/me/password", put(handlers::change_password))
         .layer(Extension(Arc::new(handlers::Limits::default())))
@@ -122,6 +129,16 @@ pub struct SignupRequest {
 #[derive(Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
+pub struct KakaoSignupRequest {
+    pub nickname: String,
+    pub agree_terms: bool,
+    pub agree_privacy: bool,
+    pub over14: bool,
+}
+
+#[derive(Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
 pub struct LoginRequest {
     pub login_id: String,
     pub password: String,
@@ -153,7 +170,10 @@ pub struct ChangePasswordRequest {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct WithdrawRequest {
-    pub password: String,
+    /// 카카오 계정은 없다
+    #[serde(default)]
+    #[ts(optional)]
+    pub password: Option<String>,
     /// 잔액이 있으면 true여야 탈퇴(잔액 소멸 확인)
     pub confirm_forfeit: bool,
 }
@@ -181,6 +201,10 @@ pub enum AuthError {
     /// 남은 잔액("1,000" 형식)
     #[error("남은 {0}비트는 사라지고 되돌릴 수 없어요.")]
     WithdrawConfirmForfeit(String),
+    #[error("카카오 로그인 시간이 지났어요. 처음부터 다시 시도해 주세요.")]
+    KakaoSignupExpired,
+    #[error("이미 가입된 카카오 계정이에요. 카카오로 로그인해 주세요.")]
+    KakaoAlreadyRegistered,
 }
 
 impl From<AuthError> for AppError {
@@ -221,6 +245,16 @@ impl From<AuthError> for AppError {
             AuthError::WithdrawConfirmForfeit(_) => AppError::domain(
                 StatusCode::CONFLICT,
                 "AUTH_WITHDRAW_CONFIRM_FORFEIT",
+                message,
+            ),
+            AuthError::KakaoSignupExpired => AppError::domain(
+                StatusCode::UNAUTHORIZED,
+                "AUTH_KAKAO_SIGNUP_EXPIRED",
+                message,
+            ),
+            AuthError::KakaoAlreadyRegistered => AppError::domain(
+                StatusCode::CONFLICT,
+                "AUTH_KAKAO_ALREADY_REGISTERED",
                 message,
             ),
         }

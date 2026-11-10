@@ -9,9 +9,10 @@ use axum::Router;
 use axum::body::Body;
 use axum::http::{HeaderMap, Request, StatusCode};
 use flutch::config::{
-    AuthConfig, BroadcastConfig, Config, LiveConfig, LiveKitConfig, RecordingConfig, S3Config,
-    TossConfig,
+    AuthConfig, BroadcastConfig, Config, KakaoConfig, LiveConfig, LiveKitConfig, RecordingConfig,
+    S3Config, TossConfig,
 };
+use flutch::kakao::{KakaoApi, KakaoError, KakaoProfile};
 use flutch::livekit::{LiveKitApi, LiveKitError, Participant};
 use flutch::recording::{ObjectStore, StorageError};
 use flutch::toss::{TossApi, TossError, TossPayment};
@@ -229,7 +230,56 @@ pub fn test_state_with(
         storage,
         recording,
         Arc::new(FakeToss::default()),
+        Arc::new(FakeKakao::default()),
     )
+}
+
+/// 카카오 호출을 조작·확인하는 시나리오용. `profile`이 `None`이면 토큰 교환 실패.
+#[derive(Default)]
+pub struct FakeKakao {
+    pub profile: Mutex<Option<KakaoProfile>>,
+    /// `profile`에 넘어온 인가 코드(호출 순서대로)
+    pub codes: Mutex<Vec<String>>,
+    /// 연결을 끊은 카카오 id(호출 순서대로)
+    pub unlinked: Mutex<Vec<i64>>,
+}
+
+impl FakeKakao {
+    pub fn set_profile(&self, id: i64, nickname: Option<&str>) {
+        *self.profile.lock().unwrap() = Some(KakaoProfile {
+            id,
+            nickname: nickname.map(str::to_owned),
+        });
+    }
+}
+
+#[async_trait]
+impl KakaoApi for FakeKakao {
+    async fn profile(&self, code: &str) -> Result<KakaoProfile, KakaoError> {
+        self.codes.lock().unwrap().push(code.to_owned());
+        self.profile
+            .lock()
+            .unwrap()
+            .clone()
+            .ok_or_else(|| KakaoError("fake".into()))
+    }
+
+    async fn unlink(&self, kakao_id: i64) -> Result<(), KakaoError> {
+        self.unlinked.lock().unwrap().push(kakao_id);
+        Ok(())
+    }
+}
+
+/// 카카오 로그인 시나리오용(같은 `Arc<FakeKakao>`를 들고 있는다).
+pub fn test_app_with_kakao(db: PgPool, kakao: Arc<FakeKakao>) -> Router {
+    flutch::app(build_state(
+        db,
+        Arc::new(FakeLiveKit::default()),
+        Arc::new(FakeStore::default()),
+        None,
+        Arc::new(FakeToss::default()),
+        kakao,
+    ))
 }
 
 /// 토스 호출을 조작·확인하는 시나리오용(같은 `Arc<FakeToss>`를 들고 있는다).
@@ -238,7 +288,14 @@ pub fn test_state_with_toss(
     livekit: Arc<FakeLiveKit>,
     toss: Arc<FakeToss>,
 ) -> Arc<AppState> {
-    build_state(db, livekit, Arc::new(FakeStore::default()), None, toss)
+    build_state(
+        db,
+        livekit,
+        Arc::new(FakeStore::default()),
+        None,
+        toss,
+        Arc::new(FakeKakao::default()),
+    )
 }
 
 fn build_state(
@@ -247,6 +304,7 @@ fn build_state(
     storage: Arc<FakeStore>,
     recording: Option<RecordingConfig>,
     toss: Arc<FakeToss>,
+    kakao: Arc<FakeKakao>,
 ) -> Arc<AppState> {
     let config = Config {
         backend_port: 0,
@@ -259,6 +317,12 @@ fn build_state(
         },
         auth: AuthConfig {
             seed_password: Some(SEED_PASSWORD.into()),
+            kakao: Some(KakaoConfig {
+                rest_key: "kakao-rest".into(),
+                client_secret: Some("kakao-secret".into()),
+                redirect_uri: "https://flutch.test/api/v1/auth/kakao/callback".into(),
+                admin_key: Some("kakao-admin".into()),
+            }),
         },
         live: LiveConfig {
             grace_secs: 60,
@@ -284,6 +348,7 @@ fn build_state(
         db,
         livekit,
         toss,
+        kakao,
         storage,
         realtime: realtime::Hub::default(),
         live: Default::default(),

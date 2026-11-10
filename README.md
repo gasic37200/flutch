@@ -47,8 +47,19 @@ FLUTTER의 두근거림과 CLUTCH의 짜릿함을 결합한 이름처럼, 라이
 | `SEED_PASSWORD` | (운영 서버에서만 설정) | 시드 계정 비밀번호. 비우면 "테스트 계정으로 바로 로그인"으로만 진입 |
 | `LIVEKIT_URL` / `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` | `ws://localhost:7880` / `devkey` / `secret` | 로컬 LiveKit(개발용 고정값). 운영은 LiveKit Cloud 값 |
 | `LIVE_GRACE_SECS` / `LIVE_MAX_DURATION_SECS` | (비움) | 재연결 유예 60초 / 최대 3시간 기본값. 수동 확인 때만 줄임 |
+| `KAKAO_REST_KEY` / `KAKAO_REDIRECT_URI` | (비움) | 카카오 로그인. 둘 다 있어야 켜지고, 없으면 로그인 화면에서 카카오 버튼이 숨겨짐. 설정은 아래 "카카오 로그인 설정" |
+| `KAKAO_CLIENT_SECRET` / `KAKAO_ADMIN_KEY` | (비움) | 콘솔에서 Client Secret을 켠 경우만 / 탈퇴 시 카카오 연결 끊기용(없으면 그 단계만 건너뜀) |
 | `RUST_LOG` | `info` | 로그 수준 |
 | `GRAFANA_ADMIN_PASSWORD` | (운영 서버에서만 설정) | Grafana 관리자 비밀번호. 로컬 개발에는 필요 없음 |
+
+### 카카오 로그인 설정
+키가 없어도 서비스는 정상이고 아이디·테스트 계정으로만 로그인됩니다. 켜려면 카카오 개발자 콘솔(developers.kakao.com)에서:
+1. 애플리케이션을 만들고 **앱 키**의 REST API 키를 `KAKAO_REST_KEY`로, Admin 키를 `KAKAO_ADMIN_KEY`로 둡니다.
+2. **앱 > 플랫폼 > Web**에 사이트 도메인(`https://flutch.kro.kr`, 로컬은 `http://localhost:5173`)을 등록합니다.
+3. **제품 설정 > 카카오 로그인**을 켜고 **Redirect URI**에 `https://flutch.kro.kr/api/v1/auth/kakao/callback`(로컬은 `http://localhost:5173/api/v1/auth/kakao/callback`)을 등록합니다. `KAKAO_REDIRECT_URI`에는 똑같은 값을 넣습니다.
+4. **동의항목**에서 `닉네임(profile_nickname)`만 켭니다(이메일은 요청하지 않습니다).
+5. **보안 > Client Secret**을 만들고 활성화했다면 `KAKAO_CLIENT_SECRET`에 넣습니다.
+6. 운영 서버 `~/flutch/.env`에 위 값을 넣고 백엔드를 다시 띄웁니다.
 
 ### 개발
 > Windows에서는 스마트 앱 컨트롤이 빌드한 실행 파일을 막으므로 **WSL2 Ubuntu**(`~/flutch`)에서 빌드·실행합니다. Docker는 Docker Desktop의 WSL 연동을 씁니다.
@@ -199,6 +210,8 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 2. 닉네임은 변경 후 30일간 다시 바꿀 수 없고, 비밀번호를 바꾸면 다른 기기의 로그인이 풀린다.
 3. 직접 가입한 계정으로 `/me` 아래 "회원 탈퇴" → 비밀번호 입력(잔액이 있으면 "비트 소멸과 위 내용을 이해했어요" 체크) → "탈퇴" → 로그아웃 상태로 홈. 같은 아이디로 로그인·재가입이 안 된다. 방송 중에는 "방송을 먼저 종료해 주세요", 테스트 계정은 "테스트 계정은 탈퇴할 수 없어요"가 뜬다.
 
+4. (카카오 키를 설정한 환경) `/login`의 "카카오로 로그인" → 카카오 인증 → 닉네임 설정 화면(카카오 닉네임이 채워져 있음) → 약관 동의 후 가입하면 로그인됩니다. 로그아웃 후 같은 방법으로 다시 로그인하면 닉네임 화면 없이 같은 계정으로 들어갑니다. `/me`에는 비밀번호 변경이 없고, "회원 탈퇴"는 비밀번호 없이 되며 카카오 계정 설정의 "연결된 서비스"에서 FLUTCH가 사라집니다.
+
 **P13. 채팅**
 1. 방송 중인 방송을 B(스트리머2)로 열고 오른쪽 채팅 창(모바일은 영상 아래 "채팅" 탭)에서 메시지를 입력해 Enter → A 화면에도 바로 보인다. 비로그인(시크릿 창)은 읽기만 되고 입력창 자리에 "로그인하고 채팅하기" 버튼이 나온다. 방송 전(READY)·종료 후에는 입력창 대신 "방송 중에만 채팅할 수 있어요"가 보이고 기록은 계속 읽힌다.
 2. 1초 안에 연달아 보내면 입력창 아래에 서버 문구가 뜨며 거절되고, 같은 말을 30초 안에 3번 보내면 "같은 메시지를 반복할 수 없어요"가 뜬다. 200자를 넘게 입력할 수 없고 글자 수가 오른쪽 아래에 보인다.
@@ -245,6 +258,9 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `follow_toggle_and_count` | 팔로우·중복 팔로우·언팔로우·탈퇴한 팔로워 제외 | P16 |
 | `follow_self_rejected` | 자기 자신 팔로우 거절 | P16 |
 | `pulse_live_first_limit_and_withdrawn` | PULSE 라이브 먼저·limit·비로그인 401·탈퇴 스트리머 제외 | P16 |
+| `auth_kakao_new_user_signup`, `auth_kakao_existing_user_login` | 카카오 첫 로그인 → 닉네임 설정 → 가입(지갑 생성), 재로그인은 같은 계정 | P12 |
+| `auth_kakao_state_mismatch_rejected`, `auth_kakao_signup_rules_and_forged_cookie` | state 불일치·동의 취소·위조 임시 쿠키 거절, 닉네임 규칙 | (서버 내부) |
+| `auth_kakao_withdraw_unlinks`, `auth_password_account_withdraw_needs_password` | 카카오 계정은 비밀번호 없이 탈퇴 + 연결 끊기, 같은 카카오 계정 재가입은 새 계정 | P12 |
 | `auth_rate_limits_by_ip` | IP별 요청 제한 | (서버 내부) |
 | `auth_requires_login_and_acts_only_on_own_account` | 로그인 필수·본인 계정만 | P11 |
 | `auth_password_change_revokes_other_sessions` | 비밀번호 변경 시 다른 세션 만료 | P12 |
@@ -314,6 +330,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 ## 알려진 한계
 > 제출일에 `/ponytail-debt` 결과로 갱신합니다.
 - 토스페이먼츠 **테스트 모드**만 지원합니다. 충전한 비트의 환불은 지원하지 않습니다.
+- 카카오 로그인은 아이디 계정과 연결되지 않는 별도 계정입니다. 카카오 가입 대기용 서명 키는 서버 시작 때 새로 만들어, 재시작하면 가입 도중이던 사람(10분 이내)은 처음부터 다시 로그인해야 합니다.
 - 이메일·휴대폰 본인 확인이 없어 탈퇴 후 새 아이디 재가입이 가능합니다(동일인 판별 불가).
 - 화면+웹캠(PIP) 방송의 녹화는 LiveKit 기본 배치(화면 크게 + 웹캠 옆)로 저장되어, 라이브에서 웹캠이 겹쳐 보이던 배치와 다릅니다.
 - 화면 공유 소리는 브라우저 기능에 따라 다릅니다(위 지원 환경 표). 화면 공유는 모바일에서 지원하지 않습니다.

@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { api, ApiRequestError } from '../../../api/client.ts'
 import type { ChangePasswordRequest } from '../../../api/generated/ChangePasswordRequest.ts'
+import type { KakaoPending } from '../../../api/generated/KakaoPending.ts'
+import type { KakaoSignupRequest } from '../../../api/generated/KakaoSignupRequest.ts'
 import type { LoginRequest } from '../../../api/generated/LoginRequest.ts'
 import type { Me } from '../../../api/generated/Me.ts'
 import type { SignupRequest } from '../../../api/generated/SignupRequest.ts'
@@ -48,6 +50,31 @@ export const useLogin = () => {
 export const useSignup = () => {
   const setMe = useSetMe()
   return useMutation({ mutationFn: (json: SignupRequest) => api<Me>('/auth/signup', { method: 'POST', json }), onSuccess: setMe })
+}
+
+/**
+ * 카카오 로그인이 켜져 있는지. 새 API 없이 start를 한 번 불러 본다: 켜져 있으면 302(opaqueredirect, 따라가지 않음),
+ * 설정이 없으면 404. 지금 이동하는 게 아니라 확인만 한다.
+ */
+export const useKakaoEnabled = () =>
+  useQuery({
+    queryKey: ['kakao-enabled'],
+    queryFn: () =>
+      fetch('/api/v1/auth/kakao/start', { redirect: 'manual' }).then(
+        (res) => res.type === 'opaqueredirect',
+        () => false,
+      ),
+    staleTime: Infinity,
+    retry: false,
+  })
+
+/** 닉네임 설정 화면의 미리 채울 값. 임시 쿠키가 없거나 만료되면 401(isError). */
+export const useKakaoPending = () =>
+  useQuery({ queryKey: ['kakao-pending'], queryFn: () => api<KakaoPending>('/auth/kakao/signup'), staleTime: Infinity, retry: false })
+
+export const useKakaoSignup = () => {
+  const setMe = useSetMe()
+  return useMutation({ mutationFn: (json: KakaoSignupRequest) => api<Me>('/auth/kakao/signup', { method: 'POST', json }), onSuccess: setMe })
 }
 
 export const useTestLogin = () => {

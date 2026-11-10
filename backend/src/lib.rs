@@ -1,6 +1,7 @@
 pub mod config;
 pub mod error;
 pub mod extract;
+pub mod kakao;
 pub mod livekit;
 pub mod metrics;
 pub mod middleware;
@@ -26,6 +27,7 @@ use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 
 use config::Config;
+use kakao::KakaoApi;
 use livekit::LiveKitApi;
 use toss::TossApi;
 
@@ -35,6 +37,7 @@ pub struct AppState {
     pub db: PgPool,
     pub livekit: Arc<dyn LiveKitApi>,
     pub toss: Arc<dyn TossApi>,
+    pub kakao: Arc<dyn KakaoApi>,
     /// 녹화 파일 저장소(S3 호환)
     pub storage: Arc<dyn recording::ObjectStore>,
     pub realtime: realtime::Hub,

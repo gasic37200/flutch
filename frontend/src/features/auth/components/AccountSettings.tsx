@@ -51,7 +51,7 @@ function PasswordSection() {
 
 // 위험 확인은 빨강 대신 흰 테두리 버튼(DESIGN). 남는 쪽(라임)이 기본 선택.
 function WithdrawSection({ me }: { me: Me }) {
-  const f = useWithdrawForm(me.balance)
+  const f = useWithdrawForm(me.balance, me.hasPassword)
   return (
     <>
       <button type='button' onClick={f.show} className='self-start text-[13px] text-text-muted underline hover:text-text'>
@@ -80,18 +80,20 @@ function WithdrawSection({ me }: { me: Me }) {
                 남은 <BeatAmount amount={me.balance} unit />는 탈퇴하면 <b>사라지고 되돌릴 수 없어요.</b>
               </span>
             )}
-            <span className='text-text-muted'>채팅·후원 기록은 "탈퇴한 사용자"로 남아요. 아이디는 다시 쓸 수 없고, 닉네임은 30일 뒤 풀려요.</span>
+            <span className='text-text-muted'>채팅·후원 기록은 "탈퇴한 사용자"로 남아요. {me.hasPassword ? '아이디는 다시 쓸 수 없고, ' : '카카오 연결이 해제되고, '}닉네임은 30일 뒤 풀려요.</span>
           </div>
-          <Field
-            label='비밀번호 확인'
-            type='password'
-            placeholder='비밀번호를 다시 입력해 주세요'
-            value={f.values.password}
-            onChange={(e) => f.set.password(e.target.value)}
-            error={f.passwordError}
-            autoComplete='current-password'
-            required
-          />
+          {me.hasPassword && (
+            <Field
+              label='비밀번호 확인'
+              type='password'
+              placeholder='비밀번호를 다시 입력해 주세요'
+              value={f.values.password}
+              onChange={(e) => f.set.password(e.target.value)}
+              error={f.passwordError}
+              autoComplete='current-password'
+              required
+            />
+          )}
           {f.needsAgree && (
             <CheckRow checked={f.values.agreed} onChange={f.set.agreed}>
               비트 소멸과 위 내용을 이해했어요
@@ -125,8 +127,7 @@ export default function AccountSettings({ me, onLogout }: Props) {
             <PasswordSection />
           </>
         )}
-        {/* shortcut: 카카오 계정 탈퇴(비밀번호 없이)는 T28에서 연다 */}
-        {me.hasPassword && <WithdrawSection me={me} />}
+        <WithdrawSection me={me} />
       </Panel>
       <Button variant='outline' onClick={onLogout}>
         로그아웃

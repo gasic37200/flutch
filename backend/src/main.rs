@@ -2,6 +2,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use flutch::config::Config;
+use flutch::kakao::KakaoHttp;
 use flutch::livekit::LiveKitHttp;
 use flutch::scheduler::Scheduler;
 use flutch::toss::TossHttp;
@@ -38,6 +39,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     let state = Arc::new(AppState {
         livekit: Arc::new(LiveKitHttp::new(config.livekit.clone(), http.clone())),
+        kakao: Arc::new(KakaoHttp::new(http.clone(), config.auth.kakao.clone())),
         toss: Arc::new(TossHttp::new(http)),
         storage,
         realtime: realtime::Hub::default(),

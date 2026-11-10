@@ -1,10 +1,11 @@
 import { Navigate, useSearchParams } from 'react-router'
 import AuthLayout from '../features/auth/components/AuthLayout.tsx'
+import KakaoSignupForm from '../features/auth/components/KakaoSignupForm.tsx'
 import LoginForm from '../features/auth/components/LoginForm.tsx'
 import SignupForm from '../features/auth/components/SignupForm.tsx'
 import { safeNext, useAuth } from '../features/auth/hooks/useAuth.ts'
 
-type Props = { mode: 'login' | 'signup' }
+type Props = { mode: 'login' | 'signup' | 'kakao' }
 
 const loginHero = (
   <>
@@ -42,8 +43,8 @@ export default function AuthPage({ mode }: Props) {
   if (me) return <Navigate to={safeNext(params.get('next'))} replace />
   return (
     <AuthLayout hero={mode === 'login' ? loginHero : signupHero}>
-      <h1 className='mb-5 text-2xl font-black sm:text-[26px]'>{mode === 'login' ? '로그인' : '회원가입'}</h1>
-      {mode === 'login' ? <LoginForm /> : <SignupForm />}
+      <h1 className='mb-5 text-2xl font-black sm:text-[26px]'>{{ login: '로그인', signup: '회원가입', kakao: '닉네임 설정' }[mode]}</h1>
+      {mode === 'login' ? <LoginForm /> : mode === 'signup' ? <SignupForm /> : <KakaoSignupForm />}
     </AuthLayout>
   )
 }
