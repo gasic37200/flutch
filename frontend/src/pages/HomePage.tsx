@@ -1,13 +1,14 @@
 import Button from '../components/ui/Button.tsx'
 import EmptyState from '../components/ui/EmptyState.tsx'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
-import BroadcastGrid, { BroadcastCard, CategoryChips, GridSkeleton } from '../features/broadcast/components/BroadcastGrid.tsx'
+import BroadcastGrid, { BroadcastCard, CategoryChips, GridSkeleton, SectionTitle } from '../features/broadcast/components/BroadcastGrid.tsx'
+import { MainLive, RecommendedCard } from '../features/broadcast/components/HomeSections.tsx'
 import { useHome } from '../features/broadcast/hooks/useHome.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
 
-// 히어로·SUPER CLUTCH 패널(T29)과 CLUTCH FEED(T30)는 이후 task에서 이 위에 붙는다.
+// 게이지 1위 히어로·CLUTCH TIME 패널(T29)과 CLUTCH FEED(T30)는 이후 task에서 이 위에 붙는다.
 export default function HomePage() {
-  const { category, setCategory, grid, recommended } = useHome()
+  const { category, setCategory, grid, main, recommended } = useHome()
   const empty = (
     <EmptyState
       title='지금은 조용하네요'
@@ -17,17 +18,28 @@ export default function HomePage() {
   )
 
   return (
-    <div className='space-y-8'>
+    <div className='flex flex-col gap-8 lg:gap-10'>
       <h1 className='sr-only'>FLUTCH 홈</h1>
 
+      {main && (
+        <section aria-label='메인 라이브' className='max-w-4xl'>
+          <MainLive broadcast={main} />
+        </section>
+      )}
+
       {recommended.length > 0 && (
-        <section aria-labelledby='home-recommended'>
-          <h2 id='home-recommended' className='mb-3 font-display text-lg font-bold tracking-wide'>
-            추천 라이브 채널
-          </h2>
-          <ul className='grid gap-4 sm:grid-cols-2 xl:grid-cols-3'>
+        <section aria-labelledby='home-recommended' className='flex flex-col gap-3 lg:gap-4'>
+          <SectionTitle id='home-recommended'>추천 라이브 채널</SectionTitle>
+          <ul className='hidden gap-4 sm:grid sm:grid-cols-[repeat(auto-fit,minmax(260px,1fr))]'>
             {recommended.map((b) => (
               <li key={b.id}>
+                <RecommendedCard broadcast={b} />
+              </li>
+            ))}
+          </ul>
+          <ul className='-mx-4 flex gap-3 overflow-x-auto px-4 sm:hidden'>
+            {recommended.map((b) => (
+              <li key={b.id} className='w-[220px] shrink-0'>
                 <BroadcastCard broadcast={b} />
               </li>
             ))}
@@ -35,11 +47,9 @@ export default function HomePage() {
         </section>
       )}
 
-      <section aria-labelledby='home-live'>
-        <div className='mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
-          <h2 id='home-live' className='font-display text-lg font-bold tracking-wide'>
-            지금 두근거리는 중!
-          </h2>
+      <section aria-labelledby='home-live' className='flex flex-col gap-3 lg:gap-4'>
+        <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
+          <SectionTitle id='home-live'>지금 두근거리는 중!</SectionTitle>
           <CategoryChips value={category} onChange={setCategory} />
         </div>
         {grid.isError ? (

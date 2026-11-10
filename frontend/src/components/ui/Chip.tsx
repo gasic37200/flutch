@@ -8,7 +8,7 @@ export function Chip({ children, className = '' }: { children: ReactNode; classN
 /** 선택 가능한 칩(카테고리 필터·금액 프리셋). 선택 = 라임 채움, 기본 = surface-2 */
 export function ChoiceChip({ selected, onClick, children }: { selected?: boolean; onClick: () => void; children: ReactNode }) {
   return (
-    <span className='inline-flex has-[:focus-visible]:drop-shadow-focus'>
+    <span className='inline-flex shrink-0 has-[:focus-visible]:drop-shadow-focus'>
       <button
         type='button'
         aria-pressed={selected}
