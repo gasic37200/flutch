@@ -214,7 +214,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 5. 기대: 처리 중·녹화 실패·보관 기간 지남(30일 뒤) 상태가 각각 안내 문구로 구분된다.
 
 ### 시나리오 ↔ 절차 대응표
-시나리오 테스트는 `backend/tests/scenarios/`에 있고 `cd backend && cargo test`로 실행합니다(실제 Postgres, LiveKit은 가짜).
+시나리오 테스트는 `backend/tests/scenarios/`에 있고 `cd backend && cargo test`로 실행합니다(실제 Postgres, LiveKit·토스는 가짜).
 
 | 시나리오 테스트 | 검증 내용 | 절차 |
 |---|---|---|
@@ -263,6 +263,11 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `mutating_request_without_or_with_foreign_origin_is_forbidden`, `mutating_request_with_allowed_origin_passes`, `read_request_needs_no_origin`, `webhooks_skip_origin_check` | CSRF Origin 검사 | (서버 내부) |
 | `schema_one_live_per_user` | DB 제약: 사용자당 LIVE 1개 | P2 |
 | `schema_ledger_is_append_only`, `schema_payment_key_unique`, `schema_rejects_negative_balance` | DB 제약: 원장·결제·잔액 | (후원 절차 추가 시) |
+| `donation_confirm_idempotent`, `payment_concurrent_confirm_credits_once` | 같은 승인·웹훅 반복·동시 승인 → 한 번만 적립, 같은 결과 | (후원 절차 추가 시) |
+| `donation_amount_mismatch_rejected` | 주문과 다른 금액 승인 거절(토스 호출 없음) | (후원 절차 추가 시) |
+| `donation_after_end_becomes_charge`, `banned_user_cannot_donate` | 승인 시 방송 종료·영구 밴이면 충전만, 주문 단계 거절 | (후원 절차 추가 시) |
+| `charge_limits_and_order_expiry` | 충전 1,000~1,000,000·보유 3,000,000, 30분 주문 만료 | (후원 절차 추가 시) |
+| `payment_toss_rejected_or_unavailable`, `payment_webhook_secret_mismatch_ignored`, `payment_confirm_owner_only` | 토스 거절·통신 실패 복구, 웹훅 재확인, 주문자만 확정 | (서버 내부) |
 | `health_check_reports_ok_with_request_id`, `health_check_reports_503_when_db_is_down` | 헬스체크 | 배포 후 `GET /api/v1/health` |
 | `unknown_api_path_returns_not_found_error_format` | 에러 응답 형식 | (서버 내부) |
 

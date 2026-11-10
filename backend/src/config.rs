@@ -17,6 +17,34 @@ pub struct Config {
     pub live: LiveConfig,
     pub broadcast: BroadcastConfig,
     pub recording: RecordingConfig,
+    pub toss: TossConfig,
+}
+
+/// 토스페이먼츠 결제위젯 연동 키. 없으면 서버는 뜨지만 결제 승인·조회가 502가 된다.
+#[derive(Clone)]
+pub struct TossConfig {
+    /// `TOSS_CLIENT_KEY`(`test_gck_…`): 공개 값. 주문 응답으로 결제창에 넘긴다.
+    pub client_key: Option<String>,
+    /// `TOSS_SECRET_KEY`(`test_gsk_…`): 승인·조회 API 인증
+    pub secret_key: Option<String>,
+}
+
+impl TossConfig {
+    pub fn from_env() -> Self {
+        Self {
+            client_key: required("TOSS_CLIENT_KEY").ok(),
+            secret_key: required("TOSS_SECRET_KEY").ok(),
+        }
+    }
+}
+
+impl fmt::Debug for TossConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TossConfig")
+            .field("client_key", &self.client_key)
+            .field("secret_key", &self.secret_key.as_ref().map(|_| "***"))
+            .finish()
+    }
 }
 
 /// Egress가 올리고 백엔드가 지우는 S3 호환 버킷(path-style).
@@ -177,6 +205,7 @@ impl Config {
             live: LiveConfig::from_env()?,
             broadcast: BroadcastConfig::from_env(),
             recording: RecordingConfig::from_env(),
+            toss: TossConfig::from_env(),
         })
     }
 }
@@ -216,6 +245,7 @@ impl fmt::Debug for Config {
             .field("live", &self.live)
             .field("broadcast", &self.broadcast)
             .field("recording", &self.recording)
+            .field("toss", &self.toss)
             .finish()
     }
 }

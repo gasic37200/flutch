@@ -1,0 +1,125 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH d AS (\n               INSERT INTO donations (broadcast_id, donor_id, kind, amount, anonymous, message, ledger_entry_id)\n               VALUES ($1, $2, $3, $4, $5, $6, $7)\n               RETURNING id, broadcast_id, donor_id, kind, amount, anonymous, message, created_at\n           )\n           SELECT d.id AS \"id!\", d.broadcast_id AS \"broadcast_id!\", d.donor_id AS \"donor_id!\",\n                  CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS \"nickname!\",\n                  d.kind AS \"kind!\", d.amount AS \"amount!\", d.anonymous AS \"anonymous!\",\n                  d.message, d.created_at AS \"created_at!\"\n           FROM d JOIN users u ON u.id = d.donor_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "broadcast_id!",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "broadcast_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "donor_id!",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "donor_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "nickname!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 4,
+        "name": "kind!",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "kind"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "amount!",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "amount"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "anonymous!",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "anonymous"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "message",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "message"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at!",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "created_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Text",
+        "Int8",
+        "Bool",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      null,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "3b39961fb1024b9e00649e379ad0878cd6c15de30aebc7723e288c63ac5227ff"
+}

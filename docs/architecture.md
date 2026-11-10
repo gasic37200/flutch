@@ -167,6 +167,7 @@ frontend/src/
 ## 7-2. 결제 웹훅
 - 토스 웹훅(`PAYMENT_STATUS_CHANGED`)은 헤더 서명이 아니라 **본문의 `paymentKey`로 결제 조회 API를 다시 호출**해 상태·금액을 확인하고 확정한다(본문의 `secret`은 결제 객체의 `secret`과 대조). 확정은 `payment_key` 유니크로 멱등.
 - 결제위젯을 쓰므로 키는 **결제위젯 연동 키**(클라이언트 `test_gck_…`, 시크릿 `test_gsk_…`).
+- 결제 조회는 `GET /v1/payments/{paymentKey}`만 쓴다. orderId 조회(`/v1/payments/orders/{orderId}`)는 API 개별 연동 키(`test_sk`) 전용이라 위젯 키로는 부를 수 없다(T21, 공식 문서). 웹훅은 실패 응답이면 최대 7회 재전송(1·4·16·64·256·1024·4096분).
 
 ## 8. 확장 시 바꿀 지점 (지금은 하지 않음)
 - 백엔드 여러 대: 실시간 허브 → Redis pub/sub, 스케줄러 → 한 대만 실행(리더 선출), 시청자 수·요청 제한 메모리 상태 → Redis.

@@ -1,0 +1,119 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT d.id, d.broadcast_id, d.donor_id,\n                  CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS \"nickname!\",\n                  d.kind, d.amount, d.anonymous, d.message, d.created_at\n           FROM ledger_entries c\n           JOIN payment_orders o ON o.id = c.payment_order_id\n           JOIN ledger_entries l ON l.user_id = c.user_id AND l.created_at = c.created_at\n                                AND l.type = 'donation' AND l.broadcast_id = o.broadcast_id AND l.id > c.id\n           JOIN donations d ON d.ledger_entry_id = l.id\n           JOIN users u ON u.id = d.donor_id\n           WHERE c.payment_order_id = $1\n           ORDER BY l.id LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "broadcast_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "broadcast_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "donor_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "donor_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "nickname!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 4,
+        "name": "kind",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "kind"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "amount",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "amount"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "anonymous",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "anonymous"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "message",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "message"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "donations",
+            "name": "created_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      null,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "cfb9a993379a7d0e967d570009af004987c2fcc7894a3a6aa826f7f5f653875e"
+}

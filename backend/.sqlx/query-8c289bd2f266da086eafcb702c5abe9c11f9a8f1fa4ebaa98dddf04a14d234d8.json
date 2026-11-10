@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE payment_orders SET status = 'expired' WHERE status = 'pending' AND expires_at <= now()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "8c289bd2f266da086eafcb702c5abe9c11f9a8f1fa4ebaa98dddf04a14d234d8"
+}

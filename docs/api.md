@@ -252,7 +252,8 @@ type Ban = { user: UserSummary; permanent: boolean; until: string | null; create
 | GET `/me/donation-stats` | 로그인 | `?cursor=&limit=` | 200 `DonationStats` | 401 |
 
 ```ts
-type PaymentOrder = { orderId: string; amount: number /* 결제할 금액 */; orderName: string /* "1,000비트 충전" */; expiresAt: string }
+type PaymentOrder = { orderId: string; amount: number /* 결제할 금액 */; orderName: string /* "1,000비트 충전" */; expiresAt: string
+                     clientKey: string | null /* 결제위젯 클라이언트 키(TOSS_CLIENT_KEY), 서버에 없으면 null */ }
 type PaymentResult = {
   orderId: string; purpose: 'charge' | 'donation'; charged: number; balance: number
   donation: Donation | null            // 후원 주문이 후원까지 확정됐을 때(내 후원이라 실명)
@@ -279,7 +280,13 @@ type DonationStats = Page<{ broadcast: BroadcastRef & { startedAt: string }; tot
   - 구현(T20): "연속"은 필터를 적용한 뒤의 순서 기준(다른 유형이 끼면 묶음이 끊김). 묶음의 `balanceAfter`·`createdAt`은 마지막 원장 값. 숨긴 방송의 `title`은 `"삭제된 방송"`으로 내려준다. `type`·`month`·`cursor`·`limit` 형식이 틀리면 422 + 해당 `fields`. 지갑 행이 없으면 `balance` 0.
 - 후원 목록: kind `donation`·`burst`만 최신순. 공개 응답은 익명 후원의 `donor=null`, **방송 소유자 요청에만 실제 `donor`**. 숨긴 방송이면 404.
 - 스킵: 소유자가 현재 표시 중인 알림을 넘김 → 모든 연결에 `donation.skipped`.
-- 시나리오: `donation_confirm_idempotent` `donation_amount_mismatch_rejected` `donation_balance_conditional_debit` `donation_live_only` `donation_after_end_becomes_charge` `donation_anonymous_name_visibility` `charge_limits_and_order_expiry` `banned_user_cannot_donate` · 지갑·원장(T20): `wallet_concurrent_debit_only_one_succeeds` `wallet_charge_limit_and_idempotent` `wallet_list_filters_and_clutch_grouping` `wallet_month_filter_kst_boundary` `wallet_requires_login_and_hides_others`
+- 구현(T21):
+  - 주문 검사 순서: 후원은 방송 404 → `DONATION_SELF` → 영구 밴 → 금액·메시지 422(`fields.amount`·`fields.message`, 메시지는 앞뒤 공백을 자르고 비면 null) → `BROADCAST_NOT_LIVE` → `PAYMENT_NOT_NEEDED`. `orderName`은 충전 `"N비트 충전"`, 후원 `"N비트 충전 후 후원"`. `orderId`는 32자 hex(UUID v4).
+  - confirm: 이미 `done`인 주문은 **만료보다 먼저** 판단(같은 `paymentKey`면 만료 뒤에도 같은 결과). 보유 한도는 **토스 승인 전에** 확인(승인 후 적립 실패 방지). 토스 통신 실패나 `ALREADY_PROCESSED_PAYMENT`면 결제 조회로 실제 상태를 확인해 DONE이면 확정한다. 승인 실패·통신 실패 시 주문은 `pending` 그대로 둔다(같은 주문으로 재시도 가능, 실제로 승인됐다면 웹훅이 확정).
+  - 확정(confirm·웹훅 공통): 주문 행 `FOR UPDATE` → 토스가 DONE이면 **만료와 상관없이 적립**(돈이 나갔으므로) → 후원 주문이면 방송을 `FOR SHARE`로 읽어 LIVE·미밴일 때만 후원. `notice`: 종료 `"방송이 종료되어 잔액으로 충전했어요"`, 영구 밴 `"이 채널에서는 후원할 수 없어 잔액으로 충전했어요"`, 주문 뒤 잔액을 다른 데 써서 모자람 `"잔액이 부족해 후원하지 못하고 충전만 했어요"`. 재시도 응답은 같은 계산으로 다시 만든다(`balance`는 그 시점 잔액).
+  - 웹훅: 본문 `{eventType, createdAt, data: Payment}`에서 `eventType=PAYMENT_STATUS_CHANGED`만 본다. `data.paymentKey`로 조회한 결제의 `secret`이 본문 `data.secret`과 다르거나 DONE이 아니거나 금액이 주문과 다르면 무시(200). 조회 통신 실패·DB 오류만 500.
+  - `Donation.kind` TS 타입은 `donation | clutch | burst`(후원 기록 공용). 목록·이벤트에는 clutch가 나오지 않는다.
+- 시나리오: `donation_confirm_idempotent` `donation_amount_mismatch_rejected` `donation_balance_conditional_debit` `donation_live_only` `donation_after_end_becomes_charge` `donation_anonymous_name_visibility` `charge_limits_and_order_expiry` `banned_user_cannot_donate` · 결제(T21): `payment_toss_rejected_or_unavailable` `payment_confirm_owner_only` `payment_webhook_secret_mismatch_ignored` `payment_concurrent_confirm_credits_once` · 지갑·원장(T20): `wallet_concurrent_debit_only_one_succeeds` `wallet_charge_limit_and_idempotent` `wallet_list_filters_and_clutch_grouping` `wallet_month_filter_kst_boundary` `wallet_requires_login_and_hides_others`
 
 ## 7. Clutch (f07)
 | 메서드·경로 | 권한 | 요청 | 응답 | 에러 |

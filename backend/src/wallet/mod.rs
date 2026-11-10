@@ -4,32 +4,225 @@
 //! SQL 한 문장(CTE)으로 해서, 트랜잭션 밖에서 불러도 잔액과 원장이 어긋나지 않는다.
 //! 후원 기록 등과 함께 묶으려면 호출자가 연 트랜잭션의 커넥션(`&mut *tx`)을 넘긴다.
 
+use std::collections::BTreeMap;
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::Router;
 use axum::http::StatusCode;
-use axum::routing::get;
+use axum::routing::{get, post};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{PgConnection, PgPool};
 use ts_rs::TS;
 
 use crate::AppState;
+use crate::auth::{UserSummary, contains_banned_word, mask_profanity};
 use crate::error::AppError;
 use crate::scheduler::Scheduler;
 
 mod db;
 mod handlers;
+mod payment;
+
+pub use payment::{
+    ConfirmPaymentRequest, CreateOrderRequest, DonationInput, PaymentError, PaymentOrder,
+    PaymentPurpose, PaymentResult,
+};
 
 /// 보유 상한(비트). DB `wallets.balance` CHECK와 같은 값.
 pub const WALLET_MAX: i64 = 3_000_000;
+/// 충전·후원 1회 금액 범위(비트)
+pub const AMOUNT_MIN: i64 = 1_000;
+pub const AMOUNT_MAX: i64 = 1_000_000;
+const DONATION_MESSAGE_MAX: usize = 100;
 
 pub fn routes() -> Router<Arc<AppState>> {
-    Router::new().route("/me/wallet", get(handlers::get_wallet))
+    Router::new()
+        .route("/me/wallet", get(handlers::get_wallet))
+        .route("/payments/orders", post(payment::create_order))
+        .route("/payments/confirm", post(payment::confirm))
+        .route("/payments/webhook", post(payment::webhook))
 }
 
 /// 주기 작업: 만료 결제 대기 주문 정리(1분)
-pub fn register(_s: &mut Scheduler) {}
+pub fn register(s: &mut Scheduler) {
+    s.every(
+        "payment_order_expiry",
+        Duration::from_secs(60),
+        |state| async move {
+            let n = expire_pending_orders(&state.db).await?;
+            if n > 0 {
+                tracing::info!(count = n, "payment orders expired");
+            }
+            Ok(())
+        },
+    );
+}
+
+/// 만료 시각이 지난 대기 주문 → `expired`. 바꾼 개수.
+pub async fn expire_pending_orders(db: &PgPool) -> Result<u64, sqlx::Error> {
+    db::expire_orders(db).await
+}
+
+/// 1,000~1,000,000 정수가 아니면 422 `fields.amount`.
+fn check_amount(amount: i64) -> Result<(), AppError> {
+    if (AMOUNT_MIN..=AMOUNT_MAX).contains(&amount) {
+        return Ok(());
+    }
+    Err(AppError::Validation(BTreeMap::from([(
+        "amount".to_owned(),
+        "1,000~1,000,000비트로 입력해 주세요.".to_owned(),
+    )])))
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum DonationError {
+    #[error("내 방송에는 후원할 수 없어요.")]
+    SelfDonation,
+    #[error("이 채널에서는 후원할 수 없어요.")]
+    Banned,
+    #[error("FLUTCH 정책상 사용할 수 없는 표현이 포함되어 있어요.")]
+    BannedWord,
+    #[error("방송 중일 때만 할 수 있어요.")]
+    NotLive,
+}
+
+impl From<DonationError> for AppError {
+    fn from(e: DonationError) -> Self {
+        let (status, code) = match e {
+            DonationError::SelfDonation => (StatusCode::FORBIDDEN, "DONATION_SELF"),
+            DonationError::Banned => (StatusCode::FORBIDDEN, "MODERATION_BANNED"),
+            DonationError::BannedWord => (StatusCode::UNPROCESSABLE_ENTITY, "DONATION_BANNED_WORD"),
+            DonationError::NotLive => (StatusCode::CONFLICT, "BROADCAST_NOT_LIVE"),
+        };
+        AppError::domain(status, code, e.to_string())
+    }
+}
+
+/// 후원 대상 확인(후원 주문·잔액 후원 공통): 없는·숨긴 방송 404 → 소유자 `DONATION_SELF` → 영구 밴
+/// `MODERATION_BANNED`. 방송 상태를 돌려준다 — LIVE 확인(409)은 입력 검사(422) 뒤에 호출자가 한다.
+pub async fn donation_target(
+    db: &PgPool,
+    user_id: i64,
+    broadcast_id: i64,
+) -> Result<String, AppError> {
+    let (owner_id, status) = db::broadcast_info(db, broadcast_id)
+        .await?
+        .ok_or(AppError::NotFound)?;
+    if owner_id == user_id {
+        return Err(DonationError::SelfDonation.into());
+    }
+    if crate::chat::ban_state(db, owner_id, user_id)
+        .await?
+        .is_some_and(|b| b.permanent)
+    {
+        return Err(DonationError::Banned.into());
+    }
+    Ok(status)
+}
+
+/// 후원 금액(1,000~1,000,000)·메시지(0~100자, FLUTCH 금지어 불가) 검사. 메시지는 앞뒤 공백을 잘라 비면 `None`.
+/// 욕설은 원문 저장, 응답에서 가린다.
+pub fn check_donation_input(
+    amount: i64,
+    message: Option<&str>,
+) -> Result<Option<String>, AppError> {
+    check_amount(amount)?;
+    let message = message.map(str::trim).filter(|m| !m.is_empty());
+    if let Some(m) = message {
+        if m.chars().count() > DONATION_MESSAGE_MAX {
+            return Err(AppError::Validation(BTreeMap::from([(
+                "message".to_owned(),
+                "100자 이하로 입력해 주세요.".to_owned(),
+            )])));
+        }
+        if contains_banned_word(m) {
+            return Err(DonationError::BannedWord.into());
+        }
+    }
+    Ok(message.map(str::to_owned))
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum DonationKind {
+    Donation,
+    /// 유료 클러치 — 합계에만 들어가고 목록·알림에는 나오지 않는다
+    Clutch,
+    Burst,
+}
+
+impl DonationKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Donation => "donation",
+            Self::Clutch => "clutch",
+            Self::Burst => "burst",
+        }
+    }
+}
+
+/// 후원 한 건. `donor`는 공개형이면 익명일 때 null, 소유자형(·내 후원)이면 항상 실제 사용자.
+#[derive(Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct Donation {
+    pub id: i64,
+    pub broadcast_id: i64,
+    pub kind: DonationKind,
+    pub amount: i64,
+    /// 욕설 가림 적용
+    pub message: Option<String>,
+    pub anonymous: bool,
+    pub donor: Option<UserSummary>,
+    pub created_at: DateTime<Utc>,
+}
+
+impl db::DonationRow {
+    fn into_donation(self) -> Result<Donation, AppError> {
+        let kind = match self.kind.as_str() {
+            "donation" => DonationKind::Donation,
+            "clutch" => DonationKind::Clutch,
+            "burst" => DonationKind::Burst,
+            k => return Err(AppError::Internal(format!("donation kind {k}"))),
+        };
+        Ok(Donation {
+            id: self.id,
+            broadcast_id: self.broadcast_id,
+            kind,
+            amount: self.amount,
+            message: self.message.as_deref().map(mask_profanity),
+            anonymous: self.anonymous,
+            donor: Some(UserSummary {
+                id: self.donor_id,
+                nickname: self.nickname,
+            }),
+            created_at: self.created_at,
+        })
+    }
+}
+
+/// 후원 기록 입력. `ledger_entry_id`는 같은 트랜잭션의 `debit` 결과.
+pub struct NewDonation<'a> {
+    pub broadcast_id: i64,
+    pub donor_id: i64,
+    pub kind: DonationKind,
+    pub amount: i64,
+    pub anonymous: bool,
+    /// 원문(검사는 `check_donation_input`)
+    pub message: Option<&'a str>,
+    pub ledger_entry_id: i64,
+}
+
+/// 후원 기록 추가 — 차감(`debit`)과 같은 트랜잭션에서 부른다. 돌려주는 `Donation`은 실명(소유자형).
+pub async fn insert_donation(
+    conn: &mut PgConnection,
+    d: &NewDonation<'_>,
+) -> Result<Donation, AppError> {
+    db::insert_donation(conn, d).await?.into_donation()
+}
 
 /// 차감 유형. 방송을 참조하는 유형은 방송 id를 함께 가진다(원장 CHECK와 같은 규칙).
 #[derive(Debug, Clone, Copy)]
