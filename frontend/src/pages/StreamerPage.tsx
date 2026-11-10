@@ -6,6 +6,8 @@ import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import Skeleton from '../components/ui/Skeleton.tsx'
 import Tabs from '../components/ui/Tabs.tsx'
 import { BroadcastCard, GridSkeleton, SectionTitle } from '../features/broadcast/components/BroadcastGrid.tsx'
+import DonationHistory from '../features/donation/components/DonationHistory.tsx'
+import DonationStatsPanel from '../features/donation/components/DonationStatsPanel.tsx'
 import BanList from '../features/moderation/components/BanList.tsx'
 import ReplayGrid from '../features/replay/components/ReplayGrid.tsx'
 import { count } from '../features/replay/format.ts'
@@ -13,7 +15,7 @@ import PastBroadcasts from '../features/streamer/components/PastBroadcasts.tsx'
 import { useStreamer, type StreamerTab } from '../features/streamer/hooks/useStreamer.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
 
-// 팔로우 버튼(T27)은 이름 줄 오른쪽 버튼 자리, 관리 탭(후원 내역·통계 T23, 차단 목록 T18u)은 동작하는 것만 탭으로 추가한다.
+// 팔로우 버튼(T27)은 이름 줄 오른쪽 버튼 자리, 관리 탭(후원 내역·통계·차단 목록)은 본인에게만 보인다(서버도 본인만 응답).
 export default function StreamerPage() {
   const id = Number(useParams().userId) || undefined
   const s = useStreamer(id)
@@ -28,7 +30,13 @@ export default function StreamerPage() {
   const tabs: { id: StreamerTab; label: string }[] = [
     { id: 'broadcasts', label: '방송' },
     { id: 'replays', label: '다시보기' },
-    ...(s.isSelf ? [{ id: 'bans' as const, label: '차단 목록' }] : []),
+    ...(s.isSelf
+      ? [
+          { id: 'donations' as const, label: '후원 내역' },
+          { id: 'stats' as const, label: '통계' },
+          { id: 'bans' as const, label: '차단 목록' },
+        ]
+      : []),
   ]
 
   return (
@@ -82,6 +90,10 @@ export default function StreamerPage() {
               )}
             </section>
           </>
+        ) : s.tab === 'donations' && s.isSelf ? (
+          <DonationHistory ownerId={user.id} />
+        ) : s.tab === 'stats' && s.isSelf ? (
+          <DonationStatsPanel />
         ) : s.tab === 'bans' && s.isSelf ? (
           <BanList ownerId={user.id} />
         ) : (

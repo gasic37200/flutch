@@ -1,3 +1,4 @@
+import DonationAlert from '../../donation/components/DonationAlert.tsx'
 import ChatOverlay from '../../chat/components/ChatOverlay.tsx'
 import Badge from '../../../components/ui/Badge.tsx'
 import Button from '../../../components/ui/Button.tsx'
@@ -8,7 +9,7 @@ import StudioPreview from './StudioPreview.tsx'
 
 const round = 'flex size-14 items-center justify-center rounded-full bg-surface-2/85 text-text'
 
-// 모바일 방송 중: 카메라가 전체 화면, 그 위에 상태 줄·원형 버튼·마이크 레벨을 얹는다. 채팅은 읽기 전용 오버레이, 후원 오버레이는 T23 자리.
+// 모바일 방송 중: 카메라가 전체 화면, 그 위에 상태 줄·원형 버튼·마이크 레벨을 얹는다. 채팅은 읽기 전용 오버레이, 후원 알림은 그 위(넘기기 가능).
 export default function MobileLive({ s }: { s: ReturnType<typeof useStudio> }) {
   const { media, env, data } = s
   if (!data) return null
@@ -43,6 +44,7 @@ export default function MobileLive({ s }: { s: ReturnType<typeof useStudio> }) {
         </p>
       )}
 
+      <DonationAlert alerts={s.alerts} owner className='top-28' />
       <ChatOverlay items={s.chat.items} className='absolute right-20 bottom-36 left-4 max-h-44' />
 
       {media.micReady && (

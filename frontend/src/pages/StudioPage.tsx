@@ -13,6 +13,7 @@ import MobileControls from '../features/studio/components/MobileControls.tsx'
 import MobileLive from '../features/studio/components/MobileLive.tsx'
 import StudioAside from '../features/studio/components/StudioAside.tsx'
 import StudioDialogs from '../features/studio/components/StudioDialogs.tsx'
+import DonationAlert from '../features/donation/components/DonationAlert.tsx'
 import StudioPreview from '../features/studio/components/StudioPreview.tsx'
 import { useStudio } from '../features/studio/hooks/useStudio.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
@@ -137,18 +138,21 @@ export default function StudioPage() {
             </Bar>
           ))}
 
-          <StudioPreview stream={media.stream} ended={media.videoEnded} tall={mobile} placeholder={live ? '송출 미리보기' : '미리보기 · 아직 송출되지 않아요'}>
-            {media.videoEnded ? (
-              <Button onClick={() => void s.reshare()}>{screen ? '다시 공유하기' : '카메라 다시 켜기'}</Button>
-            ) : (
-              <>
-                <Button variant='secondary' size='lg' onClick={() => void s.startPreview()}>
-                  {screen ? '공유할 화면 선택' : '카메라 켜고 미리보기'}
-                </Button>
-                {screen && <span className='text-xs text-text-dim'>창을 고를 때 &quot;탭 오디오 공유&quot; 또는 &quot;시스템 오디오 공유&quot;를 켜 주세요</span>}
-              </>
+          <div className='relative'>
+            <StudioPreview stream={media.stream} ended={media.videoEnded} tall={mobile} placeholder={live ? '송출 미리보기' : '미리보기 · 아직 송출되지 않아요'}>
+              {media.videoEnded ? (
+                <Button onClick={() => void s.reshare()}>{screen ? '다시 공유하기' : '카메라 다시 켜기'}</Button>
+              ) : (
+                <>
+                  <Button variant='secondary' size='lg' onClick={() => void s.startPreview()}>
+                    {screen ? '공유할 화면 선택' : '카메라 켜고 미리보기'}
+                  </Button>
+                  {screen && <span className='text-xs text-text-dim'>창을 고를 때 &quot;탭 오디오 공유&quot; 또는 &quot;시스템 오디오 공유&quot;를 켜 주세요</span>}
+                </>
             )}
           </StudioPreview>
+          <DonationAlert alerts={s.alerts} owner />
+          </div>
 
           {(pub.error || media.error) && <Bar role='alert' icon='alert'>{pub.error ?? media.error}</Bar>}
           {live && !s.connected && (

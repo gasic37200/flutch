@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../../../api/client.ts'
 import type { Chat } from '../../../api/generated/Chat.ts'
 import type { ChatPage } from '../../../api/generated/ChatPage.ts'
+import type { Donation } from '../../../api/generated/Donation.ts'
 import { useAuth } from '../../auth/hooks/useAuth.ts'
 import type { OnEvent } from '../../live/hooks/useBroadcastEvents.ts'
 
@@ -13,7 +14,7 @@ export type ChatApi = ReturnType<typeof useChat>
 const NONE: Chat[] = []
 
 /** 차단 알림 줄. 저장되지 않는 실시간 전용이라 이 화면 상태로만 들고, `afterId` 채팅 바로 뒤에 그린다(없으면 맨 앞). */
-export type SystemLine = { key: number; afterId: number | null; text: string }
+export type SystemLine = { key: number; afterId: number | null; text: string; donation?: Donation }
 let nextSystemKey = 1
 
 /** 다시 조회한 최신 페이지에, 이미 불러온 더 오래된 기록을 이어 붙인다. */
@@ -71,6 +72,12 @@ export function useChat(broadcastId: number | undefined, { onEvent, connected }:
         if (kind === 'ban') setPage((d) => ({ ...d, items: d.items.map((x) => (x.author.id === user.id ? { ...x, body: null, deleted: true } : x)) }))
         // 차단된 본인 화면은 상세의 viewer.ban을 다시 받아 입력창을 바꾼다
         if (user.id === meId) void qc.invalidateQueries({ queryKey: ['broadcast', broadcastId] })
+      }),
+      onEvent('donation.created', ({ donation }) => {
+        // 후원 강조 줄도 저장되지 않는 실시간 줄이라 차단 알림 줄과 같은 방식으로 둔다(익명 처리는 서버가 이벤트 형태로 이미 함)
+        const afterId = qc.getQueryData<ChatPage>(key)?.items.at(-1)?.id ?? null
+        const name = donation.donor?.nickname ?? '익명의 후원자'
+        setSystems((s) => [...s.slice(-49), { key: nextSystemKey++, afterId, text: `${name}님이 ${donation.amount}비트를 후원했어요`, donation }])
       }),
       onEvent('resync', () => void qc.invalidateQueries({ queryKey: key })),
     ]

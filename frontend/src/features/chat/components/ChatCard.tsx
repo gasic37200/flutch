@@ -5,6 +5,7 @@ import Panel from '../../../components/ui/Panel.tsx'
 import type { ChatApi, SystemLine } from '../hooks/useChat.ts'
 import { useChatComposer } from '../hooks/useChatComposer.ts'
 import { useChatScroll } from '../hooks/useChatScroll.ts'
+import DonationLine from '../../donation/components/DonationLine.tsx'
 import ChatComposer from './ChatComposer.tsx'
 import ChatMessage from './ChatMessage.tsx'
 
@@ -17,13 +18,16 @@ type Props = {
   headerClassName?: string
 }
 
-// 차단 알림 줄(저장되지 않는 실시간 안내). 색이 아니라 아이콘·글자로 일반 채팅과 구분한다.
-const systemLine = (s: SystemLine) => (
-  <li key={`s${s.key}`} className='flex items-center gap-1.5 text-xs text-text-muted'>
-    <Icon name='info' className='size-3.5 shrink-0' />
-    {s.text}
-  </li>
-)
+// 저장되지 않는 실시간 줄: 차단 알림(아이콘·글자로 구분)과 후원 강조 줄.
+const systemLine = (s: SystemLine) =>
+  s.donation ? (
+    <DonationLine key={`s${s.key}`} donation={s.donation} />
+  ) : (
+    <li key={`s${s.key}`} className='flex items-center gap-1.5 text-xs text-text-muted'>
+      <Icon name='info' className='size-3.5 shrink-0' />
+      {s.text}
+    </li>
+  )
 
 // 채팅 패널: 제목 · 목록(role=log) · 입력창. 시청 화면·스튜디오가 같이 쓴다.
 export default function ChatCard({ chat, broadcast, className, headerClassName = '' }: Props) {
