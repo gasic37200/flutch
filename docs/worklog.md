@@ -33,3 +33,4 @@
 | 2026-11-10 | T15 감사(프론트) | 완료 | 2026-11-10 10:57 → 11:05 | 8분 | 169,277 | 14 | — | /ponytail-audit 읽기 위임, 7건(must 1, 백엔드 2번과 같은 버그) |
 | 2026-11-10 | T15c | 완료 | 2026-11-10 11:09 → 11:30 | 21분 | 145,617 | 52 | [#65](https://github.com/gasic37200/flutch/pull/65) | Sonnet·medium. ponytail-review: backup.sh 실행 권한 1건 → 메인 수정 후 머지 |
 | 2026-11-10 | T15b | 완료 | 2026-11-10 11:09 → 11:33 | 24분 | 142,531 | 65 | [#66](https://github.com/gasic37200/flutch/pull/66) | Sonnet·high. 모바일 카메라 전환은 U1 |
+| 2026-11-10 | T15a | 완료 | 2026-11-10 11:09 → 11:52 | 44분 | 234,049 | 109 | [#68](https://github.com/gasic37200/flutch/pull/68) | Opus·high. must 2건 시나리오로 확인, hidden 시청자 웹훅 별도 LiveKit 컨테이너로 실측 |
