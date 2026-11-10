@@ -20,7 +20,7 @@
 | LiveKit Cloud 가입, API key/secret, **대시보드 Settings › Project에서 Build 플랜 한도(분·Egress) 확인** | T08a 운영 확인 | 11/11 | ⬜ |
 | LiveKit 대시보드에 웹훅 URL 등록 `https://flutch.kro.kr/api/v1/livekit/webhook` | T08b 운영 확인 | T07 배포 후 | ⬜ |
 | 토스페이먼츠 개발자센터 가입, **결제위젯** 테스트 키(`test_gck`/`test_gsk`), 웹훅 URL 등록 | T21 | 11/14 | ⬜ |
-| **수동 송출 확인 U1**: 배포 URL에서 PC 화면 공유(탭/시스템 소리) → 휴대폰 시청, 휴대폰 카메라 → PC 시청, 종료 | T15 | 11/12~13 | ⬜ |
+| **수동 송출 확인 U1**: 배포 URL에서 PC 화면 공유(탭/시스템 소리) → 휴대폰 시청, 휴대폰 카메라 → PC 시청, 종료. 함께 볼 것: 송출 탭을 백그라운드로 두고 1~2분 뒤 홈 카드 썸네일 갱신(T12), 모바일 Wake Lock·후면 카메라(T10), 소리 켜기·볼륨·전체화면(T11) | T15 | 11/12~13 | ⬜ |
 | 카카오 개발자 앱(REST 키, Redirect URI `https://flutch.kro.kr/api/v1/auth/kakao/callback`) | T28 | 11/17 | ⬜ |
 - 키·비밀값은 채팅에 붙여 넣지 않고 `.env`·GitHub Secrets에 직접 넣는다.
 - 로컬 개발은 로컬 LiveKit 서버(compose.dev)로 진행하므로 LiveKit Cloud 키가 없어도 T08~T11 개발은 막히지 않는다.
@@ -73,6 +73,8 @@
 | 2026-11-10 | T05d | 글꼴을 시안대로 Pretendard → **Noto Sans KR**, 잔액 단위는 시안의 "Beats" 대신 "비트"(decisions §1) | 시안 우선, 화폐 표기는 decisions 우선 | BeatAmount 한 줄 | 대기 |
 | 2026-11-10 | T05d | 툴팁은 아래로 열림(헤더 맨 위에서 위로 열면 잘림), 비로그인 방송하기 아이콘은 `/login`으로 | 화면 밖 잘림 방지 | Tooltip·Header 한 줄 | 대기 |
 | 2026-11-10 | T14 | README 시청 지원 브라우저를 "최신 Chrome·Edge·Safari·Firefox"로 기재 | 문서에 시청 지원 범위 없음 | README 한 줄 | 대기 |
+| 2026-11-10 | T12 | 썸네일 버전 문자열은 갱신 시각(ms), 숨김(DELETE) 때만 파일 삭제·ENDED 파일은 다시보기용으로 유지, 서버는 JPEG 시그니처만 확인(디코딩 안 함) | 단순화 | 정리 작업·검증 추가 | 대기 |
+| 2026-11-10 | T11b | 시청 화면 재연결 상태에 시안의 경과 타이머 대신 "60초 안에 돌아오지 않으면 방송이 종료돼요"만(상세 응답에 시작 시각 없음), 종료 화면 두 번째 버튼을 "홈으로" → "스트리머 페이지", 모바일 "후원" 탭은 T23 전까지 숨김 | 데이터 없음·시안 우선·"준비 중" 금지 | Broadcast에 since 추가 시 타이머 | 대기 |
 
 ## Task
 > task 1개 = 서브에이전트 1개 = PR 1개. "선행"이 모두 ✅여야 착수. "(병렬)" 표시 task끼리 동시 진행 가능(최대 3). 정책은 "정책" 열의 `docs/features/` 문서.
@@ -106,14 +108,14 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | T09 | PC 송출 화면: 송출 전 확인·화면 공유·탭/시스템 소리·마이크·볼륨 슬라이더·레벨 미터·웹캠 모드·환경 안내·이어하기/기기 전환 모달 (병렬) | 03 | T08d | Sonnet · medium | ✅ |
 | T10 | 모바일 송출 화면: 카메라 전환·음소거·Wake Lock (병렬) | 03 | T08d | Sonnet · medium | ✅ |
 | T11 | 시청 화면: 플레이어·상태 4종(대기·재연결·화면 공유 중단·종료)·실시간 정보 변경·게이지 바 자리 (병렬) | 03 | T08d | Sonnet · medium | ✅ |
-| T11b | **디자인 맞춤 · 시청**: 보드 `Watch`·`WatchMobile`·`WatchStates` (병렬) | DESIGN, boards | T05d, T11 | Sonnet · medium | 🟨 |
+| T11b | **디자인 맞춤 · 시청**: 보드 `Watch`·`WatchMobile`·`WatchStates` (병렬) | DESIGN, boards | T05d, T11 | Sonnet · medium | ✅ |
 
 ### 2. 필수 마무리 — 11/13
 | ID | task | 정책 | 선행 | 모델·사고 | 상태 |
 |---|---|---|---|---|---|
-| T12 | 썸네일: 브라우저 1분 캡처 + `PUT /thumbnail` + 디스크 볼륨 + nginx `/media/thumbs` + 기본 썸네일 | 02 | T09, T07 | Sonnet · medium | 🟨 |
-| T09c | **디자인 맞춤 · 스튜디오**: 보드 `Studio`·`StudioPrelive`·`StudioMobile`·`SmallScreens`(스튜디오 모달) (스튜디오 파일을 건드려서 T12 뒤) | DESIGN, boards | T05d, T10, T12 | Sonnet · medium | ⬜ |
-| T13 | 모니터링: 메트릭·Alloy·Loki·Grafana 대시보드 (T12와 같은 배포 파일을 건드려서 직렬) | 10 | T12 | Sonnet · medium | ⬜ |
+| T12 | 썸네일: 브라우저 1분 캡처 + `PUT /thumbnail` + 디스크 볼륨 + nginx `/media/thumbs` + 기본 썸네일 | 02 | T09, T07 | Sonnet · medium | ✅ |
+| T09c | **디자인 맞춤 · 스튜디오**: 보드 `Studio`·`StudioPrelive`·`StudioMobile`·`SmallScreens`(스튜디오 모달) (스튜디오 파일을 건드려서 T12 뒤) | DESIGN, boards | T05d, T10, T12 | Sonnet · medium | 🟨 |
+| T13 | 모니터링: 메트릭·Alloy·Loki·Grafana 대시보드 (T12와 같은 배포 파일을 건드려서 직렬) | 10 | T12 | Sonnet · medium | 🟨 |
 | T14 | README 필수 4항목(서비스 주소 포함)·지원 환경 표·수동 확인 절차 + **시나리오 이름 ↔ README 절차 대응표** (병렬) | spec 6 | T07, T09, T10, T11 | Sonnet · medium | ✅ |
 | T15 | 권한 시나리오 점검, **메인 세션이** `/ponytail-audit` 실행 후 must fix 반영 → **필수 완료** | 전체 | T12, T13, T14, T06c, T11b, T09c, U1 | 메인 세션 | ⬜ |
 

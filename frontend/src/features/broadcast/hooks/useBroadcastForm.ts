@@ -72,6 +72,7 @@ export function useBroadcastForm(existing?: Broadcast) {
     addTag,
     copyPrevious,
     canCopy: !!previous,
+    readyCount: mine.data?.items.filter((b) => b.status === 'READY').length ?? 0,
     locked,
     status,
     pending: mutation.isPending,

@@ -1,8 +1,6 @@
 import { Link } from 'react-router'
 import Avatar from './Avatar.tsx'
 import Badge from './Badge.tsx'
-import { Chip } from './Chip.tsx'
-import Icon from './Icon.tsx'
 import Panel from './Panel.tsx'
 import { faceSrc } from './mascot.ts'
 
@@ -31,26 +29,27 @@ export default function LiveCard({ to, title, streamerId, streamerName, streamer
           {thumbnailUrl ? (
             <img src={thumbnailUrl} alt='' loading='lazy' className='size-full object-cover' />
           ) : (
-            <div className='flex size-full items-center justify-center bg-cover bg-center' style={{ backgroundImage: 'url(/brand/bg-speed.jpg)' }}>
-              <span className='font-display text-lg font-bold tracking-wide text-text-muted'>{category ?? 'FLUTCH'}</span>
-              <img src={faceSrc('sleepy')} alt='' className='absolute right-2 bottom-2 size-8' />
-            </div>
+            <div className='size-full bg-cover bg-center' style={{ backgroundImage: 'url(/brand/bg-speed.jpg)' }} />
           )}
+          <div className='absolute inset-0 bg-linear-to-b from-transparent from-40% to-bg/80' />
           {live && <Badge tone='live' className='absolute top-2 left-2' />}
           {live && viewerCount !== undefined && (
-            <span className='absolute top-2 right-2 inline-flex items-center gap-1 rounded-xs bg-bg/70 px-1.5 font-mono text-xs text-live'>
-              <Icon name='eye' className='size-3.5' />
+            <span className='absolute top-2 right-2 bg-bg/80 px-1.5 py-0.5 font-mono text-xs'>
               {viewerCount.toLocaleString('ko-KR')}
               <span className='sr-only'>명 시청 중</span>
             </span>
           )}
-          {durationLabel && <span className='absolute right-2 bottom-2 rounded-xs bg-bg/70 px-1.5 font-mono text-xs'>{durationLabel}</span>}
-          {category && thumbnailUrl && <Chip className='absolute bottom-2 left-2'>{category}</Chip>}
+          {category && <span className='absolute bottom-2 left-2 font-display text-[13px] font-bold tracking-wide'>{category}</span>}
+          {durationLabel ? (
+            <span className='absolute right-2 bottom-2 rounded-xs bg-bg/70 px-1.5 font-mono text-xs'>{durationLabel}</span>
+          ) : (
+            !thumbnailUrl && <img src={faceSrc('sleepy')} alt='' className='absolute right-2 bottom-2 size-[26px] rounded-full opacity-85' />
+          )}
         </div>
-        <div className='space-y-2 p-3'>
-          <h3 className='line-clamp-2 font-semibold'>{title}</h3>
-          <div className='flex items-center gap-2 text-sm text-text-muted'>
-            <Avatar userId={streamerId} nickname={streamerName} src={streamerAvatarUrl} size='sm' className='size-6' />
+        <div className='flex flex-col gap-2 px-3.5 py-3'>
+          <h3 className='truncate text-[15px] font-bold'>{title}</h3>
+          <div className='flex items-center gap-1.5 text-[13px] text-text-muted'>
+            <Avatar userId={streamerId} nickname={streamerName} src={streamerAvatarUrl} size='xs' />
             <span className='truncate'>{streamerName}</span>
           </div>
         </div>
