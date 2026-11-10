@@ -347,7 +347,8 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 - TS 타입: `GET /users/{id}` 응답은 `UserProfile`(T26b). `followerCount`는 `follows` 행 수, `liveBroadcast`는 그 사용자의 LIVE·미숨김 방송(시청자 수 포함).
 - 팔로워 목록 API는 없다(숫자만). 사이드바 "인기 라이브"는 `GET /broadcasts?limit=5`(팔로우 0개면 3), "추천 라이브 채널"은 `GET /broadcasts?limit=3`.
 - 스트리머 페이지 관리 탭(본인만): 방송 관리 `GET /me/broadcasts`, 후원 내역·통계 `GET /me/donation-stats` + `GET /broadcasts/{id}/donations`, 차단 목록 `GET /users/{id}/bans`.
-- 시나리오: `follow_toggle_and_count` `follow_self_rejected`
+- `followerCount`는 탈퇴한 팔로워를 세지 않는다. `GET /pulse`의 `total`은 팔로우한 (탈퇴하지 않은) 스트리머 전체 수(`limit` 무관)이고 `limit`이 1~50 밖이면 422. 탈퇴한 스트리머는 빠진다. `offline`은 마지막 방송 종료가 최근인 순. TS 타입: `FollowState` `Pulse` `PulseOffline`.
+- 시나리오: `follow_toggle_and_count` `follow_self_rejected` `pulse_live_first_limit_and_withdrawn`
 
 ## 10. 웹훅·운영
 | 메서드·경로 | 호출자 | 검증 | 처리 |
