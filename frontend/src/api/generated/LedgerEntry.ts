@@ -8,7 +8,7 @@ export type LedgerEntry = {
  */
 id: number, type: LedgerType, 
 /**
- * charge만 +, 나머지 -
+ * charge·grant만 +, 나머지 -
  */
 amount: number, balanceAfter: number, 
 /**

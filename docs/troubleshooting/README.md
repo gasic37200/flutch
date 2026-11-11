@@ -49,3 +49,4 @@
 | [T20b-sqlx-prepare-drops-test-queries.md](T20b-sqlx-prepare-drops-test-queries.md) | T20b | `cargo sqlx prepare`는 테스트 타깃 쿼리 캐시를 지움 → `-- --all-targets`로 모은다 |
 | [T24-throttle-test-timing.md](T24-throttle-test-timing.md) | T24 | 묶음(throttle) 시나리오가 전체 테스트에서만 실패 → 시간 기준점을 이벤트 수신 뒤가 아니라 요청 전에, 묶일 입력은 직접 publish로 몰아 넣기 |
 | [T29-migration-order-after-parallel-task.md](T29-migration-order-after-parallel-task.md) | T29 | 병렬 task가 먼저 머지한 마이그레이션보다 버전이 앞섬 → PR 전 rebase 뒤 버전 확인, 머지 전이면 이름을 더 큰 버전으로 |
+| [T34-clippy-online-empty-task-db.md](T34-clippy-online-empty-task-db.md) | T34 | 막 만든 task DB에 `DATABASE_URL`을 두면 `query!` 매크로가 빈 DB를 검사해 clippy 실패 → `SQLX_OFFLINE=true` 또는 `sqlx migrate run` 뒤 |

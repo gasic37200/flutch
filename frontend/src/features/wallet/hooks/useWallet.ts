@@ -17,7 +17,7 @@ export const LEDGER_FILTERS: { type: LedgerType | ''; label: string }[] = [
   { type: 'withdraw_forfeit', label: '소멸' },
 ]
 
-const TYPE_LABEL: Record<LedgerType, string> = { charge: '충전', donation: '후원', clutch: '클러치', burst: 'SUPER BURST', withdraw_forfeit: '소멸' }
+const TYPE_LABEL: Record<LedgerType, string> = { charge: '충전', grant: '테스트 지급', donation: '후원', clutch: '클러치', burst: 'SUPER BURST', withdraw_forfeit: '소멸' }
 export const typeLabel = (t: LedgerType) => TYPE_LABEL[t]
 
 /** 내역 한 줄의 설명. 방송 제목은 서버가 숨긴 방송이면 "삭제된 방송"으로 준다. */
@@ -26,6 +26,8 @@ export function describe(e: LedgerEntry) {
   switch (e.type) {
     case 'charge':
       return '토스페이먼츠 테스트 결제'
+    case 'grant':
+      return 'QA용 테스트 비트 지급'
     case 'clutch':
       return `${title} 클러치 ×${e.count}`
     case 'withdraw_forfeit':

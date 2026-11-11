@@ -83,6 +83,7 @@ docker compose --env-file .env -f deploy/compose.dev.yml up -d   # Postgres 16 +
 curl localhost:8080/api/v1/health                                # 포트는 BACKEND_PORT. {"status":"ok"}
 (cd frontend && npm install && npm run dev)                      # 다른 터미널. /api는 백엔드로 프록시(WebSocket 포함)
 ```
+- (선택, 로컬 QA 전용) 더미 데이터: 백엔드를 한 번 띄워 테스트 계정이 생긴 뒤 `docker compose -f deploy/compose.dev.yml exec -T postgres psql -U flutch -d <DB 이름> -v ON_ERROR_STOP=1 < backend/scripts/seed_qa.sql` — 테스트 계정에 테스트 지급 100,000비트, 팔로우, 예정 방송, 종료 방송 후원 기록을 한 번만 넣습니다. 운영 DB에는 실행하지 않습니다.
 - compose 컨테이너는 모든 worktree가 함께 씁니다. LiveKit 웹훅은 compose를 마지막으로 띄운 `.env`의 `BACKEND_PORT`로 갑니다(다른 worktree로 바꾸려면 그 worktree에서 다시 `up -d`).
 - 로컬 LiveKit: `ws://localhost:7880`, 키 `devkey` / 시크릿 `secret`.
 
@@ -317,6 +318,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `mutating_request_without_or_with_foreign_origin_is_forbidden`, `mutating_request_with_allowed_origin_passes`, `read_request_needs_no_origin`, `webhooks_skip_origin_check` | CSRF Origin 검사 | (서버 내부) |
 | `schema_one_live_per_user` | DB 제약: 사용자당 LIVE 1개 | P2 |
 | `schema_ledger_is_append_only`, `schema_payment_key_unique`, `schema_rejects_negative_balance` | DB 제약: 원장·결제·잔액 | P17 |
+| `wallet_grant_credits_and_appends_only`, `wallet_qa_seed_runs_once` | 테스트 지급(grant) 원장: + 적립·내역 grant·수정 불가·주문/방송 참조 거절, 로컬 QA 시드는 계정 없으면 에러·두 번 실행해도 1회 | (로컬 QA) |
 | `donation_confirm_idempotent`, `payment_concurrent_confirm_credits_once` | 같은 승인·웹훅 반복·동시 승인 → 한 번만 적립, 같은 결과 | P17 |
 | `clutch_access_rules` | 비로그인 401, 내 방송 403, 비LIVE 409 | (클러치 절차 추가 시) |
 | `clutch_free_combo_then_paid` | 30초 무료 5회(COMBO) → 6번째 1비트 차감·원장·후원 기록, 잔액 0이면 409 | (클러치 절차 추가 시) |
