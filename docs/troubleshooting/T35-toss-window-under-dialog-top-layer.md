@@ -1,5 +1,5 @@
 # 토스 결제창이 모달 <dialog> 뒤에 깔려 결제 불가
-- task: T35 · PR: (이 PR) · 날짜: 2026-11-11
+- task: T35 · PR: #124 · 날짜: 2026-11-11
 - 영역: frontend/wallet, frontend/components/ui/Modal
 
 ## 증상
