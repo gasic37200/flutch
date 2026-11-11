@@ -22,7 +22,7 @@ export default function PulsePage() {
   if (pulse.isPending) return <GridSkeleton count={4} />
   const { live, offline, total } = pulse.data
   return (
-    <div className='flex max-w-[1440px] flex-col gap-6 lg:gap-8'>
+    <div className='flex flex-col gap-6 lg:gap-8'>
       <h1 className='text-2xl font-black sm:text-[26px]'>PULSE</h1>
       {total === 0 ? (
         <EmptyState title='아직 팔로우한 채널이 없어요' description='마음에 드는 스트리머를 팔로우하면 여기에 모여요.' action={<Button to='/explore'>방송 탐색하기</Button>} />
@@ -35,7 +35,7 @@ export default function PulsePage() {
           {offline.length > 0 && (
             <section aria-labelledby='pulse-offline' className='flex flex-col gap-3'>
               <SectionTitle id='pulse-offline'>오프라인</SectionTitle>
-              <ul className='grid gap-3 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]'>
+              <ul className='grid gap-3 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] 2xl:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]'>
                 {offline.map((o) => (
                   <li key={o.user.id}>
                     <Link to={`/users/${o.user.id}`} className='flex items-center gap-3 bg-surface p-3 hover:bg-surface-2'>

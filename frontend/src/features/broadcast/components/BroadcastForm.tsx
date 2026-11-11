@@ -20,8 +20,8 @@ export default function BroadcastForm({ heading, owner, existing }: Props) {
   const tags = values.tags.map((t) => `#${t}`).join(' ')
 
   return (
-    <div className='flex max-w-[1080px] flex-wrap gap-7'>
-      <form onSubmit={f.submit} noValidate className='flex min-w-0 grow-[999] basis-[520px] flex-col gap-5'>
+    <div className='flex max-w-[1240px] flex-wrap gap-7'>
+      <form onSubmit={f.submit} noValidate className='flex min-w-0 max-w-[780px] grow-[999] basis-[520px] flex-col gap-5'>
         <div className='flex flex-wrap items-center gap-3'>
           <h1 className='text-2xl font-black sm:text-[26px]'>{heading}</h1>
           {!existing && (
@@ -76,7 +76,7 @@ export default function BroadcastForm({ heading, owner, existing }: Props) {
 
         <div>
           <label htmlFor='broadcast-tag' className='mb-1 block text-sm font-semibold text-text-muted'>
-            태그 <span className='font-normal text-text-dim'>(최대 {MAX_TAGS}개, 태그당 {MAX_TAG_LENGTH}자 · 게임 이름은 태그로)</span>
+            태그 <span className='font-normal text-text-dim'>(최대 {MAX_TAGS}개, 태그당 {MAX_TAG_LENGTH}자 · 스페이스나 Enter로 확정 · 게임 이름은 태그로)</span>
           </label>
           <div className='focus-within:drop-shadow-field'>
             <div className={`chamfer p-px [--c:6px] ${locked.tags ? 'bg-surface-dim' : 'bg-brand-line focus-within:bg-brand'}`}>
@@ -91,18 +91,18 @@ export default function BroadcastForm({ heading, owner, existing }: Props) {
                     )}
                   </Chip>
                 ))}
+                {!locked.tags && values.tags.length < MAX_TAGS && (
+                  <span aria-hidden className='-mr-1 text-sm text-text-dim'>
+                    #
+                  </span>
+                )}
                 <input
                   id='broadcast-tag'
                   value={values.tagDraft}
                   onChange={(e) => set.tagDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ',') {
-                      e.preventDefault()
-                      f.addTag()
-                    }
-                  }}
+                  onKeyDown={f.tagKeyDown}
                   maxLength={MAX_TAG_LENGTH}
-                  placeholder={values.tags.length >= MAX_TAGS ? '태그는 3개까지예요' : '태그 입력 후 Enter'}
+                  placeholder={values.tags.length >= MAX_TAGS ? '태그는 3개까지예요' : '태그 입력 후 스페이스'}
                   disabled={locked.tags || values.tags.length >= MAX_TAGS}
                   aria-describedby='broadcast-tag-note'
                   className='min-w-[120px] grow bg-transparent text-sm text-text outline-none placeholder:text-text-dim disabled:cursor-not-allowed'
@@ -141,10 +141,9 @@ export default function BroadcastForm({ heading, owner, existing }: Props) {
         <p className='text-[13px] text-text-dim'>제목·카테고리·태그는 방송 중에도 바꿀 수 있어요. 끝난 방송은 제목만 바꿀 수 있어요.</p>
       </form>
 
-      <aside className='flex min-w-0 basis-[300px] grow flex-col gap-2.5'>
+      <aside className='flex min-w-0 basis-[300px] grow flex-col gap-2.5 lg:sticky lg:top-24 lg:self-start'>
         <span className='text-[13px] text-text-muted'>목록에 이렇게 보여요</span>
         <LiveCard
-          to='/manage'
           title={values.title.trim() || '방송 제목'}
           streamerId={owner.id}
           streamerName={tags ? `${owner.nickname} · ${tags}` : owner.nickname}

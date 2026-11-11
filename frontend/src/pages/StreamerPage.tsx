@@ -41,7 +41,7 @@ export default function StreamerPage() {
   ]
 
   return (
-    <div className='flex max-w-[1200px] flex-col gap-6'>
+    <div className='flex flex-col gap-6'>
       <div className='flex flex-wrap items-end gap-4 sm:gap-5'>
         <Avatar userId={user.id} nickname={user.nickname} size='lg' className='sm:size-28' />
         <div className='flex min-w-0 flex-[1_1_14rem] flex-col gap-1.5'>

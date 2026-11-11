@@ -9,7 +9,7 @@ import { GridSkeleton } from '../../broadcast/components/BroadcastGrid.tsx'
 import { count, durationLabel, kstDate } from '../format.ts'
 import type { useRecordings } from '../hooks/useRecordings.ts'
 
-export const gridClass = 'grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] sm:gap-4'
+export const gridClass = 'grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] sm:gap-4 2xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]'
 
 export function ReplayCard({ recording: r }: { recording: RecordingCard }) {
   return (

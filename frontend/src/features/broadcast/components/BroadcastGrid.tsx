@@ -6,7 +6,7 @@ import LiveCard from '../../../components/ui/LiveCard.tsx'
 import Skeleton from '../../../components/ui/Skeleton.tsx'
 import { CATEGORIES, CATEGORY_LABEL } from '../categories.ts'
 
-const gridClass = 'grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-4'
+const gridClass = 'grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-4 2xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]'
 
 export function BroadcastCard({ broadcast: b }: { broadcast: Broadcast }) {
   return (

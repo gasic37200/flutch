@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
 import type { Broadcast } from '../../../api/generated/Broadcast.ts'
 import type { Category } from '../../../api/generated/Category.ts'
@@ -29,10 +29,35 @@ export function useBroadcastForm(existing?: Broadcast) {
   const previous = existing ? undefined : mine.data?.items[0]
   const mutation = existing ? update : create
 
+  const addTags = (raw: string[]) => {
+    const next = [...tags]
+    for (const t of raw) if (t && next.length < MAX_TAGS && !next.includes(t)) next.push(t)
+    if (next.length > tags.length) setTags(next)
+  }
+
   const addTag = () => {
-    const tag = tagDraft.trim().replace(/^#/, '').trim()
+    addTags([tagDraft])
     setTagDraft('')
-    if (tag && tags.length < MAX_TAGS && !tags.includes(tag)) setTags([...tags, tag])
+  }
+
+  // 입력칸 앞에 #이 항상 붙어 보이므로 직접 친 #은 걸러낸다. 공백·쉼표가 들어오면 그 앞까지 확정:
+  // 한글 조합 중 스페이스는 keydown이 isComposing이라 무시되고 여기로 공백이 들어온다(붙여 넣기도 같은 경로).
+  const changeTagDraft = (v: string) => {
+    const parts = v.replace(/#/g, '').split(/[\s,]+/)
+    const draft = parts.pop() ?? ''
+    if (parts.length) addTags(parts)
+    setTagDraft(draft)
+  }
+
+  // 스페이스·Enter·쉼표로 확정. 한글 조합 중에는 확정하지 않는다(마지막 글자가 깨짐).
+  const tagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.nativeEvent.isComposing) return
+    if (e.key === ' ' || e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addTag()
+    } else if (e.key === 'Backspace' && !tagDraft && tags.length > 0) {
+      setTags(tags.slice(0, -1))
+    }
   }
 
   const copyPrevious = () => {
@@ -67,9 +92,9 @@ export function useBroadcastForm(existing?: Broadcast) {
 
   return {
     values: { title, category, tags, tagDraft, record },
-    set: { title: setTitle, category: setCategory, tagDraft: setTagDraft, record: setRecord },
+    set: { title: setTitle, category: setCategory, tagDraft: changeTagDraft, record: setRecord },
     removeTag: (tag: string) => setTags(tags.filter((t) => t !== tag)),
-    addTag,
+    tagKeyDown,
     copyPrevious,
     canCopy: !!previous,
     readyCount: mine.data?.items.filter((b) => b.status === 'READY').length ?? 0,

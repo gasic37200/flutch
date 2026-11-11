@@ -9,7 +9,7 @@ export default function ReplayListPage() {
   const [category, setCategory] = useState<Category | undefined>()
   const query = useRecordings({ category })
   return (
-    <div className='flex max-w-[1440px] flex-col gap-5 lg:gap-6'>
+    <div className='flex flex-col gap-5 lg:gap-6'>
       <h1 className='text-2xl font-black sm:text-[26px]'>다시보기</h1>
       <CategoryChips value={category} onChange={setCategory} />
       <ReplayGrid

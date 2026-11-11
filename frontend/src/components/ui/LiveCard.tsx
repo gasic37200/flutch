@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import Avatar from './Avatar.tsx'
 import Badge from './Badge.tsx'
@@ -5,7 +6,8 @@ import Panel from './Panel.tsx'
 import { faceSrc } from './mascot.ts'
 
 type Props = {
-  to: string
+  /** 없으면 링크 없는 미리보기 카드 */
+  to?: string
   title: string
   streamerId: number
   streamerName: string
@@ -27,8 +29,8 @@ type Props = {
 // 라이브·다시보기 공용 카드. 썸네일이 없으면 배경 텍스처 + 카테고리 이름 + 졸린 고양이(DESIGN §5).
 export default function LiveCard({ to, title, streamerId, streamerName, streamerAvatarUrl, category, thumbnailUrl, live, viewerCount, durationLabel, meta, superClutch, className }: Props) {
   return (
-    <Panel interactive className={className} innerClassName='overflow-hidden'>
-      <Link to={to} className='block'>
+    <Panel interactive={!!to} className={className} innerClassName='overflow-hidden'>
+      <Wrapper to={to}>
         <div className='relative aspect-video bg-surface-2'>
           {thumbnailUrl ? (
             <img src={thumbnailUrl} alt='' loading='lazy' className='size-full object-cover' />
@@ -59,7 +61,9 @@ export default function LiveCard({ to, title, streamerId, streamerName, streamer
           </div>
           {meta && <span className='truncate text-xs text-text-dim'>{meta}</span>}
         </div>
-      </Link>
+      </Wrapper>
     </Panel>
   )
 }
+
+const Wrapper = ({ to, children }: { to?: string; children: ReactNode }) => (to ? <Link to={to} className='block'>{children}</Link> : <div>{children}</div>)
