@@ -1,7 +1,7 @@
 //! 테스트용 앱 생성. DB는 `#[sqlx::test]`가 준 진짜 Postgres, 외부 연동(LiveKit·토스)만 fake.
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
@@ -134,8 +134,8 @@ pub struct FakeToss {
     pub next_confirm: Mutex<Option<FakeConfirm>>,
     /// true면 조회 API가 통신 실패
     pub lookup_fails: AtomicBool,
-    /// 승인 응답 지연(ms) — 동시 요청이 확실히 겹치게 한다
-    pub confirm_delay_ms: AtomicU64,
+    /// 설정하면 승인 호출이 이 장벽에서 서로를 기다린다 — 동시 요청이 확실히 겹치게 한다(시간 지연 대신)
+    pub confirm_barrier: Mutex<Option<Arc<tokio::sync::Barrier>>>,
 }
 
 impl FakeToss {
@@ -157,8 +157,12 @@ impl TossApi for FakeToss {
             .lock()
             .unwrap()
             .push(payment_key.to_owned());
-        let delay = self.confirm_delay_ms.load(Ordering::SeqCst);
-        tokio::time::sleep(std::time::Duration::from_millis(delay)).await;
+        let barrier = self.confirm_barrier.lock().unwrap().clone();
+        if let Some(b) = barrier {
+            tokio::time::timeout(std::time::Duration::from_secs(30), b.wait())
+                .await
+                .expect("두 승인 호출이 겹치지 않음");
+        }
         let next = self.next_confirm.lock().unwrap().take();
         let unavailable = || TossError::Unavailable("fake".into());
         match next {

@@ -605,8 +605,8 @@ async fn payment_concurrent_confirm_credits_once(db: PgPool) {
     let b = live_broadcast(&app, &streamer_c).await;
     let (order_id, n) = created(&donation_order(&app, &viewer_c, b, 5000).await);
 
-    // 같은 승인 결과가 동시에 두 번(별도 요청·커넥션) + 웹훅. 승인 지연으로 둘 다 확인 단계를 지나게 한다.
-    toss.confirm_delay_ms.store(200, Ordering::SeqCst);
+    // 같은 승인 결과가 동시에 두 번(별도 요청·커넥션) + 웹훅. 장벽으로 둘 다 토스 승인 호출 안에서 만난 뒤에야 진행시킨다.
+    *toss.confirm_barrier.lock().unwrap() = Some(Arc::new(tokio::sync::Barrier::new(2)));
     let (r1, r2) = tokio::join!(
         confirm(&app, Some(&viewer_c), "pk_same", &order_id, n),
         confirm(&app, Some(&viewer_c), "pk_same", &order_id, n),
@@ -619,7 +619,8 @@ async fn payment_concurrent_confirm_credits_once(db: PgPool) {
         r2.json
     );
     assert_eq!(r1.json, r2.json);
-    assert_eq!(toss.confirm_calls.lock().unwrap().len(), 2); // 둘 다 승인까지 갔다(실제로 겹침)
+    assert_eq!(toss.confirm_calls.lock().unwrap().len(), 2); // 둘 다 승인까지 갔다(장벽이 겹침을 보장)
+    *toss.confirm_barrier.lock().unwrap() = None;
     let secret = FakeToss::secret("pk_same");
     let (w, r3) = tokio::join!(
         webhook(&app, "pk_same", &secret),
