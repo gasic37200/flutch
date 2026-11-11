@@ -1,12 +1,17 @@
-import { useState } from 'react'
+import { useSearchParams } from 'react-router'
 import type { Category } from '../api/generated/Category.ts'
 import EmptyState from '../components/ui/EmptyState.tsx'
+import { CATEGORIES } from '../features/broadcast/categories.ts'
 import { CategoryChips } from '../features/broadcast/components/BroadcastGrid.tsx'
 import ReplayGrid from '../features/replay/components/ReplayGrid.tsx'
 import { useRecordings } from '../features/replay/hooks/useRecordings.ts'
 
 export default function ReplayListPage() {
-  const [category, setCategory] = useState<Category | undefined>()
+  // 새로고침·공유해도 필터가 남도록 ?category=에 둔다
+  const [sp, setSp] = useSearchParams()
+  const param = sp.get('category')
+  const category = CATEGORIES.find((c) => c === param)
+  const setCategory = (c: Category | undefined) => setSp(c ? { category: c } : {}, { replace: true })
   const query = useRecordings({ category })
   return (
     <div className='flex flex-col gap-5 lg:gap-6'>

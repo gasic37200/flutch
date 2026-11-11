@@ -6,7 +6,9 @@ import LiveCard from '../../../components/ui/LiveCard.tsx'
 import Skeleton from '../../../components/ui/Skeleton.tsx'
 import { CATEGORIES, CATEGORY_LABEL } from '../categories.ts'
 
-const gridClass = 'grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-4 2xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]'
+// 목록형 카드 그리드의 단일 규칙: 열 수를 폭 단계마다 늘려 카드가 화면이 넓어질수록 작아지지 않게 한다(사이드바 240px 포함)
+export const cardGrid = 'grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[1920px]:grid-cols-6 min-[2400px]:grid-cols-8'
+const gridClass = `${cardGrid} grid-cols-2`
 
 export function BroadcastCard({ broadcast: b }: { broadcast: Broadcast }) {
   return (

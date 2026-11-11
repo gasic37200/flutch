@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { RecordingDetail } from '../../../api/generated/RecordingDetail.ts'
 import Icon from '../../../components/ui/Icon.tsx'
+import { useAuth } from '../../auth/hooks/useAuth.ts'
 
 function Notice({ title, sub, busy }: { title: string; sub?: string; busy?: boolean }) {
   return (
@@ -16,6 +17,7 @@ function Notice({ title, sub, busy }: { title: string; sub?: string; busy?: bool
 /** `clip`이 있으면 그 구간(초)만 재생한다(미디어 프래그먼트 `#t=시작,끝`: 구간 끝에서 멈춘다). */
 export default function ReplayVideo({ recording: r, onPlay, clip }: { recording: RecordingDetail; onPlay: () => void; clip?: { start: number; end?: number } }) {
   const [broken, setBroken] = useState(false)
+  const { me } = useAuth()
   return (
     <div className='relative aspect-video w-full overflow-hidden bg-bg bg-cover bg-center' style={{ backgroundImage: 'url(/brand/bg-speed.jpg)' }}>
       {r.status === 'ready' && r.videoUrl && !broken ? (
@@ -33,7 +35,7 @@ export default function ReplayVideo({ recording: r, onPlay, clip }: { recording:
       ) : r.status === 'recording' ? (
         <Notice busy title='다시보기 처리 중이에요' sub='준비되면 자동으로 재생할 수 있어요' />
       ) : r.status === 'failed' ? (
-        <Notice title='녹화에 실패했어요' sub='이 방송은 다시보기를 볼 수 없어요' />
+        me?.id === r.owner.id ? <Notice title='녹화에 실패했어요' sub='이 방송은 다시보기를 볼 수 없어요' /> : <Notice title='다시보기가 없어요' sub='이 방송은 다시보기를 볼 수 없어요' />
       ) : (
         <Notice title='영상을 불러올 수 없어요' sub='잠시 후 다시 시도해 주세요' />
       )}

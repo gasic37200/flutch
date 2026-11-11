@@ -9,6 +9,7 @@ import { BroadcastCard, GridSkeleton, SectionTitle } from '../features/broadcast
 import DonationHistory from '../features/donation/components/DonationHistory.tsx'
 import DonationStatsPanel from '../features/donation/components/DonationStatsPanel.tsx'
 import BanList from '../features/moderation/components/BanList.tsx'
+import { gridClass } from '../features/replay/components/ReplayGrid.tsx'
 import ReplayGrid from '../features/replay/components/ReplayGrid.tsx'
 import FollowButton from '../features/follow/components/FollowButton.tsx'
 import { count } from '../features/replay/format.ts'
@@ -42,9 +43,9 @@ export default function StreamerPage() {
 
   return (
     <div className='flex flex-col gap-6'>
-      <div className='flex flex-wrap items-end gap-4 sm:gap-5'>
+      <div className='flex flex-wrap items-end gap-x-4 gap-y-3 sm:gap-x-5'>
         <Avatar userId={user.id} nickname={user.nickname} size='lg' className='sm:size-28' />
-        <div className='flex min-w-0 flex-[1_1_14rem] flex-col gap-1.5'>
+        <div className='flex min-w-0 flex-col gap-1.5'>
           <h1 className='text-2xl font-black break-words sm:text-[28px]'>{user.nickname}</h1>
           <span className='text-sm text-text-muted'>
             팔로워 <b className='font-mono text-text'>{count(followerCount)}</b>
@@ -66,9 +67,13 @@ export default function StreamerPage() {
         {s.tab === 'broadcasts' ? (
           <>
             {liveBroadcast && (
-              <section aria-labelledby='streamer-live' className='flex max-w-xs flex-col gap-3'>
+              <section aria-labelledby='streamer-live' className='flex flex-col gap-3'>
                 <SectionTitle id='streamer-live'>지금 방송 중</SectionTitle>
-                <BroadcastCard broadcast={liveBroadcast} />
+                <ul className={gridClass}>
+                  <li>
+                    <BroadcastCard broadcast={liveBroadcast} />
+                  </li>
+                </ul>
               </section>
             )}
             <section aria-labelledby='streamer-past' className='flex flex-col gap-3'>
@@ -81,7 +86,7 @@ export default function StreamerPage() {
                 <EmptyState title='아직 지난 방송이 없어요' />
               ) : (
                 <>
-                  <PastBroadcasts items={pastItems} />
+                  <PastBroadcasts items={pastItems} isSelf={s.isSelf} />
                   {past.hasNextPage && (
                     <div className='flex justify-center'>
                       <Button variant='secondary' onClick={() => void past.fetchNextPage()} loading={past.isFetchingNextPage}>

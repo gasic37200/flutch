@@ -7,7 +7,8 @@ import { kstStamp } from '../../wallet/format.ts'
 /** 후원 한 줄: 표시 이름(소유자 응답이면 실명 + 익명 배지) · 비트 · 메시지 · 시각. `action`은 오른쪽 버튼 자리. */
 export default function DonationRow({ donation: d, action }: { donation: Donation; action?: ReactNode }) {
   return (
-    <li className='flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-surface-2 px-4 py-2.5 text-sm last:border-b-0'>
+    <li className='flex items-start gap-3 border-b border-surface-2 px-4 py-2.5 text-sm last:border-b-0'>
+      <div className='flex min-w-0 grow flex-wrap items-baseline gap-x-3 gap-y-0.5'>
       <b className='flex min-w-0 max-w-40 items-center gap-1.5 break-all text-text-muted sm:w-36 sm:shrink-0'>
         {donorName(d)}
         {d.anonymous && d.donor && <Badge tone='anonymous' />}
@@ -21,7 +22,8 @@ export default function DonationRow({ donation: d, action }: { donation: Donatio
       <time dateTime={d.createdAt} className='shrink-0 text-xs text-text-dim'>
         {kstStamp(d.createdAt)}
       </time>
-      {action}
+      </div>
+      {action && <span className='shrink-0'>{action}</span>}
     </li>
   )
 }

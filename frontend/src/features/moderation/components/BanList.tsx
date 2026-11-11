@@ -14,7 +14,7 @@ export default function BanList({ ownerId }: { ownerId: number }) {
   if (query.isPending) return <Skeleton className='h-40 w-full max-w-xl' />
   if (b.items.length === 0 && !query.hasNextPage) return <EmptyState title='차단한 시청자가 없어요' description='채팅 닉네임을 눌러 차단할 수 있어요.' />
   return (
-    <section aria-labelledby='ban-list' className='flex max-w-xl flex-col gap-3'>
+    <section aria-labelledby='ban-list' className='flex max-w-3xl flex-col gap-3 2xl:max-w-[1400px]'>
       <h2 id='ban-list' className='text-lg font-black'>
         차단 목록
       </h2>
@@ -26,7 +26,7 @@ export default function BanList({ ownerId }: { ownerId: number }) {
               <b className='text-sm break-all'>{x.user.nickname}</b>
               <span className='text-xs text-text-dim'>{leftText(x, b.now)}</span>
             </div>
-            <Button size='sm' variant='neutral' disabled={b.busy} onClick={() => void b.unban(x.user)}>
+            <Button size='md' variant='neutral' disabled={b.busy} onClick={() => void b.unban(x.user)}>
               해제
             </Button>
           </li>

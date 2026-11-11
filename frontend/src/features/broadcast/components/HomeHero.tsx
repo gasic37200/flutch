@@ -30,7 +30,7 @@ export default function HomeHero({ view }: { view: HeroView }) {
   return (
     <section aria-label='메인 라이브' className='flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:gap-4'>
       <div className='min-w-0 lg:flex-[999_1_520px]'>
-        <HeroCard broadcast={b} superClutch={sc} progress={view.slotProgress} />
+        <HeroCard broadcast={b} superClutch={sc} progress={view.active.length > 1 ? view.slotProgress : null} />
       </div>
       <div className='hidden min-w-0 lg:flex lg:flex-[1_1_300px]'>
         {sc ? <SuperClutchPanel view={view} broadcast={b} /> : hero.gauge && <ClutchTimePanel broadcast={b} gauge={hero.gauge} topGauge={hero.mode === 'top_gauge'} cooldownMin={view.cooldownMin} />}
@@ -42,7 +42,7 @@ export default function HomeHero({ view }: { view: HeroView }) {
   )
 }
 
-function HeroCard({ broadcast: b, superClutch, progress }: { broadcast: Broadcast; superClutch: boolean; progress: number }) {
+function HeroCard({ broadcast: b, superClutch, progress }: { broadcast: Broadcast; superClutch: boolean; progress: number | null }) {
   return (
     <Panel tone={superClutch ? 'clutch' : 'hero'} className={superClutch ? clutchGlow : ''} innerClassName='overflow-hidden'>
       <Link to={`/live/${b.id}`} className='block' aria-label={`${b.owner.nickname} 라이브 보기`}>
@@ -53,7 +53,7 @@ function HeroCard({ broadcast: b, superClutch, progress }: { broadcast: Broadcas
             <Badge tone='live' />
             {superClutch && <Badge tone='superClutch' />}
           </div>
-          {superClutch && (
+          {superClutch && progress !== null && (
             <div className='absolute inset-x-0 bottom-0 h-1 bg-surface-2/80 sm:h-1.5' aria-hidden>
               <div className='h-full bg-clutch transition-[width] duration-1000 ease-linear' style={{ width: `${progress}%` }} />
             </div>
@@ -132,15 +132,20 @@ function SuperClutchPanel({ view, broadcast: b }: { view: HeroView; broadcast: B
   return (
     <Panel tone='clutch' className={`flex-1 ${clutchGlow}`} innerClassName='flex flex-col items-center gap-3.5 p-[22px]'>
       <img src='/brand/logo-super-clutch.png' alt='SUPER CLUTCH' className='w-full max-w-[280px]' />
-      <div className='flex w-full justify-between text-[13px] text-text-muted'>
-        <span>다음 방송까지</span>
-        <b className='font-mono text-base text-text' aria-live='off'>
-          {view.slotLeft}
-        </b>
-      </div>
-      <div className='chamfer h-2.5 w-full bg-surface-2 [--c:6px]' aria-hidden>
-        <div className='chamfer h-full bg-clutch transition-[width] duration-1000 ease-linear [--c:6px]' style={{ width: `${view.slotProgress}%` }} />
-      </div>
+      {/* 혼자뿐이면 넘어갈 다음 방송이 없으니 타이머·진행 바를 숨긴다 */}
+      {view.active.length > 1 && (
+        <>
+          <div className='flex w-full justify-between text-[13px] text-text-muted'>
+            <span>다음 방송까지</span>
+            <b className='font-mono text-base text-text' aria-live='off'>
+              {view.slotLeft}
+            </b>
+          </div>
+          <div className='chamfer h-2.5 w-full bg-surface-2 [--c:6px]' aria-hidden>
+            <div className='chamfer h-full bg-clutch transition-[width] duration-1000 ease-linear [--c:6px]' style={{ width: `${view.slotProgress}%` }} />
+          </div>
+        </>
+      )}
       <Link
         to={`/live/${b.id}`}
         className='chamfer flex h-[46px] w-full items-center justify-center bg-clutch text-[15px] font-bold text-bg [--c:6px] focus-visible:outline-offset-4'
@@ -173,7 +178,13 @@ function SuperClutchStrip({ view, broadcast: b }: { view: HeroView; broadcast: B
     <Link to={`/live/${b.id}`} className='flex items-center gap-2.5 px-1'>
       <img src='/brand/logo-super-clutch.png' alt='SUPER CLUTCH' className='w-[90px]' />
       <span className='min-w-0 grow truncate text-xs text-text-muted'>
-        <b className='font-mono text-text'>{view.slotLeft}</b> 뒤 {view.next?.owner.nickname} · 진행 중 {view.active.length}
+        {view.active.length > 1 ? (
+          <>
+            <b className='font-mono text-text'>{view.slotLeft}</b> 뒤 {view.next?.owner.nickname} · 진행 중 {view.active.length}
+          </>
+        ) : (
+          '진행 중 1'
+        )}
       </span>
     </Link>
   )
