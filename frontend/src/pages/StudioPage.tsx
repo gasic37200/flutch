@@ -45,24 +45,32 @@ export default function StudioPage() {
   if (!s.isOwner) return <EmptyState face='grumpy' title='내 방송이 아니에요' description='내가 등록한 방송만 송출할 수 있어요.' action={manage} />
   if (phase === 'ended')
     return (
-      <EmptyState
-        face='happy'
-        title='방송이 종료되었어요'
-        description={`방송 시간 ${s.elapsed} · 최고 시청자 ${data.peakViewers}명`}
-        action={
-          <div className='flex gap-2'>
-            {manage}
-            <Button to='/' variant='secondary'>
-              홈으로
-            </Button>
-          </div>
-        }
-      />
+      <div className='max-w-xl'>
+        <EmptyState
+          face='happy'
+          title='방송이 종료되었어요'
+          description={`방송 시간 ${s.elapsed} · 최고 시청자 ${data.peakViewers}명${data.record ? ' · 다시보기는 녹화 처리가 끝나면 스트리머 페이지에서 볼 수 있어요.' : ''}`}
+          action={
+            <div className='flex flex-wrap justify-center gap-2'>
+              {data.record && <Button to={`/users/${data.owner.id}`}>다시보기 보러 가기</Button>}
+              <Button to='/manage' variant={data.record ? 'secondary' : 'primary'}>
+                내 방송 관리
+              </Button>
+              <Button to='/' variant='neutral'>
+                홈으로
+              </Button>
+            </div>
+          }
+        />
+      </div>
     )
 
   const live = phase === 'live'
   const screen = media.mode === 'screen'
   const mobile = s.env.mobile
+  // 새로고침·재진입: 서버는 LIVE인데 이 화면은 송출을 아직 잇지 않은 상태. 소스를 켜지 않아도 종료할 수 있어야 한다.
+  const resumable = !live && data.status === 'LIVE'
+  const startHint = media.videoReady ? undefined : screen ? '공유할 화면을 고르면 시작할 수 있어요' : '카메라를 켜면 시작할 수 있어요'
 
   const dialogs = (
     <StudioDialogs
@@ -121,19 +129,24 @@ export default function StudioPage() {
           </>
         )}
         <span className='grow' />
-        {live ? (
-          <Button variant='danger' size='lg' onClick={s.askEnd}>
+        {!live && !mobile && (
+          <>
+            {startHint && <span className='hidden text-xs text-text-dim lg:inline'>{startHint}</span>}
+            {startButton}
+          </>
+        )}
+        {(live || resumable) && (
+          <Button variant='danger' onClick={s.askEnd}>
             방송 종료
           </Button>
-        ) : (
-          !mobile && startButton
         )}
       </header>
 
       <div className='flex flex-col gap-5 xl:flex-row'>
         <div className='min-w-0 grow space-y-3.5'>
           {live && <Bar role='alert'>방송 시작 3시간이 되면 자동으로 종료돼요.</Bar>}
-          {s.env.notices.map((n) => (
+          {resumable && <Bar role='status'>방송이 아직 진행 중이에요. 소스를 다시 켜고 이어서 송출하거나, 지금 방송을 종료할 수 있어요.</Bar>}
+          {!live && s.env.notices.map((n) => (
             <Bar key={n} role='status'>
               {n}
             </Bar>
@@ -208,7 +221,12 @@ export default function StudioPage() {
             </div>
           )}
 
-          {mobile && !live && startButton}
+          {mobile && !live && (
+            <div className='space-y-2'>
+              {startHint && <p className='text-center text-xs text-text-muted'>{startHint}</p>}
+              {startButton}
+            </div>
+          )}
         </div>
 
         <aside className='w-full shrink-0 space-y-3.5 xl:w-[340px]'>

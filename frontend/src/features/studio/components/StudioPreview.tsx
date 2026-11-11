@@ -26,7 +26,7 @@ export default function StudioPreview({ stream, ended, tall, fill, placeholder, 
   useEffect(() => {
     if (ref.current) ref.current.srcObject = stream
   }, [stream])
-  const frame = fill ? 'absolute inset-0' : tall ? 'relative aspect-[3/4] max-h-[55dvh] w-full' : 'relative aspect-video w-full'
+  const frame = fill ? 'absolute inset-0' : tall ? 'relative aspect-[3/4] max-h-[45dvh] w-full' : 'relative aspect-video max-h-[max(15rem,calc(100dvh-22rem))] w-full'
   return (
     <div className={`overflow-hidden bg-bg ${frame}`}>
       <video ref={ref} autoPlay muted playsInline aria-label='송출 미리보기' className={`size-full ${fill ? 'object-cover' : 'object-contain'} ${stream && !ended ? '' : 'invisible'}`} />

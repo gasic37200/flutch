@@ -27,7 +27,9 @@ export function detectEnv(): StudioEnv {
 
   const notices: string[] = []
   if (!secure) notices.push('HTTPS 주소에서만 화면 공유와 카메라를 쓸 수 있어요. 주소가 https://로 시작하는지 확인해 주세요.')
-  else if (!canScreen) notices.push('이 기기에서는 화면 공유를 쓸 수 없어요. 카메라 모드로 방송해 주세요.')
+  else if (mobile) {
+    // 모바일은 카메라 송출이 기본이라 화면 공유 불가 안내를 띄우지 않는다
+  } else if (!canScreen) notices.push('이 기기에서는 화면 공유를 쓸 수 없어요. 카메라 모드로 방송해 주세요.')
   else if (!tabAudio) notices.push('이 브라우저에서는 화면 소리를 보낼 수 없어요. 소리까지 보내려면 PC의 Chrome 또는 Edge를 써 주세요.')
   else if (!systemAudio) notices.push('이 환경에서는 탭 소리만 송출할 수 있어요. 시스템 소리는 Windows의 Chrome·Edge에서만 지원돼요.')
   return { secure, canScreen, mobile, canFlip, systemAudio, tabAudio, notices }

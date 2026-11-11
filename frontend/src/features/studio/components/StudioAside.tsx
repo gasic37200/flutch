@@ -17,10 +17,11 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-function Check({ done, children }: { done: boolean; children: ReactNode }) {
+// off = 꺼 둔 항목: 빈 원("아직 안 됨") 대신 대시로 구분한다
+function Check({ done, off, children }: { done: boolean; off?: boolean; children: ReactNode }) {
   return (
     <li className={`flex items-center gap-2 ${done ? 'text-brand' : 'text-text-muted'}`}>
-      {done ? <Icon name='check' className='size-4' /> : <span className='ml-0.5 size-3 rounded-full border border-current' aria-hidden />}
+      {done ? <Icon name='check' className='size-4' /> : off ? <span className='ml-0.5 h-px w-3 bg-current' aria-hidden /> : <span className='ml-0.5 size-3 rounded-full border border-current' aria-hidden />}
       {children}
     </li>
   )
@@ -41,7 +42,7 @@ export default function StudioAside({ s, live }: { s: S; live: boolean }) {
             <Check done={media.videoReady}>
               {screen ? (media.videoReady ? '공유할 화면 선택됨' : '공유할 화면 선택 전') : media.videoReady ? '카메라 켜짐' : '카메라 켜기 전'}
             </Check>
-            <Check done={false}>{data.record ? '녹화 켜짐 (최대 3시간)' : '녹화 꺼짐'}</Check>
+            <Check done={data.record} off={!data.record}>{data.record ? '녹화 켜짐 (최대 3시간)' : '녹화 꺼짐'}</Check>
           </ul>
         </Card>
         <Card title='권한이 막혔을 때'>
