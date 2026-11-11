@@ -66,7 +66,8 @@ mod tests {
 
     #[test]
     fn blocks_after_max_per_key_and_resets_after_window() {
-        let limiter = RateLimiter::new(2, Duration::from_millis(50));
+        // 창이 짧으면 부하 중 세 번째 호출 전에 창이 지나 실패한다(T30 보고)
+        let limiter = RateLimiter::new(2, Duration::from_secs(1));
         assert!(limiter.hit("a").is_ok());
         assert!(limiter.hit("a").is_ok());
         assert!(matches!(
@@ -74,7 +75,7 @@ mod tests {
             Err(AppError::RateLimited { retry_after_sec: 1 })
         ));
         assert!(limiter.hit("b").is_ok());
-        std::thread::sleep(Duration::from_millis(60));
+        std::thread::sleep(Duration::from_millis(1050));
         assert!(limiter.hit("a").is_ok());
     }
 }
