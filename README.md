@@ -251,6 +251,11 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 2. 두 방송에서 각각 SUPER BURST(1,000비트) 또는 클러치로 게이지를 100%로 만든다. 10초 안에 히어로가 SUPER CLUTCH 배지·그라데이션 테두리로 바뀌고, 패널에 "다음 방송까지" 카운트다운·30초 진행 바·"지금 보러 가기"·진행 중 목록(남은 시간)이 보인다. 시청 화면 영상 왼쪽 위에도 SUPER CLUTCH 배지가 붙는다.
 3. 기대: 30초마다 히어로가 두 방송을 번갈아 보여 주고, 새로 터진 방송은 바로 다음 차례에 나온다. 목록의 방송을 누르면 바로 시청 화면으로 간다. 발동 5분 뒤나 방송을 끝내면 회전에서 빠지고(노출 중이면 바로 다음 방송), 서버를 다시 띄워도 같은 순서·남은 시간이 이어진다.
 
+**P19. CLUTCH FEED (가상 클립)**
+1. 녹화를 켠 방송에서 SUPER CLUTCH를 터뜨리고 방송을 종료한다. 녹화 파일이 완성되기 전(처리 중)에는 홈에 클립이 없고 "최근 다시보기"가 보인다.
+2. 녹화가 준비되면 홈 CLUTCH FEED에 SUPER CLUTCH 배지·0:45가 붙은 클립 카드가 나온다(영상이 짧으면 그만큼).
+3. 기대: 카드를 누르면 다시보기가 발동 30초 전부터 재생되고 구간 끝에서 멈춘다. 숨긴 방송·보관 기간이 지난 녹화의 클립은 사라진다.
+
 ### 시나리오 ↔ 절차 대응표
 시나리오 테스트는 `backend/tests/scenarios/`에 있고 `cd backend && cargo test`로 실행합니다(실제 Postgres, LiveKit·토스는 가짜).
 
@@ -323,6 +328,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `burst_anonymous_hidden_from_public` | 익명 버스트는 공개 이벤트·목록에서 후원자 숨김, 소유자에게만 실명 | (클러치 절차 추가 시) |
 | `burst_rules`, `burst_concurrent_only_balance_succeeds` | 비로그인 401·내 방송 403·영구 밴 403·임시차단 허용·비LIVE 409, 동시 2건은 잔액만큼만 성공 | (클러치 절차 추가 시) |
 | `clutch_rotation` | 진행 중 SUPER CLUTCH 30초 교대, 새 발동은 바로 다음, 진행 중 재발동 없음, 방송 종료 즉시 제외(다음이 새 슬롯), 5분 뒤 제외 | P18 |
+| `clips_from_ready_recordings` | ready 녹화만, 숨김·삭제·녹화 중 제외, 시작 0초 하한, 길이 영상 끝까지 자름, 최신순·페이지 | P19 |
 | `hero_modes`, `rotation_survives_restart` | 히어로 empty·top_viewers·top_gauge·super_clutch, 진행 중 목록 최대 5, 30초 슬롯, 새 앱 인스턴스도 같은 슬롯 | P18 |
 | `donation_amount_mismatch_rejected` | 주문과 다른 금액 승인 거절(토스 호출 없음) | P17 |
 | `donation_after_end_becomes_charge`, `banned_user_cannot_donate` | 승인 시 방송 종료·영구 밴이면 충전만, 주문 단계 거절 | P17 |

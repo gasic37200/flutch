@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 import { ApiRequestError } from '../api/client.ts'
 import Avatar from '../components/ui/Avatar.tsx'
 import Button from '../components/ui/Button.tsx'
@@ -19,6 +19,11 @@ const DAY_MS = 86_400_000
 
 export default function ReplayPage() {
   const id = Number(useParams().recordingId) || undefined
+  // CLUTCH FEED 클립: ?t=시작초&d=길이초
+  const sp = useSearchParams()[0]
+  const start = Math.max(0, Math.floor(Number(sp.get('t')))) || 0
+  const len = Math.floor(Number(sp.get('d'))) || 0
+  const clip = sp.has('t') ? { start, end: len > 0 ? start + len : undefined } : undefined
   const { data: r, error, refetch } = useRecording(id)
   const countView = useCountView(id)
   const now = useNow(false)
@@ -37,7 +42,7 @@ export default function ReplayPage() {
   return (
     <ShellBody aside={<ChatHistory broadcastId={r.broadcastId} startedAt={r.startedAt} />}>
       <div className='flex flex-col gap-3.5'>
-        <ReplayVideo recording={r} onPlay={countView} />
+        <ReplayVideo recording={r} onPlay={countView} clip={clip} />
         <h1 className='text-base font-bold break-words sm:text-xl'>{r.title}</h1>
         <div className='flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-text-muted'>
           <Link to={`/users/${r.owner.id}`} className='inline-flex items-center gap-2 text-sm font-bold text-text hover:text-brand'>

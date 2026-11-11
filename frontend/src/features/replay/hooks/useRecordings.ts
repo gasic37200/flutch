@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { api } from '../../../api/client.ts'
+import type { Clip } from '../../../api/generated/Clip.ts'
 import type { Category } from '../../../api/generated/Category.ts'
 import type { ChatPage } from '../../../api/generated/ChatPage.ts'
 import type { Page } from '../../../api/generated/Page.ts'
@@ -58,4 +59,9 @@ export function useReplayChats(broadcastId: number | undefined) {
     retry: false,
   })
   return { ...q, items: q.data ? [...q.data.pages].reverse().flatMap((p) => p.items) : [] }
+}
+
+/** 홈 CLUTCH FEED용 최신 클립. */
+export function useClips(limit: number) {
+  return useQuery({ queryKey: ['clips', limit], queryFn: () => api<Page<Clip>>(`/clips?limit=${limit}`) })
 }

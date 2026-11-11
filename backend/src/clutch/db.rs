@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use sqlx::{PgConnection, PgExecutor};
+use sqlx::{PgConnection, PgExecutor, PgPool};
 
 /// 게이지 계산 입력. 시각은 모두 DB 시계(`clock_timestamp()`) 기준이라 테스트의 시간 조작도 같은 기준이다.
 pub struct GaugeRow {
@@ -157,4 +157,49 @@ pub async fn mark_shown(conn: &mut PgConnection, id: i64) -> Result<(), sqlx::Er
     .execute(conn)
     .await?;
     Ok(())
+}
+
+pub struct ClipRow {
+    pub id: i64,
+    pub broadcast_id: i64,
+    pub recording_id: i64,
+    pub object_key: String,
+    pub triggered_at: DateTime<Utc>,
+    pub start_sec: i32,
+    pub duration_sec: i32,
+}
+
+/// ready 녹화가 있는 미숨김 방송의 SUPER CLUTCH, 최신순. 구간 = 발동 `before`초 전부터 `len`초(영상 끝을 넘으면 자름).
+/// 발동이 녹화 길이를 벗어나 구간이 비면 뺀다.
+pub async fn clips(
+    db: &PgPool,
+    before_id: Option<i64>,
+    before: i32,
+    len: i32,
+    limit: i64,
+) -> Result<Vec<ClipRow>, sqlx::Error> {
+    sqlx::query_as!(
+        ClipRow,
+        r#"SELECT s.id, s.broadcast_id, r.id AS recording_id, r.object_key AS "object_key!",
+                  s.triggered_at, c.start_sec AS "start_sec!",
+                  LEAST($3::int, r.duration_sec - c.start_sec) AS "duration_sec!"
+           FROM super_clutches s
+           JOIN broadcasts b ON b.id = s.broadcast_id AND b.hidden_at IS NULL
+           JOIN recordings r ON r.broadcast_id = b.id
+                            AND r.status = 'ready' AND r.object_key IS NOT NULL
+           CROSS JOIN LATERAL (
+               SELECT GREATEST(0, floor(extract(epoch FROM s.triggered_at - b.started_at))::int - $2::int) AS start_sec
+           ) c
+           WHERE b.started_at IS NOT NULL
+             AND r.duration_sec > c.start_sec
+             AND ($1::bigint IS NULL OR s.id < $1)
+           ORDER BY s.id DESC
+           LIMIT $4"#,
+        before_id,
+        before,
+        len,
+        limit
+    )
+    .fetch_all(db)
+    .await
 }

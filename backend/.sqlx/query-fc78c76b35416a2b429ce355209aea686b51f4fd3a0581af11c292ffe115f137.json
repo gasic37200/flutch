@@ -1,0 +1,93 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT s.id, s.broadcast_id, r.id AS recording_id, r.object_key AS \"object_key!\",\n                  s.triggered_at, c.start_sec AS \"start_sec!\",\n                  LEAST($3::int, r.duration_sec - c.start_sec) AS \"duration_sec!\"\n           FROM super_clutches s\n           JOIN broadcasts b ON b.id = s.broadcast_id AND b.hidden_at IS NULL\n           JOIN recordings r ON r.broadcast_id = b.id\n                            AND r.status = 'ready' AND r.object_key IS NOT NULL\n           CROSS JOIN LATERAL (\n               SELECT GREATEST(0, floor(extract(epoch FROM s.triggered_at - b.started_at))::int - $2::int) AS start_sec\n           ) c\n           WHERE b.started_at IS NOT NULL\n             AND r.duration_sec > c.start_sec\n             AND ($1::bigint IS NULL OR s.id < $1)\n           ORDER BY s.id DESC\n           LIMIT $4",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "super_clutches",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "broadcast_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "super_clutches",
+            "name": "broadcast_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "recording_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "recordings",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "object_key!",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recordings",
+            "name": "object_key"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "triggered_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "super_clutches",
+            "name": "triggered_at"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "start_sec!",
+        "type_info": "Int4",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 6,
+        "name": "duration_sec!",
+        "type_info": "Int4",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int4",
+        "Int4",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "fc78c76b35416a2b429ce355209aea686b51f4fd3a0581af11c292ffe115f137"
+}
