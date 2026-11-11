@@ -48,7 +48,7 @@ export default function ManagePage() {
       <ConfirmDialog
         open={m.target !== null}
         title='방송을 삭제할까요?'
-        message={m.target ? deleteMessage(m.target) : ''}
+        message={m.target ? `「${m.target.title}」 ${deleteMessage(m.target)}` : ''}
         confirmLabel='삭제'
         loading={m.deleting}
         onConfirm={m.confirmDelete}

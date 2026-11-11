@@ -1,4 +1,6 @@
 import { useParams } from 'react-router'
+import Button from '../components/ui/Button.tsx'
+import EmptyState from '../components/ui/EmptyState.tsx'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import Skeleton from '../components/ui/Skeleton.tsx'
 import { useRequireLogin } from '../features/auth/hooks/useAuth.ts'
@@ -25,7 +27,10 @@ export default function BroadcastFormPage() {
   if (id === undefined) return <BroadcastForm heading={heading} owner={me} />
   if (broadcast.isError || !Number.isInteger(id)) return wrap(<ErrorScreen {...errorKindOf(Number.isInteger(id) ? broadcast.error : undefined)} />)
   if (!broadcast.data) return wrap(<Skeleton className='h-96 w-full' />)
-  // 서버도 PATCH를 403으로 막는다. 여기서는 빈 폼을 보여 주지 않을 뿐.
-  if (broadcast.data.owner.id !== me.id) return wrap(<ErrorScreen kind='notFound' />)
+  // 서버도 PATCH를 403으로 막는다. 여기서는 빈 폼 대신 안내를 보여 준다(스튜디오와 같은 문구).
+  if (broadcast.data.owner.id !== me.id)
+    return wrap(
+      <EmptyState face='grumpy' title='내 방송이 아니에요' description='내가 등록한 방송만 수정할 수 있어요.' action={<Button to='/manage'>내 방송 관리</Button>} />,
+    )
   return <BroadcastForm key={broadcast.data.id} heading={heading} owner={me} existing={broadcast.data} />
 }
