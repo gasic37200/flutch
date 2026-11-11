@@ -83,6 +83,7 @@ docker compose --env-file .env -f deploy/compose.dev.yml up -d   # Postgres 16 +
 curl localhost:8080/api/v1/health                                # 포트는 BACKEND_PORT. {"status":"ok"}
 (cd frontend && npm install && npm run dev)                      # 다른 터미널. /api는 백엔드로 프록시(WebSocket 포함)
 ```
+- (선택, 로컬 QA 전용) 더미 데이터: 백엔드를 한 번 띄워 테스트 계정이 생긴 뒤 `docker compose -f deploy/compose.dev.yml exec -T postgres psql -U flutch -d <DB 이름> -v ON_ERROR_STOP=1 < backend/scripts/seed_qa.sql` — 테스트 계정에 테스트 지급 100,000비트, 팔로우, 예정 방송, 종료 방송 후원 기록을 한 번만 넣습니다. 운영 DB에는 실행하지 않습니다.
 - compose 컨테이너는 모든 worktree가 함께 씁니다. LiveKit 웹훅은 compose를 마지막으로 띄운 `.env`의 `BACKEND_PORT`로 갑니다(다른 worktree로 바꾸려면 그 worktree에서 다시 `up -d`).
 - 로컬 LiveKit: `ws://localhost:7880`, 키 `devkey` / 시크릿 `secret`.
 
@@ -235,7 +236,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 5. 기대: 화면과 웹캠이 별도 트랙으로 전송되어 A가 다른 창(게임)으로 전환해도 두 영상이 끊기지 않는다.
 
 **P17. 지갑·충전·후원**
-1. 로그인(시청자)한 뒤 헤더 비트 알약 또는 "내 지갑"(`/wallet`)에서 잔액과 내역을 본다. 유형(충전·후원·클러치·SUPER BURST·소멸)과 월 필터로 좁혀지고, 유료 클러치는 방송별로 묶여 한 줄로 나온다. "충전하기" → 금액(1,000/5,000/10,000/50,000 또는 직접 입력 1,000~1,000,000) → "결제하기"로 토스 결제위젯이 열린다. 결제를 마치면 `/payments/success`가 승인하고 "충전했어요!"와 잔액이 보인다. 결제창을 닫거나 실패하면 `/payments/fail`이 "비트는 빠져나가지 않았어요"를 보여 준다. 보유 한도(3,000,000)를 넘는 금액은 막힌다.
+1. 로그인(시청자)한 뒤 헤더 비트 알약 또는 "내 지갑"(`/wallet`)에서 잔액과 내역을 본다. 유형(충전·테스트 지급·후원·클러치·SUPER BURST·소멸)과 월 필터로 좁혀지고, 유료 클러치는 방송별로 묶여 한 줄로 나온다. "충전하기" → 금액(1,000/5,000/10,000/50,000 또는 직접 입력 1,000~1,000,000) → "결제하기"로 토스 결제위젯이 열린다. 결제를 마치면 `/payments/success`가 승인하고 "충전했어요!"와 잔액이 보인다. 결제창을 닫거나 실패하면 `/payments/fail`이 "비트는 빠져나가지 않았어요"를 보여 준다. 보유 한도(3,000,000)를 넘는 금액은 막힌다.
 2. 방송 중인 방송을 시청자로 열고 "후원하기": 프리셋(1,000/5,000/10,000) 또는 직접 입력, 메시지(100자), "익명으로 후원" 체크. 잔액이 충분하면 바로 후원되고 잔액 알약이 응답 값으로 줄어든다.
 3. 잔액이 모자라면 버튼이 "N비트 충전하고 후원하기"로 바뀌고, 누르면 결제위젯 → 승인 뒤 "후원했어요!"와 "방송으로 돌아가기"가 나온다. 결제 사이 방송이 끝났거나 차단됐으면 "후원 없이 충전만" 안내가 나온다.
 4. 후원이 들어오면 시청 화면·스트리머 화면 영상 위에 알림이 10초(여러 건은 순서대로), 10,000비트 이상은 노란 큰 카드로 뜨고 채팅창에 강조 한 줄이 남는다. 익명 후원은 시청자 화면에 "익명의 후원자", 스트리머 화면에는 실명 + "익명" 배지가 보이며, 스트리머가 "넘기기"를 누르면 모든 시청자 화면의 현재 알림이 넘어간다.
@@ -317,6 +318,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `mutating_request_without_or_with_foreign_origin_is_forbidden`, `mutating_request_with_allowed_origin_passes`, `read_request_needs_no_origin`, `webhooks_skip_origin_check` | CSRF Origin 검사 | (서버 내부) |
 | `schema_one_live_per_user` | DB 제약: 사용자당 LIVE 1개 | P2 |
 | `schema_ledger_is_append_only`, `schema_payment_key_unique`, `schema_rejects_negative_balance` | DB 제약: 원장·결제·잔액 | P17 |
+| `wallet_grant_credits_and_appends_only`, `wallet_qa_seed_runs_once` | 테스트 지급(grant) 원장: + 적립·내역 grant·수정 불가·주문/방송 참조 거절, 로컬 QA 시드는 계정 없으면 에러·두 번 실행해도 1회 | (로컬 QA) |
 | `donation_confirm_idempotent`, `payment_concurrent_confirm_credits_once` | 같은 승인·웹훅 반복·동시 승인 → 한 번만 적립, 같은 결과 | P17 |
 | `clutch_access_rules` | 비로그인 401, 내 방송 403, 비LIVE 409 | (클러치 절차 추가 시) |
 | `clutch_free_combo_then_paid` | 30초 무료 5회(COMBO) → 6번째 1비트 차감·원장·후원 기록, 잔액 0이면 409 | (클러치 절차 추가 시) |

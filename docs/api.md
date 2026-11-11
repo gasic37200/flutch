@@ -103,8 +103,8 @@ type RecordingDetail = Omit<RecordingCard, 'durationSec'> & {
 
 type LedgerEntry = {
   id: number                           // 묶음이면 묶음의 마지막 원장 id
-  type: 'charge' | 'donation' | 'clutch' | 'burst' | 'withdraw_forfeit'
-  amount: number                       // charge만 +, 나머지 -
+  type: 'charge' | 'grant' | 'donation' | 'clutch' | 'burst' | 'withdraw_forfeit'  // grant = 테스트 지급(로컬 QA 시드만)
+  amount: number                       // charge·grant만 +, 나머지 -
   balanceAfter: number
   count: number                        // clutch 묶음의 건수, 그 외 1
   broadcast: BroadcastRef | null

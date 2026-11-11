@@ -159,7 +159,7 @@ frontend/src/
 - **시간**: `timestamptz`로 저장하고 Postgres `timezone`은 **UTC로 고정**(compose에 `PGTZ=UTC`, 연결 시 `SET TIME ZONE 'UTC'`). API는 UTC(`Z`) RFC 3339로 주고받고, **화면은 KST로 표시**(`Intl.DateTimeFormat('ko-KR', {timeZone: 'Asia/Seoul'})`). "하루"(조회수)·"최근 7일"·"월 필터"의 경계는 **KST(Asia/Seoul)**로 계산.
 - **OS·컨테이너 시간대**: 개발 WSL과 운영 서버 OS는 `Asia/Seoul`(로그 읽기·cron 기준). 앱 컨테이너는 `TZ=Asia/Seoul` 환경변수, `tracing` 로그 시각은 `+09:00` 오프셋 포함. 백업 등 cron은 KST 기준(예: 매일 04:00 KST).
 - **원장**:
-  - 유형: `charge`(+), `donation`(-), `clutch`(-), `burst`(-), `withdraw_forfeit`(-). 참조는 유형별 nullable FK 컬럼.
+  - 유형: `charge`(+), `grant`(+, 테스트 지급 — 로컬 QA 시드 `backend/scripts/seed_qa.sql`만 넣음, 주문·방송 참조 없음), `donation`(-), `clutch`(-), `burst`(-), `withdraw_forfeit`(-). 참조는 유형별 nullable FK 컬럼.
   - 차감: `UPDATE wallets SET balance = balance - $n WHERE user_id = $u AND balance >= $n RETURNING balance` → 그 값을 `balance_after`로 같은 트랜잭션에서 원장에 추가.
   - **스트리머는 받은 비트를 원장에 적립받지 않는다**(정산 없음, 받은 비트를 다시 쓰면 안 됨). 받은 합계는 `donations`에서 집계.
 - **세션**: 32바이트 랜덤 토큰(base64url)을 쿠키 `flutch_session`(httpOnly·Secure·SameSite=Lax)에, DB에는 SHA-256 해시만. 연장은 `last_seen_at`이 1시간 이상 지났을 때만 UPDATE. LIVE 송출 중인 사용자의 세션은 만료 작업이 건너뛴다.

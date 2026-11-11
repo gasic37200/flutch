@@ -392,6 +392,8 @@ pub async fn mismatched_wallets(db: &PgPool) -> Result<Vec<i64>, sqlx::Error> {
 #[ts(export)]
 pub enum LedgerType {
     Charge,
+    /// 테스트 지급(+). 로컬 QA 시드(backend/scripts/seed_qa.sql)만 넣는다.
+    Grant,
     Donation,
     Clutch,
     Burst,
@@ -416,7 +418,7 @@ pub struct LedgerEntry {
     pub id: i64,
     #[serde(rename = "type")]
     pub kind: LedgerType,
-    /// charge만 +, 나머지 -
+    /// charge·grant만 +, 나머지 -
     pub amount: i64,
     pub balance_after: i64,
     /// clutch 묶음의 건수, 그 외 1

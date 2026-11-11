@@ -3,7 +3,8 @@
 화폐: **비트(beat), 1비트 = 1원**. 결제: 토스페이먼츠 테스트 모드.
 
 ## 원장 원칙
-- 원장(ledger)은 **추가만**. 수정·삭제 금지. 유형: 충전, 후원, 유료 클러치, SUPER BURST, 탈퇴 소멸.
+- 원장(ledger)은 **추가만**. 수정·삭제 금지. 유형: 충전, 테스트 지급, 후원, 유료 클러치, SUPER BURST, 탈퇴 소멸.
+- 테스트 지급(`grant`, +)은 **로컬 QA 시드 전용**(`backend/scripts/seed_qa.sql`, psql로 수동 실행). 운영에는 자동 지급 경로가 없다. 지갑 내역에 "테스트 지급"으로 표시.
 - 잔액 차감은 `UPDATE ... WHERE balance >= $amount` 조건부로만. 잔액과 원장 합계는 항상 일치.
 - 결제 확정은 `paymentKey`·`orderId` 유니크로 멱등(같은 승인 통지·웹훅이 여러 번 와도 1번만 적립). 웹훅은 서명이 아니라 **결제 조회 API로 재확인**.
 - 스트리머는 받은 비트를 원장에 적립받지 않는다. 받은 합계는 후원 기록에서 집계.
@@ -47,3 +48,5 @@
 - `donation_anonymous_name_visibility`: 시청자 응답엔 익명, 소유자 응답엔 실명
 - `charge_limits_and_order_expiry`
 - `banned_user_cannot_donate`
+- `wallet_grant_credits_and_appends_only`: 테스트 지급이 잔액·내역(type grant)에 반영, 수정·삭제 불가, 주문·방송 참조·음수 거절
+- `wallet_qa_seed_runs_once`: 시드 계정 없으면 에러, 두 번 실행해도 한 번만 들어가고 잔액 = 원장

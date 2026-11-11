@@ -384,3 +384,128 @@ async fn wallet_requires_login_and_hides_others(db: PgPool) {
     assert!(res.json["nextCursor"].is_null());
     assert_consistent(&db).await;
 }
+
+/// 로컬 QA 시드(backend/scripts/seed_qa.sql)와 같은 테스트 지급 문장.
+const GRANT: &str = "WITH w AS (
+         INSERT INTO wallets (user_id, balance) VALUES ($1, $2)
+         ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance
+         RETURNING balance
+     )
+     INSERT INTO ledger_entries (user_id, type, amount, balance_after) SELECT $1, 'grant', $2, balance FROM w";
+
+fn db_code(err: sqlx::Error) -> String {
+    err.as_database_error()
+        .and_then(|d| d.code())
+        .map(|c| c.into_owned())
+        .unwrap_or_default()
+}
+
+/// 테스트 지급(grant): +로 잔액에 반영되고 내역에 type grant로 나온다. 주문·방송 없이만 들어가고 원장 추가만 규칙을 따른다.
+#[sqlx::test]
+async fn wallet_grant_credits_and_appends_only(db: PgPool) {
+    let app = app(&db);
+    let (cookie, viewer) = login_as(&app, "viewer").await;
+    let (_, streamer) = login_as(&app, "streamer1").await;
+    sqlx::query(GRANT)
+        .bind(viewer)
+        .bind(100_000_i64)
+        .execute(&db)
+        .await
+        .unwrap();
+    charge(&db, viewer, 1000).await.unwrap();
+
+    let res = send(&app, empty_req("GET", "/api/v1/me/wallet", Some(&cookie))).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    assert_eq!(res.json["balance"], 101_000);
+    let items = res.json["items"].as_array().unwrap();
+    assert_eq!(items.len(), 2);
+    assert_eq!(items[1]["type"], "grant");
+    assert_eq!(items[1]["amount"], 100_000);
+    assert_eq!(items[1]["balanceAfter"], 100_000);
+    assert!(items[1]["broadcast"].is_null());
+
+    let res = send(
+        &app,
+        empty_req("GET", "/api/v1/me/wallet?type=grant", Some(&cookie)),
+    )
+    .await;
+    assert_eq!(res.status, StatusCode::OK);
+    let types: Vec<_> = res.json["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| i["type"].clone())
+        .collect();
+    assert_eq!(types, ["grant"]);
+
+    // 원장 추가만: grant 행도 수정·삭제 불가
+    for stmt in [
+        "UPDATE ledger_entries SET amount = 1 WHERE type = 'grant'",
+        "DELETE FROM ledger_entries WHERE type = 'grant'",
+    ] {
+        let err = sqlx::query(stmt).execute(&db).await.unwrap_err();
+        assert_eq!(db_code(err), "P0001", "{stmt}");
+    }
+    // grant는 + 금액만, 방송·주문을 참조하지 않는다
+    let b = ended_broadcast(&db, streamer, "방송", false).await;
+    let o = order(&db, viewer, 1000).await;
+    for (amount, broadcast_id, order_id) in [
+        (-1000_i64, None, None),
+        (1000, Some(b), None),
+        (1000, None, Some(o)),
+    ] {
+        let err = sqlx::query(
+            "INSERT INTO ledger_entries (user_id, type, amount, balance_after, broadcast_id, payment_order_id)
+             VALUES ($1, 'grant', $2, 0, $3, $4)",
+        )
+        .bind(viewer)
+        .bind(amount)
+        .bind(broadcast_id)
+        .bind(order_id)
+        .execute(&db)
+        .await
+        .unwrap_err();
+        assert_eq!(
+            db_code(err),
+            "23514",
+            "{amount} {broadcast_id:?} {order_id:?}"
+        );
+    }
+    assert_consistent(&db).await;
+}
+
+const SEED_QA: &str = include_str!("../../scripts/seed_qa.sql");
+
+/// 로컬 QA 시드: 시드 계정이 없으면 에러로 멈추고, 두 번 실행해도 한 번만 들어가며 잔액·원장이 일치한다.
+#[sqlx::test]
+async fn wallet_qa_seed_runs_once(db: PgPool) {
+    let err = sqlx::raw_sql(SEED_QA).execute(&db).await.unwrap_err();
+    assert!(err.to_string().contains("시드 계정"), "{err}");
+
+    let app = app(&db);
+    let (cookie, _) = login_as(&app, "viewer").await;
+    login_as(&app, "streamer1").await;
+    login_as(&app, "streamer2").await;
+    for _ in 0..2 {
+        sqlx::raw_sql(SEED_QA).execute(&db).await.unwrap();
+    }
+
+    let counts: (i64, i64, i64, i64, i64) = sqlx::query_as(
+        "SELECT (SELECT count(*) FROM ledger_entries WHERE type = 'grant'),
+                (SELECT count(*) FROM follows),
+                (SELECT count(*) FROM broadcasts WHERE status = 'READY'),
+                (SELECT count(*) FROM broadcasts WHERE status = 'ENDED' AND NOT record),
+                (SELECT count(*) FROM donations)",
+    )
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    assert_eq!(counts, (3, 2, 5, 2, 7));
+
+    let res = send(&app, empty_req("GET", "/api/v1/me/wallet", Some(&cookie))).await;
+    assert_eq!(res.status, StatusCode::OK);
+    assert_eq!(res.json["balance"], 100_000 - 46_003);
+    let items = res.json["items"].as_array().unwrap();
+    assert_eq!(items.last().unwrap()["type"], "grant");
+    assert_consistent(&db).await;
+}
