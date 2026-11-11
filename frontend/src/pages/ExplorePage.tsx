@@ -14,7 +14,7 @@ export default function ExplorePage() {
   const { results } = x
   const heading = x.q ? `"${x.q}" 라이브` : x.category ? `${CATEGORY_LABEL[x.category]} 라이브` : '라이브 방송'
   return (
-    <div className='flex max-w-[1440px] flex-col gap-6 lg:gap-8'>
+    <div className='flex flex-col gap-6 lg:gap-8'>
       <div className='flex flex-col gap-3.5'>
         <h1 className='text-2xl font-black sm:text-[26px]'>탐색</h1>
         <form onSubmit={x.search} role='search' className='max-w-[640px] focus-within:drop-shadow-field'>

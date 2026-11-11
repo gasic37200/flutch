@@ -18,7 +18,7 @@ type Props = { channels: SidebarChannel[]; /** 첫 패널 제목(기본 인기 �
 export default function Sidebar({ channels, title = '인기 라이브', empty = '지금은 라이브 중인 방송이 없어요', onNavigate }: Props) {
   return (
     <nav aria-label='주 메뉴' className='flex h-full flex-col gap-5 overflow-y-auto bg-bg px-4 py-5'>
-      <Panel innerClassName='flex flex-col gap-1.5 bg-bg p-3'>
+      <Panel className='shrink-0' innerClassName='flex flex-col gap-1.5 bg-bg p-3'>
         <h2 className='flex items-center gap-2 px-1 pb-1.5 text-[15px] font-black'>
           <Icon name='pulse' className='size-[18px] text-brand' />
           {title}
@@ -42,7 +42,7 @@ export default function Sidebar({ channels, title = '인기 라이브', empty = 
           </ul>
         )}
       </Panel>
-      <ul className='space-y-1'>
+      <ul className='shrink-0 space-y-1'>
         {menu.map((m) => (
           <li key={m.to}>
             <NavLink
@@ -57,7 +57,7 @@ export default function Sidebar({ channels, title = '인기 라이브', empty = 
           </li>
         ))}
       </ul>
-      <Link to='/studio' onClick={onNavigate} aria-label='PLAY ON FLUTCH, 방송 시작하기' className='chamfer mt-auto block overflow-hidden [--c:12px]'>
+      <Link to='/studio' onClick={onNavigate} aria-label='PLAY ON FLUTCH, 방송 시작하기' className='chamfer mt-auto block shrink-0 overflow-hidden [--c:12px]'>
         <img src='/brand/banner-play-on-flutch.png' alt='' className='block w-full' />
       </Link>
     </nav>

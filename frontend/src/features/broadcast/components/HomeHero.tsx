@@ -46,7 +46,7 @@ function HeroCard({ broadcast: b, superClutch, progress }: { broadcast: Broadcas
   return (
     <Panel tone={superClutch ? 'clutch' : 'hero'} className={superClutch ? clutchGlow : ''} innerClassName='overflow-hidden'>
       <Link to={`/live/${b.id}`} className='block' aria-label={`${b.owner.nickname} 라이브 보기`}>
-        <div className='relative aspect-video'>
+        <div className='relative aspect-video lg:aspect-auto lg:h-[min(34vw,800px)]'>
           <ThumbnailImage src={b.thumbnailUrl} category={CATEGORY_LABEL[b.category]} />
           <div className='absolute inset-0 bg-linear-to-b from-bg/15 to-bg/55' />
           <div className='absolute top-3 left-3 flex gap-2 sm:top-4 sm:left-4'>

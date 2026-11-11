@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
 import type { Broadcast } from '../../../api/generated/Broadcast.ts'
 import type { Category } from '../../../api/generated/Category.ts'
@@ -30,9 +30,23 @@ export function useBroadcastForm(existing?: Broadcast) {
   const mutation = existing ? update : create
 
   const addTag = () => {
-    const tag = tagDraft.trim().replace(/^#/, '').trim()
+    const tag = tagDraft
     setTagDraft('')
     if (tag && tags.length < MAX_TAGS && !tags.includes(tag)) setTags([...tags, tag])
+  }
+
+  // 입력칸 앞에 #이 항상 붙어 보이므로 직접 친 #·공백은 걸러낸다
+  const changeTagDraft = (v: string) => setTagDraft(v.replace(/[#\s]/g, ''))
+
+  // 스페이스·Enter·쉼표로 확정. 한글 조합 중에는 확정하지 않는다(마지막 글자가 깨짐).
+  const tagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.nativeEvent.isComposing) return
+    if (e.key === ' ' || e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addTag()
+    } else if (e.key === 'Backspace' && !tagDraft && tags.length > 0) {
+      setTags(tags.slice(0, -1))
+    }
   }
 
   const copyPrevious = () => {
@@ -67,9 +81,9 @@ export function useBroadcastForm(existing?: Broadcast) {
 
   return {
     values: { title, category, tags, tagDraft, record },
-    set: { title: setTitle, category: setCategory, tagDraft: setTagDraft, record: setRecord },
+    set: { title: setTitle, category: setCategory, tagDraft: changeTagDraft, record: setRecord },
     removeTag: (tag: string) => setTags(tags.filter((t) => t !== tag)),
-    addTag,
+    tagKeyDown,
     copyPrevious,
     canCopy: !!previous,
     readyCount: mine.data?.items.filter((b) => b.status === 'READY').length ?? 0,
