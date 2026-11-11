@@ -16,7 +16,7 @@
 | GHCR 이미지 pull용 토큰(`read:packages`) + 서버 SSH 키 → GitHub Secrets | T07 | 11/10 | ✅ |
 | **GitHub Secrets 4개**: `DEPLOY_HOST`(146.56.116.48) · `DEPLOY_USER`(ubuntu) · `DEPLOY_SSH_KEY`(서버 개인키 전체) · `GHCR_READ_TOKEN`(read:packages PAT). 넣은 뒤 Actions › Deploy › Run workflow(main) | T07 완료 확인 | 11/10 | ✅ (11/11 입력, 10:5x 첫 배포 성공·health ok) |
 | **HTTPS 인증서**: 11/10 14:55 KST **Let's Encrypt로 발급 완료**(5분 재시도 cron이 슬롯을 잡음, 2027-02-08까지 유효, 재시도 cron은 `.cert-ok`로 정지). ZeroSSL(EAB)은 대안으로 스크립트에 남겨 둠 | T07 완료 확인 | 11/10 | ✅ |
-| Oracle Object Storage 버킷 2개(`recordings` 공개 읽기·목록 비공개, `backups` 비공개) + Customer Secret Key(S3 호환) + namespace·region | T07 백업, T25 | 11/11 | ⬜ |
+| Oracle Object Storage 버킷 2개(`recordings` 공개 읽기·목록 비공개, `backups` 비공개) + Customer Secret Key(S3 호환) + namespace·region | T07 백업, T25 | 11/11 | ✅ (11/11 14:17 백업 업로드·recordings 쓰기·공개 읽기 200·목록 404 확인, backend 재시작해 녹화 S3 설정 로드) |
 | **녹화 저장소 연결(T25 이후)**: `recordings` 버킷 공개 읽기 + CORS(`https://flutch.kro.kr` GET·HEAD) → 서버 `.env`에 `RECORDING_S3_ENDPOINT`(`https://<ns>.compat.objectstorage.<region>.oraclecloud.com`)·`RECORDING_S3_BUCKET`·`RECORDING_S3_REGION`·`RECORDING_S3_ACCESS_KEY`·`RECORDING_S3_SECRET_KEY`·`RECORDING_PUBLIC_BASE_URL`(`https://objectstorage.<region>.oraclecloud.com/n/<ns>/b/<bucket>/o`). 하나라도 비면 녹화 꺼짐(방송은 정상). LiveKit Cloud Egress 한도 확인 | T25 운영 확인 | 배포 후 | ⬜ |
 | LiveKit Cloud 가입, API key/secret, **대시보드 Settings › Project에서 Build 플랜 한도(분·Egress) 확인** | T08a 운영 확인 | 11/11 | 🟨 (서버 `.env`에 Cloud 키 입력 확인, 플랜 한도 확인은 사용자) |
 | LiveKit 대시보드에 웹훅 URL 등록 `https://flutch.kro.kr/api/v1/livekit/webhook` | T08b 운영 확인 | T07 배포 후 | ⬜ |
@@ -115,7 +115,7 @@ T01 → T02 → T02b → T03 → T04는 직렬. T05·T07은 T01 직후부터 이
 | T03 | 인증 백엔드: 가입·로그인·로그아웃·내 정보·닉네임/비밀번호 변경·테스트 로그인·시드·요청 제한·CSRF·Origin + **금지어·욕설·흔한 비밀번호 목록**(`backend/data/`, 출처 README) + 시나리오 | 01, 10 | T02b | Opus · high | ✅ |
 | T04 | 방송 CRUD·상태 전이·제한·목록/검색 API + 시나리오(재시작 후 조회 포함) | 02 | T03 | Sonnet · medium | ✅ |
 | T05 | 디자인 토큰 + **DESIGN §9 공통 컴포넌트 전체** + 앱 레이아웃(헤더·사이드바) + 에러 화면 (병렬) | DESIGN | T01 | Sonnet · medium | ✅ |
-| T07 | 배포: 서버 세팅·nginx·certbot·compose.prod·`ubuntu-24.04-arm` 러너 이미지 빌드·GHCR·SSH 배포·health 확인·DB 백업 (병렬, 서버·도메인 준비 후) | 10, architecture §10 | T01 | Sonnet · medium | 🟨 (배포·HTTPS·health ✅ 11/11, 원격 DB 백업만 Object Storage 대기) |
+| T07 | 배포: 서버 세팅·nginx·certbot·compose.prod·`ubuntu-24.04-arm` 러너 이미지 빌드·GHCR·SSH 배포·health 확인·DB 백업 (병렬, 서버·도메인 준비 후) | 10, architecture §10 | T01 | Sonnet · medium | ✅ (배포·HTTPS·health 11/11, Object Storage 백업 11/11 14:17 첫 업로드) |
 | T06a | 인증 화면: 로그인·가입·약관 2장·테스트 로그인 버튼·내 정보 (병렬) | 01 | T03, T05 | Sonnet · medium | ✅ |
 | T06b | 방송 화면: 등록·수정·**삭제**·**내 방송 관리**(READY 목록), 홈 그리드, **탐색·검색** (병렬) | 02 | T04, T05 | Sonnet · medium | ✅ |
 | T05d | **디자인 맞춤 · 공통**: 시안 보드 `Main`·`Components`·`Guest`·`Errors`(docs/design-refs/boards)에 토큰·공통 컴포넌트·헤더·사이드바·비로그인 상태·에러 화면을 맞춤 (11/10 추가 — T05가 시안 아티팩트를 열지 못해 home.webp만 보고 만듦) | DESIGN, boards | T05 | Sonnet · medium | ✅ |
