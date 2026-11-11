@@ -23,7 +23,7 @@ export default function WalletPage() {
   if (!w.me) return null
 
   return (
-    <div className='flex max-w-[860px] flex-col gap-5'>
+    <div className='mx-auto flex max-w-[860px] flex-col gap-5'>
       <h1 className='text-[22px] font-black sm:text-[26px]'>내 지갑</h1>
 
       <Panel tone='hero' innerClassName='flex flex-wrap items-center gap-4 p-5 sm:gap-5 sm:p-6'>

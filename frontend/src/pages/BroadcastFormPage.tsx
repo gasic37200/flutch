@@ -16,7 +16,7 @@ export default function BroadcastFormPage() {
 
   const heading = id === undefined ? '새 방송 등록' : '방송 정보 수정'
   const wrap = (body: React.ReactNode) => (
-    <div className='max-w-xl'>
+    <div className='mx-auto max-w-xl'>
       <h1 className='mb-4 text-2xl font-black sm:text-[26px]'>{heading}</h1>
       {body}
     </div>

@@ -57,8 +57,16 @@ export default function Sidebar({ channels, title = '인기 라이브', empty = 
           </li>
         ))}
       </ul>
-      <Link to='/studio' onClick={onNavigate} aria-label='PLAY ON FLUTCH, 방송 시작하기' className='chamfer mt-auto block shrink-0 overflow-hidden [--c:12px]'>
-        <img src='/brand/banner-play-on-flutch.png' alt='' className='block w-full' />
+      {/* 낮은 화면에서는 마스코트가 남은 높이에 맞게 줄고, 너무 낮으면 배너를 숨긴다 */}
+      <Link to='/studio' onClick={onNavigate} aria-label='PLAY ON FLUTCH, 방송 시작하기' className='mt-auto flex min-h-0 shrink flex-col [@media(max-height:560px)]:hidden'>
+        <Panel tone='hero' className='flex min-h-0 flex-1 flex-col' innerClassName='flex min-h-0 flex-1 flex-col items-center gap-2 bg-surface p-3'>
+          <span className='flex shrink-0 items-center gap-1.5 font-display text-xl font-bold italic leading-none text-brand'>
+            <Icon name='bolt' className='size-5' />
+            PLAY ON
+          </span>
+          <span className='shrink-0 font-display text-2xl font-bold italic leading-none text-text'>FLUTCH</span>
+          <img src='/brand/mascot-controller.png' alt='' className='min-h-0 w-full flex-1 object-contain' style={{ maxHeight: 200 }} />
+        </Panel>
       </Link>
     </nav>
   )

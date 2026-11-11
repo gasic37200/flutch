@@ -20,7 +20,7 @@ export default function BroadcastForm({ heading, owner, existing }: Props) {
   const tags = values.tags.map((t) => `#${t}`).join(' ')
 
   return (
-    <div className='flex max-w-[1240px] flex-wrap gap-7'>
+    <div className='mx-auto flex max-w-[1240px] flex-wrap gap-7'>
       <form onSubmit={f.submit} noValidate className='flex min-w-0 max-w-[780px] grow-[999] basis-[520px] flex-col gap-5'>
         <div className='flex flex-wrap items-center gap-3'>
           <h1 className='text-2xl font-black sm:text-[26px]'>{heading}</h1>

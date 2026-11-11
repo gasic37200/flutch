@@ -65,7 +65,7 @@
 - 상황별 표정: 빈 화면 = `sleepy`, 에러 = `grumpy`, 결제·후원 완료 = `happy`/`joy`, SUPER CLUTCH = `excited`.
 - 썸네일 없음: 배경 텍스처 + 카테고리 이름(Chakra Petch) + 작은 졸린 고양이.
 - 빈 화면: 큰 마스코트 + "지금은 조용하네요. 첫 번째 클러치를 만들어 보세요" + 방송하기 버튼.
-- 사이드바 하단 배너: `brand/banner-play-on-flutch.png`. 로그인 화면: `brand/mascot-controller.png`.
+- 사이드바 하단 배너: CSS 카드(Panel hero + `mascot-controller.png`, 원본 PNG가 잘려 대체). 로그인 화면: `brand/mascot-controller.png`.
 
 ## 6. 움직임
 - 애니메이션은 **게이지 차오름, 임박 맥박, COMBO 팝업, 후원 알림 등장, SUPER CLUTCH 연출**에만.
