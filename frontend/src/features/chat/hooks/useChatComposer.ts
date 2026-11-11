@@ -74,6 +74,8 @@ export function useChatComposer(broadcast: BroadcastDetail | undefined, chat: Pi
         setBlocked({ permanent: false, until: new Date(Date.now() + (e.retryAfterSec ?? 60) * 1000).toISOString() })
       } else if (e instanceof ApiRequestError && e.code === 'MODERATION_BANNED') {
         setBlocked({ permanent: true, until: null })
+      } else if (e instanceof ApiRequestError && e.code === 'RATE_LIMITED') {
+        setError('채팅은 1초에 한 번 보낼 수 있어요')
       } else {
         setError(e instanceof ApiRequestError ? e.message : '네트워크 연결을 확인하고 다시 시도해 주세요.')
       }

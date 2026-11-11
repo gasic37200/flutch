@@ -13,6 +13,18 @@ const FREE_WINDOW_MS = 30_000
 const REFRESH_MS = 20_000 // 점수가 5분 창 밖으로 빠지는 감소는 이벤트가 없어 주기적으로 다시 받는다
 const OVERLAY_MS = 3000
 
+/** 쿨다운이 남았으면 "다음 클러치까지 n분"(features/07). 분 단위라 15초마다만 갱신한다. */
+function useCooldownText(until: string | null | undefined) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!until) return
+    const t = setInterval(() => setNow(Date.now()), 15_000)
+    return () => clearInterval(t)
+  }, [until])
+  const ms = until ? Date.parse(until) - now : 0
+  return ms > 0 ? `다음 클러치까지 ${Math.ceil(ms / 60_000)}분` : undefined
+}
+
 export type ClutchMode = 'guest' | 'owner' | 'closed' | 'open'
 
 /** 클러치 버튼 상태: 콤보(내 화면만)·잔액 부족 안내·SUPER CLUTCH 연출 표시. */
@@ -24,6 +36,7 @@ export function useClutch(broadcast: BroadcastDetail | undefined, onEvent: OnEve
   const [sending, setSending] = useState(false)
   const [message, setMessage] = useState<string>()
   const [superClutch, setSuperClutch] = useState<SuperClutch>()
+  const cooldownText = useCooldownText(broadcast?.gauge.cooldownUntil)
 
   const live = broadcast?.status === 'LIVE'
   const mode: ClutchMode = isPending || !me ? 'guest' : broadcast?.viewer?.isOwner ? 'owner' : !live ? 'closed' : 'open'
@@ -90,6 +103,7 @@ export function useClutch(broadcast: BroadcastDetail | undefined, onEvent: OnEve
     sending,
     message,
     superClutch,
+    cooldownText,
     next,
     combo: fresh && !fresh.paid ? fresh.combo : 0,
   }

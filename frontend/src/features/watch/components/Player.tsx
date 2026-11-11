@@ -11,6 +11,8 @@ import type { usePlayer } from '../hooks/usePlayer.ts'
 
 type Props = {
   view: WatchView
+  /** 마지막으로 본 송출 소스(영상 중단 문구용) */
+  source?: 'screen' | 'camera'
   broadcast: BroadcastDetail | undefined
   player: ReturnType<typeof usePlayer>
   onUnmute: () => void
@@ -32,7 +34,7 @@ const sub = (text: ReactNode) => <p className='text-sm text-text-muted'>{text}</
 const dim = (text: ReactNode) => <p className='text-xs text-text-dim'>{text}</p>
 const spinner = (cls: string) => <Icon name='spinner' className={`${cls} animate-spin text-brand motion-reduce:animate-none`} />
 
-function Overlay({ view, broadcast }: Pick<Props, 'view' | 'broadcast'>) {
+function Overlay({ view, broadcast, source }: Pick<Props, 'view' | 'broadcast' | 'source'>) {
   switch (view) {
     case 'waiting':
       return (
@@ -58,7 +60,7 @@ function Overlay({ view, broadcast }: Pick<Props, 'view' | 'broadcast'>) {
       )
     case 'screenPaused':
       return (
-        <Notice title='잠시 화면 공유가 중단됐어요' icon={<Icon name='screenOff' className='size-10 text-text-muted sm:size-11' />}>
+        <Notice title={source === 'camera' ? '영상이 잠시 중단됐어요' : '잠시 화면 공유가 중단됐어요'} icon={<Icon name='screenOff' className='size-10 text-text-muted sm:size-11' />}>
           {sub('스트리머 목소리는 계속 들려요')}
         </Notice>
       )
@@ -117,7 +119,7 @@ function Overlay({ view, broadcast }: Pick<Props, 'view' | 'broadcast'>) {
 const iconBtn = 'inline-flex size-10 items-center justify-center text-text hover:text-brand focus-visible:outline-2 focus-visible:outline-text'
 
 // 표현만: 상태·트랙·볼륨·PIP 숨김은 useWatch·usePlayer가 준다.
-export default function Player({ view, broadcast, player: p, onUnmute }: Props) {
+export default function Player({ view, source, broadcast, player: p, onUnmute }: Props) {
   const { videoRef, pipRef, micRef, shareAudioRef, boxRef } = p
   if (view === 'loading') return <Skeleton className='aspect-video w-full' />
   const playing = view === 'playing'
@@ -140,7 +142,7 @@ export default function Player({ view, broadcast, player: p, onUnmute }: Props) 
       </button>
       <audio ref={micRef} muted={p.muted} autoPlay />
       <audio ref={shareAudioRef} muted={p.muted} autoPlay />
-      <Overlay view={view} broadcast={broadcast} />
+      <Overlay view={view} broadcast={broadcast} source={source} />
       {live && (
         <div className='absolute top-3 left-3 flex gap-2 sm:top-3.5 sm:left-3.5'>
           <Badge tone='live' />

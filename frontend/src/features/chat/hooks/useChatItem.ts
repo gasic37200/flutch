@@ -21,6 +21,8 @@ export function useChatItem(chat: Pick<ChatApi, 'edit' | 'remove'>, item: Chat, 
   const [error, setError] = useState<string>()
   const [popup, setPopup] = useState(false) // 닉네임을 눌러 연 시청자 창
 
+  // 욕설은 서버가 `***`로 가려 내려 준다(원문 비공개). 그대로 수정창에 넣고 저장하면 원문이 `***`로 덮이므로 빈 칸에서 시작한다.
+  const masked = !!item.body?.includes('***')
   const canDelete = !item.deleted && (mine || isOwner)
   const hasMenu = !item.deleted && (mine || isOwner)
 
@@ -53,10 +55,11 @@ export function useChatItem(chat: Pick<ChatApi, 'edit' | 'remove'>, item: Chat, 
     canEdit: editable,
     canDelete,
     editing,
+    masked,
     draft,
     setDraft,
     startEdit: () => {
-      setDraft(item.body ?? '')
+      setDraft(masked ? '' : (item.body ?? ''))
       setError(undefined)
       setMenu(false)
       setEditing(true)

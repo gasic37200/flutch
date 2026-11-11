@@ -29,10 +29,10 @@ export default function WatchInfo({ broadcast: b }: { broadcast: BroadcastDetail
           )}
         </div>
       </div>
-      <div className='flex flex-wrap items-center gap-2.5'>
+      <div className='flex w-full items-center gap-2.5 sm:w-auto'>
         <FollowButton userId={b.owner.id} />
         {live && (
-          <>
+          <div className='flex grow items-center justify-center gap-3 sm:grow-0'>
             <span className='inline-flex items-center gap-1.5 font-mono text-[15px] font-bold text-live'>
               <Icon name='user' className='size-4' title='시청자 수' />
               {b.viewerCount.toLocaleString('ko-KR')}
@@ -42,7 +42,7 @@ export default function WatchInfo({ broadcast: b }: { broadcast: BroadcastDetail
                 {elapsed}
               </span>
             )}
-          </>
+          </div>
         )}
         <DonateButton broadcast={b} />
       </div>

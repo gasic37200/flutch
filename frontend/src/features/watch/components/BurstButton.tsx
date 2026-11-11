@@ -6,15 +6,15 @@ import Modal from '../../../components/ui/Modal.tsx'
 import type { useBurst } from '../hooks/useBurst.ts'
 import type { ClutchMode } from '../hooks/useClutch.ts'
 
-// 게이지 Panel 오른쪽, 클러치 버튼 옆. 로그인한 시청자에게만(LIVE·소유자 아님). 모바일은 아이콘 버튼만.
+// 게이지 Panel 오른쪽, 클러치 버튼 옆. 로그인한 시청자에게만(LIVE·소유자 아님). 클러치 버튼과 같은 폭.
 export default function BurstButton({ burst, mode }: { burst: ReturnType<typeof useBurst>; mode: ClutchMode }) {
   if (mode !== 'open') return null
   const { open, show, close, anonymous, setAnonymous, sending, message, send, price, balance, short } = burst
   return (
     <>
-      <Button variant='burst' size='md' onClick={show} aria-label={`SUPER BURST (${price.toLocaleString('ko-KR')}비트)`}>
+      <Button variant='burst' size='md' className='w-full md:w-40' onClick={show} aria-label={`SUPER BURST (${price.toLocaleString('ko-KR')}비트)`}>
         <Icon name='bolt' className='size-4' />
-        <span className='hidden md:inline'>SUPER BURST</span>
+        SUPER BURST
       </Button>
       <Modal
         open={open}

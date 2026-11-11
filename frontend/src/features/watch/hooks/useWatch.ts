@@ -15,6 +15,10 @@ export function useWatch(broadcastId: number | undefined) {
   const events = useBroadcastEvents(broadcastId)
   const viewer = useViewer(broadcastId)
   const hasVideo = Boolean(viewer.tracks.screenShare ?? viewer.tracks.camera)
+  // 마지막으로 본 송출 소스: 영상이 끊겼을 때 "화면 공유"인지 "웹캠"인지 문구를 가른다
+  const current: 'screen' | 'camera' | undefined = viewer.tracks.screenShare ? 'screen' : viewer.tracks.camera ? 'camera' : undefined
+  const [source, setSource] = useState(current)
+  if (current && current !== source) setSource(current)
   const noVideo = viewer.status === 'connected' && !hasVideo
 
   const [graceOver, setGraceOver] = useState(false)
@@ -39,7 +43,7 @@ export function useWatch(broadcastId: number | undefined) {
   else if (noVideo) view = 'connecting'
   else view = 'playing'
 
-  return { broadcast, error: query.error, refetch: query.refetch, view, viewer, events }
+  return { broadcast, error: query.error, refetch: query.refetch, view, source, viewer, events }
 }
 
 /** 1초마다 갱신되는 현재 시각(ms). 경과 시간 표시용. */
