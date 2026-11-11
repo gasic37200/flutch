@@ -1,6 +1,7 @@
 import { ANONYMOUS, loadTossPayments, type TossPaymentsWidgets } from '@tosspayments/tosspayments-sdk'
 import { useEffect, useRef, useState } from 'react'
 import type { PaymentOrder } from '../../../api/generated/PaymentOrder.ts'
+import { savePaymentReturn } from './usePaymentConfirm.ts'
 
 export const METHODS_ID = 'toss-methods'
 export const AGREEMENT_ID = 'toss-agreement'
@@ -13,6 +14,7 @@ export function useTossPayment(order: PaymentOrder) {
   const widgets = useRef<TossPaymentsWidgets>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [paying, setPaying] = useState(false)
+  const payLock = useRef(false)
   const [error, setError] = useState<string>()
   const { clientKey, amount } = order
 
@@ -46,9 +48,21 @@ export function useTossPayment(order: PaymentOrder) {
   }, [clientKey, amount])
 
   const pay = async () => {
-    if (!widgets.current || paying) return
+    // 같은 틱 연타는 state가 아직 안 바뀌어 ref로 막는다
+    if (!widgets.current || payLock.current) return
+    payLock.current = true
     setPaying(true)
     setError(undefined)
+    savePaymentReturn()
+    // 토스 결제창은 body의 fixed div라 모달 <dialog>(top layer, 나머지 화면 inert) 아래에 깔린다 → 결제창이 떠 있는 동안 비모달로 내린다
+    const dialog = document.getElementById(METHODS_ID)?.closest('dialog')
+    const reopen = (modal: boolean) => {
+      if (!dialog?.open) return
+      dialog.close()
+      if (modal) dialog.showModal()
+      else dialog.show()
+    }
+    reopen(false)
     try {
       await widgets.current.requestPayment({
         orderId: order.orderId,
@@ -60,6 +74,8 @@ export function useTossPayment(order: PaymentOrder) {
       // 결제창을 닫은 경우(USER_CANCEL)도 여기로 온다. 실패 사유는 failUrl 쪽 화면이 보여 준다.
       setError(e instanceof Error && e.message ? e.message : '결제를 시작하지 못했어요.')
     } finally {
+      reopen(true)
+      payLock.current = false
       setPaying(false)
     }
   }

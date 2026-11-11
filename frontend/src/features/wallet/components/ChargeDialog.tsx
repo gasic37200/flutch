@@ -22,7 +22,8 @@ export default function ChargeDialog({ balance, onClose }: { balance: number; on
             if (c.canSubmit) c.submit()
           }}
         >
-          <div role='group' aria-label='충전 금액' className='flex flex-wrap gap-2'>
+          {/* 시안처럼 2열 같은 폭. 칩 버튼을 칸에 맞춰 늘린다 */}
+          <div role='group' aria-label='충전 금액' className='grid grid-cols-2 gap-2 [&_button]:w-full [&_button]:justify-center'>
             {CHARGE_PRESETS.map((n) => (
               <ChoiceChip key={n} selected={!c.custom && c.preset === n} onClick={() => c.selectPreset(n)}>
                 {won(n)}
@@ -33,22 +34,25 @@ export default function ChargeDialog({ balance, onClose }: { balance: number; on
             label='직접 입력 (1,000 ~ 1,000,000)'
             inputMode='numeric'
             placeholder='비트'
+            // "1,000,000"의 글자 수. 그 이상은 입력되지 않는다
+            maxLength={9}
             value={c.custom ? won(Number(c.custom)) : ''}
             onChange={(e) => c.setCustom(e.target.value)}
             error={c.error}
           />
+          {/* 금액이 틀린 동안에는 결제 금액을 보이지 않는다 */}
           <dl className='flex flex-col gap-1.5'>
             <div className='flex justify-between'>
               <dt className='text-text-muted'>결제 금액</dt>
-              <dd className='font-mono font-bold'>{won(c.amount)}원</dd>
+              <dd className='font-mono font-bold'>{c.canSubmit ? `${won(c.amount)}원` : '-'}</dd>
             </div>
             <div className='flex justify-between'>
               <dt className='text-text-muted'>충전 후 잔액</dt>
-              <dd className='font-mono font-bold text-brand'>{won(c.after)} 비트</dd>
+              <dd className='font-mono font-bold text-brand'>{c.canSubmit ? `${won(c.after)} 비트` : '-'}</dd>
             </div>
           </dl>
           <Button type='submit' size='lg' loading={c.busy} disabled={!c.canSubmit}>
-            {won(c.amount)}원 결제하기
+            {c.canSubmit ? `${won(c.amount)}원 결제하기` : '결제하기'}
           </Button>
           <p className='text-xs leading-relaxed text-text-dim'>테스트 모드 충전은 환불을 지원하지 않아요.</p>
         </form>

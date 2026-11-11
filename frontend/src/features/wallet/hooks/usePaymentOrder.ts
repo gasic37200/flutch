@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { api } from '../../../api/client.ts'
 import type { CreateOrderRequest } from '../../../api/generated/CreateOrderRequest.ts'
 import type { PaymentOrder } from '../../../api/generated/PaymentOrder.ts'
@@ -9,9 +9,12 @@ export function usePaymentOrder() {
   const [order, setOrder] = useState<PaymentOrder>()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
+  // 같은 틱 연타는 busy state가 아직 false라 ref로 막는다
+  const lock = useRef(false)
 
   const create = async (req: CreateOrderRequest) => {
-    if (busy) return
+    if (lock.current) return
+    lock.current = true
     setBusy(true)
     setError(undefined)
     try {
@@ -19,6 +22,7 @@ export function usePaymentOrder() {
     } catch (e) {
       setError(errorText(e))
     } finally {
+      lock.current = false
       setBusy(false)
     }
   }

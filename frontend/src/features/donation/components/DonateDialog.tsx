@@ -3,6 +3,7 @@ import Button from '../../../components/ui/Button.tsx'
 import { ChoiceChip } from '../../../components/ui/Chip.tsx'
 import Field from '../../../components/ui/Field.tsx'
 import Modal from '../../../components/ui/Modal.tsx'
+import { FormAlert } from '../../auth/components/FormParts.tsx'
 import PaymentStep from '../../wallet/components/PaymentStep.tsx'
 import { beats } from '../format.ts'
 import { DONATE_PRESETS, MAX_MESSAGE, useDonate } from '../hooks/useDonate.ts'
@@ -39,6 +40,7 @@ export default function DonateDialog({ broadcast, nickname, balance, onClose }: 
           label='직접 입력 (1,000 ~ 1,000,000)'
           inputMode='numeric'
           placeholder='비트'
+          maxLength={9}
           value={d.custom ? beats(Number(d.custom)) : ''}
           onChange={(e) => d.setCustom(e.target.value)}
           error={d.fields.amount}
@@ -63,13 +65,9 @@ export default function DonateDialog({ broadcast, nickname, balance, onClose }: 
           <span className='text-text-muted'>내 잔액</span>
           <b className='font-mono'>{beats(balance)} 비트</b>
         </div>
-        {d.error && (
-          <p role='alert' className='text-text'>
-            {d.error}
-          </p>
-        )}
+        <FormAlert message={d.error} />
         <Button type='submit' size='lg' loading={d.sending} disabled={!d.valid}>
-          {d.needsCharge ? `${beats(d.chargeAmount)}비트 충전하고 후원하기` : `${beats(d.amount)}비트 후원하기`}
+          {!d.valid ? '후원하기' : d.needsCharge ? `${beats(d.chargeAmount)}비트 충전하고 후원하기` : `${beats(d.amount)}비트 후원하기`}
         </Button>
         {d.needsCharge && d.chargeAmount > d.shortage && <p className='text-xs text-text-dim'>최소 충전 단위(1,000비트) 때문에 남는 비트는 잔액에 남아요.</p>}
         <p className='text-xs text-text-dim'>테스트 모드 충전은 환불을 지원하지 않아요.</p>

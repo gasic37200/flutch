@@ -4,7 +4,7 @@ import Button from '../components/ui/Button.tsx'
 import Panel from '../components/ui/Panel.tsx'
 import Skeleton from '../components/ui/Skeleton.tsx'
 import { faceSrc, type Face } from '../components/ui/mascot.ts'
-import { usePaymentConfirm } from '../features/wallet/hooks/usePaymentConfirm.ts'
+import { paymentRetryPath, usePaymentConfirm } from '../features/wallet/hooks/usePaymentConfirm.ts'
 import type { ReactNode } from 'react'
 
 const n = (v: number) => `${v.toLocaleString('ko-KR')} 비트`
@@ -15,7 +15,7 @@ function Card({ ok, face, title, children, actions }: { ok?: boolean; face: Face
       <img src={faceSrc(face)} alt='' className='size-14 shrink-0 rounded-full' />
       <div role={ok ? 'status' : 'alert'} className='flex min-w-0 flex-col items-start gap-1.5'>
         <h1 className='text-base font-bold'>{title}</h1>
-        {children && <div className='text-[13px] text-text-muted'>{children}</div>}
+        {children && <div className='text-[13px] break-keep text-text-muted'>{children}</div>}
         <div className='flex flex-wrap gap-2'>{actions}</div>
       </div>
     </Panel>
@@ -34,23 +34,23 @@ function Success() {
   if (!valid) return <Card face='grumpy' title='결제 정보가 올바르지 않아요' actions={wallet} />
   if (query.isError) {
     const e = query.error
-    const unavailable = e instanceof ApiRequestError && e.status === 502
+    // 4xx는 서버가 토스 승인 전에 막았거나 토스가 승인을 거절한 경우라 돈이 나가지 않았다(주문은 pending으로 남음, api.md 결제 절).
+    // 502·네트워크 끊김은 승인됐을 수도 있어 같은 주문으로 다시 확인한다(멱등).
+    if (e instanceof ApiRequestError && e.status < 500) return <NotCompleted reason={e.message}>결제가 승인되지 않아 돈은 빠져나가지 않았어요.</NotCompleted>
     return (
       <Card
         face='grumpy'
-        title={unavailable ? '결제 확인이 늦어지고 있어요' : '결제를 확인하지 못했어요'}
+        title='결제 확인이 늦어지고 있어요'
         actions={
           <>
-            {unavailable && (
-              <Button size='sm' onClick={() => void query.refetch()} loading={query.isFetching}>
-                다시 확인
-              </Button>
-            )}
+            <Button size='sm' onClick={() => void query.refetch()} loading={query.isFetching}>
+              다시 확인
+            </Button>
             {wallet}
           </>
         }
       >
-        {unavailable ? '잠시 후 다시 확인해 주세요. 결제는 같은 주문으로 이어서 확인돼요.' : e instanceof ApiRequestError ? e.message : '네트워크 연결을 확인하고 다시 시도해 주세요.'}
+        잠시 후 다시 확인해 주세요. 결제는 같은 주문으로 이어서 확인돼요.
       </Card>
     )
   }
@@ -78,24 +78,28 @@ function Success() {
   )
 }
 
-/** /payments/fail: 토스가 실패·취소로 돌려보낸 화면. 비트는 빠져나가지 않았다. */
-function Fail() {
-  const [sp] = useSearchParams()
-  const message = sp.get('message')
+/** 결제가 끝나지 않은 화면(토스 실패·취소, 서버 승인 거절). 돈은 빠져나가지 않았고, 결제를 시작한 화면에서 다시 시도한다. */
+function NotCompleted({ reason, children }: { reason?: string | null; children: ReactNode }) {
   return (
     <Card
       face='grumpy'
       title='결제가 완료되지 않았어요'
       actions={
-        <Button to='/wallet' variant='secondary' size='sm'>
+        <Button to={paymentRetryPath()} variant='secondary' size='sm'>
           다시 시도 →
         </Button>
       }
     >
-      결제를 취소했거나 시간이 지났어요. 비트는 빠져나가지 않았어요.
-      {message && <span className='mt-1 block text-xs text-text-dim'>{message}</span>}
+      {children}
+      {reason && <span className='mt-1 block text-xs text-text-dim'>{reason}</span>}
     </Card>
   )
+}
+
+/** /payments/fail: 토스가 실패·취소로 돌려보낸 화면. */
+function Fail() {
+  const [sp] = useSearchParams()
+  return <NotCompleted reason={sp.get('message')}>결제를 취소했거나 시간이 지났어요. 돈은 빠져나가지 않았어요.</NotCompleted>
 }
 
 export default function PaymentResultPage({ result }: { result: 'success' | 'fail' }) {
