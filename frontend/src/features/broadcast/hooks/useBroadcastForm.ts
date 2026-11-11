@@ -5,6 +5,7 @@ import type { Category } from '../../../api/generated/Category.ts'
 import { useToast } from '../../../hooks/useToast.ts'
 import { formError } from '../../auth/hooks/formError.ts'
 import { useCreateBroadcast, useMyBroadcasts, useUpdateBroadcast } from './useBroadcasts.ts'
+import { READY_LIMIT } from './useManageBroadcasts.ts'
 
 export const MAX_TAGS = 3
 export const MAX_TAG_LENGTH = 10
@@ -29,10 +30,19 @@ export function useBroadcastForm(existing?: Broadcast) {
   const previous = existing ? undefined : mine.data?.items[0]
   const mutation = existing ? update : create
 
-  const addTags = (raw: string[]) => {
+  // 확정할 태그 목록을 돌려준다(상한·중복 규칙 한 곳)
+  const merge = (raw: string[]) => {
     const next = [...tags]
     for (const t of raw) if (t && next.length < MAX_TAGS && !next.includes(t)) next.push(t)
+    return next
+  }
+  const addTags = (raw: string[]) => {
+    const next = merge(raw)
     if (next.length > tags.length) setTags(next)
+  }
+  // 고치는 중에는 이전 서버 오류를 지운다
+  const touch = () => {
+    if (mutation.isError) mutation.reset()
   }
 
   const addTag = () => {
@@ -68,36 +78,52 @@ export function useBroadcastForm(existing?: Broadcast) {
     setRecord(previous.record)
   }
 
-  const done = () => {
-    toast({ tone: 'success', message: existing ? '방송 정보를 저장했어요.' : '방송을 등록했어요. 내 방송 관리에서 시작할 수 있어요.' })
-    void navigate('/manage')
+  const done = (to: string) => {
+    toast({ tone: 'success', message: existing ? '방송 정보를 저장했어요.' : '방송을 등록했어요.' })
+    void navigate(to)
   }
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault()
-    const base = { title: title.trim(), category, tags, record }
-    if (!existing) return create.mutate(base, { onSuccess: done })
+  // 등록은 기본이 스튜디오로 이동(시안), 'manage'면 대기 방송으로 저장하고 관리로 간다
+  const send = (dest: 'studio' | 'manage') => {
+    const finalTags = merge([tagDraft]) // 확정 안 한 태그 입력도 버리지 않는다
+    const base = { title: title.trim(), category, tags: finalTags, record }
+    if (!existing)
+      return create.mutate(base, { onSuccess: (b) => done(dest === 'studio' ? `/studio?broadcast=${b.id}` : '/manage') })
     // 잠긴 필드는 null(= 변경 없음)로 보낸다. 보내면 서버가 409로 거절한다.
     update.mutate(
       {
         title: base.title,
         category: locked.category ? null : category,
-        tags: locked.tags ? null : tags,
+        tags: locked.tags ? null : finalTags,
         record: locked.record ? null : record,
         pipCorner: null,
       },
-      { onSuccess: done },
+      { onSuccess: () => done('/manage') },
     )
   }
 
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    send('studio')
+  }
+
+  const readyCount = mine.data?.items.filter((b) => b.status === 'READY').length ?? 0
+
   return {
     values: { title, category, tags, tagDraft, record },
-    set: { title: setTitle, category: setCategory, tagDraft: changeTagDraft, record: setRecord },
+    set: {
+      title: (v: string) => (touch(), setTitle(v)),
+      category: (v: Category) => (touch(), setCategory(v)),
+      tagDraft: (v: string) => (touch(), changeTagDraft(v)),
+      record: setRecord,
+    },
+    saveToManage: () => send('manage'),
+    full: !existing && readyCount >= READY_LIMIT,
     removeTag: (tag: string) => setTags(tags.filter((t) => t !== tag)),
     tagKeyDown,
     copyPrevious,
     canCopy: !!previous,
-    readyCount: mine.data?.items.filter((b) => b.status === 'READY').length ?? 0,
+    readyCount,
     locked,
     status,
     pending: mutation.isPending,
