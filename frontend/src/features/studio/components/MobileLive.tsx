@@ -50,11 +50,11 @@ export default function MobileLive({ s }: { s: ReturnType<typeof useStudio> }) {
       {media.micReady && (
         <div className='absolute right-4 bottom-30 flex flex-col items-center gap-1.5'>
           <LevelMeter vertical analyser={media.analysers.mic} label='마이크' />
-          <span className='text-[11px] text-text-muted'>마이크</span>
+          <span className='text-xs text-text-muted'>마이크</span>
         </div>
       )}
 
-      <div className='absolute right-20 bottom-24 left-4 text-[11px] text-text-dim' role='status'>
+      <div className='absolute right-20 bottom-24 left-4 text-xs text-text-muted [text-shadow:0_1px_2px_var(--color-bg)]' role='status'>
         {s.wakeLockMissing ? '화면이 꺼지지 않게 설정해 주세요. 이 브라우저에서는 자동으로 막을 수 없어요.' : '화면 꺼짐 방지 켜짐'}
         <br />
         다른 앱으로 이동하면 카메라가 멈출 수 있어요.
