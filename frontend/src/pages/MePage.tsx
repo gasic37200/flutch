@@ -6,7 +6,7 @@ export default function MePage() {
   const logout = useLogoutToHome()
   if (!me) return null
   return (
-    <div className='mx-auto max-w-[420px]'>
+    <div className='max-w-[420px]'>
       <h1 className='mb-4 text-2xl font-black sm:text-[26px]'>내 정보</h1>
       <AccountSettings me={me} onLogout={logout} />
     </div>

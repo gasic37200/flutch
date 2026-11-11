@@ -15,7 +15,7 @@ export default function ManagePage() {
   if (!me) return null
 
   return (
-    <div className='mx-auto max-w-3xl'>
+    <div className='max-w-3xl 2xl:max-w-[1400px]'>
       <div className='mb-4 flex items-center justify-between gap-3'>
         <div>
           <h1 className='text-2xl font-black sm:text-[26px]'>내 방송 관리</h1>

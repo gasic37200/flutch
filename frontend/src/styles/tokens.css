@@ -33,7 +33,7 @@
   --drop-shadow-glow: 0 0 12px rgba(176, 246, 18, 0.4);
   /* SUPER CLUTCH 히어로 주황 글로우 */
   --drop-shadow-clutch: 0 0 16px rgba(255, 122, 26, 0.45);
-  --drop-shadow-focus: 0 0 2px var(--color-text);
+  --drop-shadow-focus: 0 0 3px var(--color-text);
   --drop-shadow-field: 0 0 3px rgba(176, 246, 18, 0.6);
 
   --animate-shimmer: shimmer 1.4s ease-in-out infinite;
@@ -126,9 +126,12 @@
     background: var(--color-bg);
     color: var(--color-text);
     font-family: var(--font-sans);
+    /* 한국어는 단어 중간에서 줄바꿈하지 않고, 긴 URL 등은 어디서든 끊는다 */
+    word-break: keep-all;
+    overflow-wrap: anywhere;
   }
   :focus-visible {
-    outline: 2px solid var(--color-text);
+    outline: 3px solid var(--color-text);
     outline-offset: 2px;
   }
 }

@@ -37,18 +37,18 @@ export default function Field(props: InputProps | AreaProps) {
           {multiline ? (
             <textarea {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)} {...shared} className={`${control} min-h-24 py-2`} />
           ) : (
-            <input {...(rest as InputHTMLAttributes<HTMLInputElement>)} {...shared} className={`${control} h-10`} />
+            <input {...(rest as InputHTMLAttributes<HTMLInputElement>)} {...shared} className={`${control} h-[38px]`} />
           )}
         </div>
       </div>
       {(note || length !== null) && (
         <div className='mt-1 flex items-start justify-between gap-2 text-xs'>
-          <p id={noteId} className={`flex items-center gap-1 ${error ? 'text-text' : 'text-text-dim'}`}>
-            {error && <Icon name='alert' className='size-3.5 text-text' />}
+          <p id={noteId} className={`flex items-start gap-1 ${error ? 'text-text' : 'text-text-dim'}`}>
+            {error && <Icon name='alert' className='mt-px size-3.5 shrink-0 text-text' />}
             {note}
           </p>
           {length !== null && (
-            <span className='font-mono text-text-dim'>
+            <span className='shrink-0 font-mono text-text-dim'>
               {length}/{rest.maxLength}
             </span>
           )}

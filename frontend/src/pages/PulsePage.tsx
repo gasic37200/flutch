@@ -1,4 +1,5 @@
 import Button from '../components/ui/Button.tsx'
+import { kstStamp } from '../lib/kst.ts'
 import Avatar from '../components/ui/Avatar.tsx'
 import EmptyState from '../components/ui/EmptyState.tsx'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
@@ -9,7 +10,6 @@ import { count } from '../features/replay/format.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
 import { Link } from 'react-router'
 
-const kst = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
 
 export default function PulsePage() {
   const { me, isPending } = useAuth()
@@ -43,7 +43,7 @@ export default function PulsePage() {
                       <span className='min-w-0 grow'>
                         <b className='block truncate text-sm'>{o.user.nickname}</b>
                         <span className='text-xs text-text-dim'>
-                          팔로워 {count(o.followerCount)} · {o.lastEndedAt ? `마지막 방송 ${kst.format(new Date(o.lastEndedAt))}` : '방송 기록 없음'}
+                          팔로워 {count(o.followerCount)} · {o.lastEndedAt ? `마지막 방송 ${kstStamp(o.lastEndedAt)}` : '방송 기록 없음'}
                         </span>
                       </span>
                     </Link>

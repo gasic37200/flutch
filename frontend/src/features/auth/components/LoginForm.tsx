@@ -28,7 +28,7 @@ export default function LoginForm() {
         </Button>
         <p className='text-[13px] text-text-muted'>
           아직 계정이 없나요?{' '}
-          <Link to='/signup' className='font-semibold text-brand hover:underline'>
+          <Link to='/signup' className='inline-flex min-h-11 items-center font-semibold text-brand hover:underline'>
             회원가입
           </Link>{' '}
           · 비밀번호를 잊으면 복구할 수 없어요.

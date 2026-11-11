@@ -13,7 +13,7 @@ export function ChoiceChip({ selected, onClick, children }: { selected?: boolean
         type='button'
         aria-pressed={selected}
         onClick={onClick}
-        className={`chamfer inline-flex h-9 items-center px-4 text-sm [--c:6px] ${selected ? 'bg-brand font-bold text-bg' : 'bg-surface-2 text-text-muted hover:text-text'}`}
+        className={`chamfer inline-flex h-11 items-center px-4 text-sm sm:h-9 [--c:6px] ${selected ? 'bg-brand font-bold text-bg' : 'bg-surface-2 text-text-muted hover:text-text'}`}
       >
         {children}
       </button>
