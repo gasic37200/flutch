@@ -5,11 +5,12 @@ import ErrorScreen from '../../../components/ui/ErrorScreen.tsx'
 import LiveCard from '../../../components/ui/LiveCard.tsx'
 import { errorKindOf } from '../../../hooks/errorKind.ts'
 import { CATEGORY_LABEL } from '../../broadcast/categories.ts'
-import { GridSkeleton } from '../../broadcast/components/BroadcastGrid.tsx'
+import { cardGrid, GridSkeleton } from '../../broadcast/components/BroadcastGrid.tsx'
 import { count, durationLabel, kstDate } from '../format.ts'
 import type { useRecordings } from '../hooks/useRecordings.ts'
 
-export const gridClass = 'grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] sm:gap-4 2xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]'
+// 다시보기 카드는 제목·메타가 길어 375에서는 1열
+export const gridClass = `${cardGrid} grid-cols-1`
 
 export function ReplayCard({ recording: r }: { recording: RecordingCard }) {
   return (

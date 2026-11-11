@@ -10,7 +10,7 @@ export default function AuthShell() {
   const panel = useSidebarPanel(me)
   return (
     <AuthContext value={{ me, isPending }}>
-      <AppShell channels={panel.channels} panelTitle={panel.title} panelEmpty={panel.empty} user={me && { id: me.id, nickname: me.nickname, balance: me.balance }} onLogout={logout} />
+      <AppShell panel={panel} user={me && { id: me.id, nickname: me.nickname, balance: me.balance }} onLogout={logout} />
     </AuthContext>
   )
 }

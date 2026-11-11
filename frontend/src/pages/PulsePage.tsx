@@ -16,14 +16,24 @@ export default function PulsePage() {
   const pulse = usePulse(50, me !== null)
   if (isPending) return <GridSkeleton count={4} />
   if (me === null) {
-    return <EmptyState title='로그인하면 팔로우한 채널을 볼 수 있어요' action={<Button to='/login'>로그인</Button>} />
+    return (
+      <div className='flex flex-col gap-6 lg:gap-8'>
+        <h1 className='text-2xl font-black sm:text-[26px]'>PULSE</h1>
+        <EmptyState title='로그인하면 팔로우한 채널을 볼 수 있어요' action={<Button to='/login?next=/pulse'>로그인</Button>} />
+      </div>
+    )
   }
   if (pulse.isError) return <ErrorScreen {...errorKindOf(pulse.error)} onRetry={() => void pulse.refetch()} />
   if (pulse.isPending) return <GridSkeleton count={4} />
   const { live, offline, total } = pulse.data
   return (
     <div className='flex flex-col gap-6 lg:gap-8'>
-      <h1 className='text-2xl font-black sm:text-[26px]'>PULSE</h1>
+      <div className='flex flex-col gap-1'>
+        <h1 className='text-2xl font-black sm:text-[26px]'>PULSE</h1>
+        <p className='text-sm text-text-muted'>
+          내가 팔로우한 채널 <b className='font-mono text-text'>{total}</b>
+        </p>
+      </div>
       {total === 0 ? (
         <EmptyState title='아직 팔로우한 채널이 없어요' description='마음에 드는 스트리머를 팔로우하면 여기에 모여요.' action={<Button to='/explore'>방송 탐색하기</Button>} />
       ) : (
@@ -35,7 +45,7 @@ export default function PulsePage() {
           {offline.length > 0 && (
             <section aria-labelledby='pulse-offline' className='flex flex-col gap-3'>
               <SectionTitle id='pulse-offline'>오프라인</SectionTitle>
-              <ul className='grid gap-3 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] 2xl:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]'>
+              <ul className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
                 {offline.map((o) => (
                   <li key={o.user.id}>
                     <Link to={`/users/${o.user.id}`} className='flex items-center gap-3 bg-surface p-3 hover:bg-surface-2'>
