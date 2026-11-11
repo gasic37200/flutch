@@ -13,13 +13,14 @@ function Notice({ title, sub, busy }: { title: string; sub?: string; busy?: bool
 }
 
 // 탐색·볼륨·전체화면·배속은 브라우저 기본 컨트롤을 쓴다. 영상이 아니면 같은 비율의 안내 박스를 보여 준다.
-export default function ReplayVideo({ recording: r, onPlay }: { recording: RecordingDetail; onPlay: () => void }) {
+/** `clip`이 있으면 그 구간(초)만 재생한다(미디어 프래그먼트 `#t=시작,끝`: 구간 끝에서 멈춘다). */
+export default function ReplayVideo({ recording: r, onPlay, clip }: { recording: RecordingDetail; onPlay: () => void; clip?: { start: number; end?: number } }) {
   const [broken, setBroken] = useState(false)
   return (
     <div className='relative aspect-video w-full overflow-hidden bg-bg bg-cover bg-center' style={{ backgroundImage: 'url(/brand/bg-speed.jpg)' }}>
       {r.status === 'ready' && r.videoUrl && !broken ? (
         <video
-          src={r.videoUrl}
+          src={clip ? `${r.videoUrl}#t=${clip.start}${clip.end ? `,${clip.end}` : ''}` : r.videoUrl}
           poster={r.thumbnailUrl ?? undefined}
           controls
           playsInline

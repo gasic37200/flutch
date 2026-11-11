@@ -4,11 +4,11 @@ import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import BroadcastGrid, { BroadcastCard, CategoryChips, GridSkeleton, SectionTitle } from '../features/broadcast/components/BroadcastGrid.tsx'
 import HomeHero from '../features/broadcast/components/HomeHero.tsx'
 import { RecommendedCard } from '../features/broadcast/components/HomeSections.tsx'
-import RecentReplays from '../features/replay/components/RecentReplays.tsx'
+import ClutchFeed from '../features/replay/components/ClutchFeed.tsx'
 import { useHome } from '../features/broadcast/hooks/useHome.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
 
-// CLUTCH FEED(T30)는 "최근 다시보기" 자리에 붙는다.
+// CLUTCH FEED: 클립이 있으면 클립, 없으면 최근 다시보기.
 export default function HomePage() {
   const { category, setCategory, grid, hero, recommended } = useHome()
   const empty = (
@@ -60,7 +60,7 @@ export default function HomePage() {
         )}
       </section>
 
-      <RecentReplays />
+      <ClutchFeed />
     </div>
   )
 }

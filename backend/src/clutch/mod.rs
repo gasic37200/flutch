@@ -31,6 +31,7 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/broadcasts/{id}/clutches", post(handlers::create))
         .route("/broadcasts/{id}/bursts", post(handlers::burst))
         .route("/home/hero", get(rotation::hero))
+        .route("/clips", get(handlers::clips))
         .layer(Extension(Arc::new(Limits::default())))
 }
 

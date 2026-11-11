@@ -1,12 +1,16 @@
 use std::sync::Arc;
 
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::{Extension, Json};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use super::{
     BurstRequest, BurstResult, ClutchError, ClutchResult, Limits, Source, add_points, db, publish,
 };
 use crate::AppState;
+use crate::broadcast::{Broadcast, Page};
 use crate::error::AppError;
 use crate::extract::{CurrentUser, JsonBody};
 use crate::wallet::{self, DebitKind, DonationError, DonationKind, NewDonation};
@@ -137,5 +141,81 @@ pub async fn burst(
         donation,
         balance: posted.balance_after,
         gauge: out.gauge,
+    }))
+}
+
+/// 가상 클립 구간: SUPER CLUTCH 발동 30초 전부터 45초(발동 15초 후까지). 파일은 만들지 않는다.
+const CLIP_BEFORE_SECS: i32 = 30;
+const CLIP_LEN_SECS: i32 = 45;
+
+#[derive(Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct Clip {
+    /// super_clutch id
+    pub id: i64,
+    pub recording_id: i64,
+    pub video_url: String,
+    pub broadcast: Broadcast,
+    pub start_sec: i32,
+    pub duration_sec: i32,
+    pub triggered_at: DateTime<Utc>,
+}
+
+#[derive(Deserialize, Default)]
+pub struct ClipsQuery {
+    cursor: Option<String>,
+    limit: Option<String>,
+}
+
+pub async fn clips(
+    State(state): State<Arc<AppState>>,
+    Query(q): Query<ClipsQuery>,
+) -> Result<Json<Page<Clip>>, AppError> {
+    let num = |field: &str, v: &Option<String>| -> Result<Option<i64>, AppError> {
+        v.as_deref()
+            .map(|s| {
+                s.parse().map_err(|_| {
+                    AppError::Validation(
+                        [(field.to_owned(), "숫자로 입력해 주세요.".to_owned())].into(),
+                    )
+                })
+            })
+            .transpose()
+    };
+    let limit = num("limit", &q.limit)?.unwrap_or(20).clamp(1, 50);
+    let mut rows = db::clips(
+        &state.db,
+        num("cursor", &q.cursor)?,
+        CLIP_BEFORE_SECS,
+        CLIP_LEN_SECS,
+        limit + 1,
+    )
+    .await?;
+    let next_cursor = (rows.len() as i64 > limit).then(|| {
+        rows.truncate(limit as usize);
+        rows.last().map(|r| r.id.to_string())
+    });
+    let base = &state.config.recording.public_base_url;
+    let mut items = Vec::with_capacity(rows.len());
+    for r in rows {
+        // shortcut: 클립마다 방송을 개별 조회(최대 51회), 목록 50개 한도라 허용 — 부하가 보이면 한 쿼리로 묶는다.
+        // 조회 사이에 숨겨진 방송은 건너뛴다
+        let Some(broadcast) = crate::broadcast::find_one(&state, r.broadcast_id).await? else {
+            continue;
+        };
+        items.push(Clip {
+            id: r.id,
+            recording_id: r.recording_id,
+            video_url: format!("{base}/{}", r.object_key),
+            broadcast,
+            start_sec: r.start_sec,
+            duration_sec: r.duration_sec,
+            triggered_at: r.triggered_at,
+        });
+    }
+    Ok(Json(Page {
+        items,
+        next_cursor: next_cursor.flatten(),
     }))
 }

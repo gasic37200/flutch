@@ -3,7 +3,7 @@ import { SectionTitle } from '../../broadcast/components/BroadcastGrid.tsx'
 import { useRecordings } from '../hooks/useRecordings.ts'
 import { ReplayList } from './ReplayGrid.tsx'
 
-/** 홈 "최근 다시보기"(CLUTCH FEED T30 전까지 이 자리를 쓴다). 없으면 섹션째 숨긴다. */
+/** 홈 "최근 다시보기"(CLUTCH FEED에 클립이 없을 때의 대체). 없으면 섹션째 숨긴다. */
 export default function RecentReplays() {
   const q = useRecordings({ limit: 4 })
   const items = q.data?.pages[0]?.items ?? []

@@ -19,11 +19,13 @@ type Props = {
   durationLabel?: string
   /** 카드 맨 아래 보조 한 줄(다시보기: 조회수·날짜) */
   meta?: string
+  /** CLUTCH FEED 클립 카드: SUPER CLUTCH 배지 */
+  superClutch?: boolean
   className?: string
 }
 
 // 라이브·다시보기 공용 카드. 썸네일이 없으면 배경 텍스처 + 카테고리 이름 + 졸린 고양이(DESIGN §5).
-export default function LiveCard({ to, title, streamerId, streamerName, streamerAvatarUrl, category, thumbnailUrl, live, viewerCount, durationLabel, meta, className }: Props) {
+export default function LiveCard({ to, title, streamerId, streamerName, streamerAvatarUrl, category, thumbnailUrl, live, viewerCount, durationLabel, meta, superClutch, className }: Props) {
   return (
     <Panel interactive className={className} innerClassName='overflow-hidden'>
       <Link to={to} className='block'>
@@ -41,6 +43,7 @@ export default function LiveCard({ to, title, streamerId, streamerName, streamer
               <span className='sr-only'>명 시청 중</span>
             </span>
           )}
+          {superClutch && <Badge tone='superClutch' className='absolute top-2 right-2' />}
           {category && <span className='absolute bottom-2 left-2 font-display text-[13px] font-bold tracking-wide'>{category}</span>}
           {durationLabel ? (
             <span className='absolute right-2 bottom-2 rounded-xs bg-bg/70 px-1.5 font-mono text-xs'>{durationLabel}</span>

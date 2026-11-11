@@ -364,6 +364,21 @@ pub async fn live_of_owners(state: &AppState, owners: &[i64]) -> Result<Vec<Broa
         .collect()
 }
 
+/// 숨기지 않은 방송 한 건(없으면 `None`). 목록 응답에 싣는 용도라 상세보다 가볍다.
+pub async fn find_one(state: &AppState, id: i64) -> Result<Option<Broadcast>, AppError> {
+    let f = db::Filter {
+        id: Some(id),
+        limit: 1,
+        ..db::Filter::default()
+    };
+    db::find(&state.db, &f)
+        .await?
+        .into_iter()
+        .next()
+        .map(|r| handlers::into_broadcast(state, r))
+        .transpose()
+}
+
 /// 모든 LIVE·미숨김 방송(최신 id 순). 홈 히어로용.
 pub async fn live_all(state: &AppState) -> Result<Vec<Broadcast>, AppError> {
     let f = db::Filter {
