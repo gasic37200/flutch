@@ -56,7 +56,7 @@ export default function ViewerPopup({ user, badges, ownerId, onClose }: Props) {
                   ))}
                 </div>
               </div>
-              <Button variant='danger' disabled={actions.busy} onClick={() => setConfirming(true)}>
+              <Button variant='outline' disabled={actions.busy} onClick={() => setConfirming(true)}>
                 영구 밴
               </Button>
               {banned && (
@@ -113,7 +113,6 @@ export default function ViewerPopup({ user, badges, ownerId, onClose }: Props) {
         title={`${user.nickname}님을 영구 밴할까요?`}
         message='해제할 때까지 내 모든 방송에서 채팅·후원을 할 수 없고, 지금 방송의 채팅은 "삭제된 메시지"가 돼요.'
         confirmLabel='영구 밴'
-        tone='live'
         loading={actions.busy}
         onConfirm={() => void act(() => actions.ban(user, 'permanent'))}
         onCancel={() => setConfirming(false)}
