@@ -152,7 +152,7 @@ feat(broadcast): 송출 시작·종료 API 추가
    - "위험·건너뛴 것"이 있으면 → 판단해서 **후속 서브에이전트에게 다시 할당**(같은 PR 브랜치에 이어서, 또는 새 task). 사용자 결정이 필요한 것만 §9-6으로.
    - PR의 **docs 변경분만 따로 검토**: decisions·features·architecture·api와 모순이 없고 사실이면 승인하고 **변경된 문서를 다시 읽어 숙지**한다. 틀리면 서브에이전트에게 수정 요청.
    - `auth` `donation` `wallet` 범위면 `gh pr checkout <번호>`로 PR 브랜치를 받은 뒤 `/ponytail-review branch` 1회, 끝나면 main으로 돌아온다.
-4. **머지**: CI 통과 + 위 판단 통과 → Squash merge → roadmap 상태와 **`docs/worklog.md`**(§9-7) 갱신을 묶어 docs PR.
+4. **머지**: CI 통과 + 위 판단 통과 → Squash merge → roadmap 상태와 **`docs/worklog.md`**(§9-7) 갱신을 묶어 docs PR. 그리고 WSL에서 그 task의 worktree·로컬 브랜치·`flutch_<task>` DB를 지운다(끝난 task DB가 44개 쌓이자 Postgres 크래시 복구의 디스크 동기화가 5분 걸려 진행 중 task가 모두 멈춤, 11/11).
 5. **배포 확인**: 머지 후 자동 배포가 끝나면 `GET /api/v1/health` 확인. 실패하면 **즉시 revert PR을 올려 머지**하고 원인 task를 다시 할당.
 6. **컨텍스트 관리**: task를 머지할 때마다 roadmap에 상태가 남아 있으므로, 컨텍스트가 길어지면 `/compact` 후 1번(숙지)부터 다시.
 
