@@ -11,7 +11,6 @@ export const WALLET_KEY = ['wallet']
 export const LEDGER_FILTERS: { type: LedgerType | ''; label: string }[] = [
   { type: '', label: '전체' },
   { type: 'charge', label: '충전' },
-  { type: 'grant', label: '테스트 지급' },
   { type: 'donation', label: '후원' },
   { type: 'clutch', label: '클러치' },
   { type: 'burst', label: 'SUPER BURST' },
