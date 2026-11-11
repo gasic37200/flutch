@@ -1,5 +1,6 @@
 import type { PaymentOrder } from '../../../api/generated/PaymentOrder.ts'
 import Button from '../../../components/ui/Button.tsx'
+import { FormAlert } from '../../auth/components/FormParts.tsx'
 import { AGREEMENT_ID, METHODS_ID, useTossPayment } from '../hooks/useTossPayment.ts'
 
 type Props = { order: PaymentOrder; onBack: () => void; backLabel: string }
@@ -33,12 +34,8 @@ export default function PaymentStep({ order, onBack, backLabel }: Props) {
           결제창을 불러오는 중이에요…
         </p>
       )}
-      {p.status === 'error' && <p role='alert'>결제창을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>}
-      {p.error && (
-        <p role='alert' className='text-xs text-text-muted'>
-          {p.error}
-        </p>
-      )}
+      {p.status === 'error' && <FormAlert message='결제창을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.' />}
+      <FormAlert message={p.error} />
       <div className='flex justify-end gap-2'>
         {back}
         <Button onClick={() => void p.pay()} loading={p.paying} disabled={p.status !== 'ready'}>

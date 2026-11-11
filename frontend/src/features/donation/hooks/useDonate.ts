@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { api, ApiRequestError } from '../../../api/client.ts'
 import type { DonateResponse } from '../../../api/generated/DonateResponse.ts'
 import type { DonationInput } from '../../../api/generated/DonationInput.ts'
@@ -27,6 +27,7 @@ export function useDonate(broadcastId: number, balance: number, onClose: () => v
   const [message, setMessage] = useState('')
   const [anonymous, setAnonymous] = useState(false)
   const [sending, setSending] = useState(false)
+  const sendLock = useRef(false)
   const [error, setError] = useState<string>()
   const [fields, setFields] = useState<{ amount?: string; message?: string }>({})
   const payment = usePaymentOrder()
@@ -40,6 +41,9 @@ export function useDonate(broadcastId: number, balance: number, onClose: () => v
   const startOrder = () => payment.create({ purpose: 'donation', broadcastId, donation: input })
 
   const send = async () => {
+    // 같은 틱 연타는 sending state가 아직 false라 ref로 막는다(서버는 별건 후원으로 받으므로 여기서 막아야 한다)
+    if (sendLock.current) return
+    sendLock.current = true
     setSending(true)
     try {
       const r = await api<DonateResponse>(`/broadcasts/${broadcastId}/donations`, { method: 'POST', json: input })
@@ -59,6 +63,7 @@ export function useDonate(broadcastId: number, balance: number, onClose: () => v
         setFields({ message: e.message })
       } else setError(errorText(e))
     } finally {
+      sendLock.current = false
       setSending(false)
     }
   }
@@ -93,7 +98,7 @@ export function useDonate(broadcastId: number, balance: number, onClose: () => v
     },
     setAnonymous,
     submit: () => {
-      if (!valid || sending || payment.busy) return
+      if (!valid || sendLock.current || payment.busy) return
       setError(undefined)
       setFields({})
       void (needsCharge ? startOrder() : send())

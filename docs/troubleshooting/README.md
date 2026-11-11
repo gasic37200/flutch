@@ -50,3 +50,4 @@
 | [T24-throttle-test-timing.md](T24-throttle-test-timing.md) | T24 | 묶음(throttle) 시나리오가 전체 테스트에서만 실패 → 시간 기준점을 이벤트 수신 뒤가 아니라 요청 전에, 묶일 입력은 직접 publish로 몰아 넣기 |
 | [T29-migration-order-after-parallel-task.md](T29-migration-order-after-parallel-task.md) | T29 | 병렬 task가 먼저 머지한 마이그레이션보다 버전이 앞섬 → PR 전 rebase 뒤 버전 확인, 머지 전이면 이름을 더 큰 버전으로 |
 | [T34-clippy-online-empty-task-db.md](T34-clippy-online-empty-task-db.md) | T34 | 막 만든 task DB에 `DATABASE_URL`을 두면 `query!` 매크로가 빈 DB를 검사해 clippy 실패 → `SQLX_OFFLINE=true` 또는 `sqlx migrate run` 뒤 |
+| [T35-toss-window-under-dialog-top-layer.md](T35-toss-window-under-dialog-top-layer.md) | T35 | 토스 결제창(body 오버레이)이 `showModal()` 모달(top layer·inert) 뒤에 깔림 → 결제창이 떠 있는 동안 dialog를 `show()`로 내림 |
