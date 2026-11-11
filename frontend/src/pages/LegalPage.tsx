@@ -31,7 +31,7 @@ const DOCS = {
 export default function LegalPage({ doc }: { doc: keyof typeof DOCS }) {
   const { title, sections } = DOCS[doc]
   return (
-    <div className='mx-auto max-w-2xl'>
+    <div className='max-w-2xl'>
       <Panel innerClassName='flex flex-col gap-3 p-5 text-[13px] leading-[1.7] text-text-muted'>
         <h1 className='text-lg font-bold text-text'>{title}</h1>
         <p className='chamfer bg-surface-2 px-3 py-2 text-text [--c:6px]'>공모전 시연용 서비스예요. 실제 결제는 일어나지 않아요.</p>

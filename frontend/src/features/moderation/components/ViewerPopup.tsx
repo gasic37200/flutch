@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { kstStamp } from '../../../lib/kst.ts'
 import type { Badge as BadgeKind } from '../../../api/generated/Badge.ts'
 import type { UserSummary } from '../../../api/generated/UserSummary.ts'
 import Avatar from '../../../components/ui/Avatar.tsx'
@@ -9,7 +10,6 @@ import Modal from '../../../components/ui/Modal.tsx'
 import { profileTone } from '../../../components/ui/mascot.ts'
 import { TIMEOUTS, useBanActions, useViewerChats } from '../hooks/useModeration.ts'
 
-const stamp = (iso: string) => new Date(iso).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
 
 type Props = {
   user: UserSummary
@@ -83,7 +83,7 @@ export default function ViewerPopup({ user, badges, ownerId, onClose }: Props) {
                           {chats.items.map((c) => (
                             <li key={c.id} className='flex gap-2 text-[13px]'>
                               <time dateTime={c.createdAt} className='shrink-0 font-mono text-[11px] text-text-dim'>
-                                {stamp(c.createdAt)}
+                                {kstStamp(c.createdAt)}
                               </time>
                               {c.deleted ? <span className='text-text-dim italic'>삭제된 메시지입니다</span> : <span className='break-words'>{c.body}</span>}
                             </li>

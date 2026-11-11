@@ -6,16 +6,18 @@ import Panel from '../components/ui/Panel.tsx'
 export type SidebarChannel = { broadcastId: number; userId: number; nickname: string; viewerCount: number }
 
 // "준비 중" 메뉴는 노출하지 않는다.
-const menu: { to: string; label: string; icon: IconName }[] = [
+const menu: { to: string; label: string; icon: IconName; auth?: boolean }[] = [
   { to: '/', label: '홈', icon: 'home' },
   { to: '/explore', label: '탐색', icon: 'compass' },
   { to: '/pulse', label: 'PULSE', icon: 'pulse' },
   { to: '/replay', label: '다시보기', icon: 'video' },
+  // 375에서는 헤더 비트 알약이 숨어 지갑으로 가는 길이 이 메뉴뿐이다
+  { to: '/wallet', label: '내 지갑', icon: 'wallet', auth: true },
 ]
 
-type Props = { channels: SidebarChannel[]; /** 첫 패널 제목(기본 인기 라이브, 팔로우가 있으면 PULSE) */ title?: string; empty?: string; onNavigate?: () => void }
+type Props = { channels: SidebarChannel[]; /** 첫 패널 제목(기본 인기 라이브, 팔로우가 있으면 PULSE) */ title?: string; empty?: string; loggedIn?: boolean; onNavigate?: () => void }
 
-export default function Sidebar({ channels, title = '인기 라이브', empty = '지금은 라이브 중인 방송이 없어요', onNavigate }: Props) {
+export default function Sidebar({ channels, title = '인기 라이브', empty = '지금은 라이브 중인 방송이 없어요', loggedIn, onNavigate }: Props) {
   return (
     <nav aria-label='주 메뉴' className='flex h-full flex-col gap-5 overflow-y-auto bg-bg px-4 py-5'>
       <Panel className='shrink-0' innerClassName='flex flex-col gap-1.5 bg-bg p-3'>
@@ -34,7 +36,7 @@ export default function Sidebar({ channels, title = '인기 라이브', empty = 
                   <span className='min-w-0 grow truncate text-sm font-bold'>{c.nickname}</span>
                   <b className='font-mono text-xs text-live'>
                     {c.viewerCount.toLocaleString('ko-KR')}
-                    <span className='sr-only'>명 시청 중</span>
+                    <span className='font-sans font-normal'>명</span>
                   </b>
                 </Link>
               </li>
@@ -43,7 +45,7 @@ export default function Sidebar({ channels, title = '인기 라이브', empty = 
         )}
       </Panel>
       <ul className='shrink-0 space-y-1'>
-        {menu.map((m) => (
+        {menu.filter((m) => !m.auth || loggedIn).map((m) => (
           <li key={m.to}>
             <NavLink
               to={m.to}

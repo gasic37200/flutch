@@ -5,7 +5,7 @@ import Panel from '../../../components/ui/Panel.tsx'
 import { useSignupForm } from '../hooks/useAuthForms.ts'
 import { CheckRow, FormAlert } from './FormParts.tsx'
 
-const link = 'text-[13px] text-brand hover:underline'
+const link = 'inline-flex min-h-11 items-center px-1 text-[13px] text-brand hover:underline'
 
 export default function SignupForm() {
   const f = useSignupForm()
@@ -15,7 +15,7 @@ export default function SignupForm() {
       <Field label='비밀번호' type='password' hint='영문+숫자 8~64자' value={f.values.password} onChange={(e) => f.set.password(e.target.value)} error={f.error?.fields.password} autoComplete='new-password' maxLength={64} required />
       <Field label='닉네임' hint='2~12자 한글·영문·숫자, 바꾸면 30일 뒤에 다시 바꿀 수 있어요' value={f.values.nickname} onChange={(e) => f.set.nickname(e.target.value)} error={f.error?.fields.nickname} counter maxLength={12} required />
       <Panel innerClassName='flex flex-col gap-2.5 px-4 py-3.5'>
-        <label className='flex items-center gap-2 text-sm font-bold'>
+        <label className='flex min-h-11 items-center gap-2 text-sm font-bold'>
           <input
             type='checkbox'
             checked={f.values.agreeTerms && f.values.agreePrivacy && f.values.over14}

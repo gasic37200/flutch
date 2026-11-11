@@ -11,7 +11,7 @@ const n = (v: number) => `${v.toLocaleString('ko-KR')} 비트`
 
 function Card({ ok, face, title, children, actions }: { ok?: boolean; face: Face; title: string; children?: ReactNode; actions: ReactNode }) {
   return (
-    <Panel tone={ok ? 'hero' : 'line'} className='mx-auto max-w-lg' innerClassName='flex items-center gap-3.5 p-[18px]'>
+    <Panel tone={ok ? 'hero' : 'line'} className='max-w-lg' innerClassName='flex items-center gap-3.5 p-[18px]'>
       <img src={faceSrc(face)} alt='' className='size-14 shrink-0 rounded-full' />
       <div role={ok ? 'status' : 'alert'} className='flex min-w-0 flex-col items-start gap-1.5'>
         <h1 className='text-base font-bold'>{title}</h1>
@@ -55,7 +55,7 @@ function Success() {
     )
   }
   const r = query.data
-  if (!r) return <Skeleton className='mx-auto h-28 w-full max-w-lg' card />
+  if (!r) return <Skeleton className='h-28 w-full max-w-lg' card />
   if (r.donation)
     return (
       <Card

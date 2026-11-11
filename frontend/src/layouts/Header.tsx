@@ -46,7 +46,7 @@ export default function Header({ user, onMenu, onLogout }: Props) {
           <Link
             to='/wallet'
             aria-label={`내 지갑, ${user.balance.toLocaleString('ko-KR')} 비트`}
-            className='hidden items-center rounded-full border border-brand bg-brand/8 px-3.5 py-1.5 sm:inline-flex'
+            className='hidden h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-brand bg-brand/8 px-3.5 sm:inline-flex'
           >
             <BeatAmount amount={user.balance} unit className='text-sm' />
           </Link>

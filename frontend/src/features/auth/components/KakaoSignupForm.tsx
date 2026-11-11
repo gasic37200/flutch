@@ -5,7 +5,7 @@ import Panel from '../../../components/ui/Panel.tsx'
 import { useKakaoSignupForm } from '../hooks/useAuthForms.ts'
 import { CheckRow, FormAlert } from './FormParts.tsx'
 
-const link = 'text-[13px] text-brand hover:underline'
+const link = 'inline-flex min-h-11 items-center px-1 text-[13px] text-brand hover:underline'
 
 /** 카카오 첫 로그인 직후: 가입은 여기서 닉네임·약관을 확인해야 끝난다. */
 export default function KakaoSignupForm() {

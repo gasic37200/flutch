@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import Avatar from './Avatar.tsx'
 import Badge from './Badge.tsx'
@@ -28,12 +28,15 @@ type Props = {
 
 // 라이브·다시보기 공용 카드. 썸네일이 없으면 배경 텍스처 + 카테고리 이름 + 졸린 고양이(DESIGN §5).
 export default function LiveCard({ to, title, streamerId, streamerName, streamerAvatarUrl, category, thumbnailUrl, live, viewerCount, durationLabel, meta, superClutch, className }: Props) {
+  // 파일을 못 읽으면 썸네일 없음과 같은 기본 표시로 바꾼다
+  const [failed, setFailed] = useState(false)
+  const hasThumb = !!thumbnailUrl && !failed
   return (
     <Panel interactive={!!to} className={className} innerClassName='overflow-hidden'>
       <Wrapper to={to}>
         <div className='relative aspect-video bg-surface-2'>
-          {thumbnailUrl ? (
-            <img src={thumbnailUrl} alt='' loading='lazy' className='size-full object-cover' />
+          {hasThumb ? (
+            <img src={thumbnailUrl} alt='' loading='lazy' onError={() => setFailed(true)} className='size-full object-cover' />
           ) : (
             <div className='size-full bg-cover bg-center' style={{ backgroundImage: 'url(/brand/bg-speed.jpg)' }} />
           )}
@@ -50,7 +53,7 @@ export default function LiveCard({ to, title, streamerId, streamerName, streamer
           {durationLabel ? (
             <span className='absolute right-2 bottom-2 rounded-xs bg-bg/70 px-1.5 font-mono text-xs'>{durationLabel}</span>
           ) : (
-            !thumbnailUrl && <img src={faceSrc('sleepy')} alt='' className='absolute right-2 bottom-2 size-[26px] rounded-full opacity-85' />
+            !hasThumb && <img src={faceSrc('sleepy')} alt='' className='absolute right-2 bottom-2 size-[26px] rounded-full opacity-85' />
           )}
         </div>
         <div className='flex flex-col gap-2 px-3.5 py-3'>
