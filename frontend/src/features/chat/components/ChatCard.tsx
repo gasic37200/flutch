@@ -67,7 +67,7 @@ export default function ChatCard({ chat, broadcast, className, headerClassName =
                 </Button>
               </div>
             ) : chat.items.length === 0 ? (
-              !chat.loading && <p className='py-6 text-center text-text-dim'>아직 채팅이 없어요.</p>
+              !chat.loading && chat.systems.length === 0 && <p className='py-6 text-center text-text-dim'>아직 채팅이 없어요.</p>
             ) : (
               <ul className='flex flex-col gap-2.5'>
                 {chat.items.flatMap((item) => [

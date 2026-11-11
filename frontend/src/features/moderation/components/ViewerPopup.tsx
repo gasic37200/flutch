@@ -8,7 +8,7 @@ import Button from '../../../components/ui/Button.tsx'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog.tsx'
 import Modal from '../../../components/ui/Modal.tsx'
 import { profileTone } from '../../../components/ui/mascot.ts'
-import { TIMEOUTS, useBanActions, useViewerChats } from '../hooks/useModeration.ts'
+import { TIMEOUTS, useBanActions, useBanList, useViewerChats } from '../hooks/useModeration.ts'
 
 
 type Props = {
@@ -25,6 +25,8 @@ export default function ViewerPopup({ user, badges, ownerId, onClose }: Props) {
   const [history, setHistory] = useState(false)
   const manage = ownerId !== undefined && ownerId !== user.id
   const actions = useBanActions(ownerId ?? 0)
+  // shortcut: 차단 목록 첫 20건에서만 찾는다, 차단이 20명을 넘으면 페이지 순회로 개선
+  const banned = useBanList(ownerId ?? 0, manage).items.some((b) => b.user.id === user.id)
   const chats = useViewerChats(ownerId ?? 0, user.id, manage && history)
 
   const act = async (f: () => Promise<boolean>) => {
@@ -48,7 +50,7 @@ export default function ViewerPopup({ user, badges, ownerId, onClose }: Props) {
                 <span className='text-xs text-text-muted'>임시차단</span>
                 <div className='grid grid-cols-3 gap-1.5'>
                   {TIMEOUTS.map((t) => (
-                    <Button key={t.duration} variant='neutral' size='sm' disabled={actions.busy} onClick={() => void act(() => actions.ban(user, t.duration))}>
+                    <Button key={t.duration} variant='neutral' size='md' disabled={actions.busy} onClick={() => void act(() => actions.ban(user, t.duration))}>
                       {t.label}
                     </Button>
                   ))}
@@ -57,9 +59,11 @@ export default function ViewerPopup({ user, badges, ownerId, onClose }: Props) {
               <Button variant='outline' disabled={actions.busy} onClick={() => setConfirming(true)}>
                 영구 밴
               </Button>
-              <Button variant='neutral' size='sm' disabled={actions.busy} onClick={() => void act(() => actions.unban(user))}>
-                차단 해제
-              </Button>
+              {banned && (
+                <Button variant='neutral' disabled={actions.busy} onClick={() => void act(() => actions.unban(user))}>
+                  차단 해제
+                </Button>
+              )}
               <Button variant='secondary' aria-expanded={history} onClick={() => setHistory((h) => !h)}>
                 이 시청자의 채팅 기록
               </Button>

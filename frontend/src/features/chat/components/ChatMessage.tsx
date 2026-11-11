@@ -34,7 +34,7 @@ export default function ChatMessage({ chat, item, isOwner, live }: { chat: ChatA
         {item.deleted ? (
           <span className='text-text-dim italic'>삭제된 메시지입니다</span>
         ) : m.editing ? null : (
-          <span className='break-words whitespace-pre-wrap'>{item.body}</span>
+          <span className='whitespace-pre-wrap [overflow-wrap:anywhere]'>{item.body}</span>
         )}
         {item.edited && !item.deleted && !m.editing && <Badge tone='edited' />}
         <time dateTime={item.createdAt} className='text-[11px] text-text-dim opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:hidden'>
@@ -74,6 +74,7 @@ export default function ChatMessage({ chat, item, isOwner, live }: { chat: ChatA
           <input
             autoFocus
             aria-label='채팅 수정'
+            placeholder={m.masked ? '가려진 표현이 있어요. 새로 입력해 주세요' : undefined}
             maxLength={MAX_CHAT}
             value={m.draft}
             onChange={(e) => m.setDraft(e.target.value)}

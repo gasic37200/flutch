@@ -74,8 +74,9 @@ export function useViewerChats(ownerId: number, userId: number, enabled: boolean
 }
 
 /** 차단 목록(유효한 차단만) + 남은 시간 갱신 + 해제. */
-export function useBanList(ownerId: number) {
+export function useBanList(ownerId: number, enabled = true) {
   const q = useInfiniteQuery({
+    enabled,
     queryKey: bansKey(ownerId),
     queryFn: ({ pageParam }) => api<Page<Ban>>(`/users/${ownerId}/bans?limit=20${pageParam ? `&cursor=${pageParam}` : ''}`),
     initialPageParam: undefined as string | undefined,

@@ -4,14 +4,11 @@ import DonationAlert from '../features/donation/components/DonationAlert.tsx'
 import DonationPanel from '../features/donation/components/DonationPanel.tsx'
 import { useDonationAlerts } from '../features/donation/hooks/useDonationAlerts.ts'
 import { useDonationList } from '../features/donation/hooks/useDonationList.ts'
-import BurstButton from '../features/watch/components/BurstButton.tsx'
-import ClutchButton from '../features/watch/components/ClutchButton.tsx'
+import ClutchPanel from '../features/watch/components/ClutchPanel.tsx'
 import SuperClutchOverlay from '../features/watch/components/SuperClutchOverlay.tsx'
 import { useBurst } from '../features/watch/hooks/useBurst.ts'
 import { useClutch } from '../features/watch/hooks/useClutch.ts'
-import ClutchGauge from '../components/ui/ClutchGauge.tsx'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
-import Panel from '../components/ui/Panel.tsx'
 import Tabs from '../components/ui/Tabs.tsx'
 import ChatCard from '../features/chat/components/ChatCard.tsx'
 import { useChat } from '../features/chat/hooks/useChat.ts'
@@ -26,7 +23,7 @@ import ShellBody from '../layouts/ShellBody.tsx'
 // 슬롯: 클러치 버튼·SUPER BURST(T19·T24)는 게이지 Panel 오른쪽, 후원하기(T23)·팔로우(T27)는 WatchInfo 오른쪽 끝, 후원 목록(T23)은 모바일 탭 추가 + 데스크톱 영상 아래 패널.
 export default function WatchPage() {
   const id = Number(useParams().broadcastId) || undefined
-  const { broadcast, error, refetch, view, viewer, events } = useWatch(id)
+  const { broadcast, error, refetch, view, source, viewer, events } = useWatch(id)
   const chat = useChat(id, events)
   const player = usePlayer(viewer.tracks, viewer.muted)
   const clutch = useClutch(broadcast, events.onEvent)
@@ -44,28 +41,21 @@ export default function WatchPage() {
   }
 
   // 채팅은 데스크톱 aside 또는 모바일 탭 한 곳에만 렌더한다(상태는 위의 useChat이 들고 있어 전환해도 유지)
-  const chatCard = <ChatCard chat={chat} broadcast={broadcast} className='h-[30rem] xl:h-175' headerClassName={desktop ? '' : 'hidden'} />
+  const chatCard = <ChatCard chat={chat} broadcast={broadcast} className={desktop ? 'sticky top-22 h-[calc(100dvh-7rem)] max-h-full min-h-96' : 'h-[30rem]'} headerClassName={desktop ? '' : 'hidden'} />
 
   return (
     <>
       <SuperClutchOverlay superClutch={clutch.superClutch} />
       <ShellBody aside={desktop ? chatCard : undefined}>
         <div className='flex flex-col gap-3.5'>
-          <div className='relative'>
-            <Player view={view} broadcast={broadcast} player={player} onUnmute={() => void viewer.unmute()} />
+          {/* 가로 화면(낮은 뷰포트)에서는 영상이 화면 높이 안에 들어오도록 폭을 줄인다 */}
+          <div className='relative mx-auto w-full max-w-[calc((100dvh-5rem)*16/9)]'>
+            <Player view={view} source={source} broadcast={broadcast} player={player} onUnmute={() => void viewer.unmute()} />
             <DonationAlert alerts={alerts} owner={broadcast?.viewer?.isOwner} />
           </div>
           {broadcast && (
             <>
-              <Panel innerClassName='px-3 py-2.5 md:px-4 md:py-3'>
-                <div className='flex items-center gap-3'>
-                  <div className='min-w-0 grow'>
-                    <ClutchGauge percent={broadcast.gauge.percent} cooldown={broadcast.gauge.phase === 'cooldown'} boost={burst.boost} size='lg' />
-                  </div>
-                  <ClutchButton clutch={clutch} />
-                  <BurstButton burst={burst} mode={clutch.mode} />
-                </div>
-              </Panel>
+              <ClutchPanel broadcast={broadcast} clutch={clutch} burst={burst} />
               <WatchInfo broadcast={broadcast} />
               {desktop && <DonationPanel list={donations} />}
             </>
