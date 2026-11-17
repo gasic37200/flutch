@@ -15,6 +15,7 @@ import PipControl from '../features/studio/components/PipControl.tsx'
 import StudioAside from '../features/studio/components/StudioAside.tsx'
 import StudioDialogs from '../features/studio/components/StudioDialogs.tsx'
 import DonationAlert from '../features/donation/components/DonationAlert.tsx'
+import StudioGauge from '../features/studio/components/StudioGauge.tsx'
 import StudioPreview from '../features/studio/components/StudioPreview.tsx'
 import { useStudio } from '../features/studio/hooks/useStudio.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
@@ -120,6 +121,7 @@ export default function StudioPage() {
                 녹화 중
               </Badge>
             )}
+            <StudioGauge s={s} className='w-full sm:w-56' />
             <h1 className='sr-only'>{data.title}</h1>
           </>
         ) : (

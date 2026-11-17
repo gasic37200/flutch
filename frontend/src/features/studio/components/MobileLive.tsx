@@ -4,6 +4,7 @@ import Badge from '../../../components/ui/Badge.tsx'
 import Button from '../../../components/ui/Button.tsx'
 import Icon from '../../../components/ui/Icon.tsx'
 import type { useStudio } from '../hooks/useStudio.ts'
+import StudioGauge from './StudioGauge.tsx'
 import LevelMeter from './LevelMeter.tsx'
 import StudioPreview from './StudioPreview.tsx'
 
@@ -35,7 +36,10 @@ export default function MobileLive({ s }: { s: ReturnType<typeof useStudio> }) {
           종료
         </Button>
       </div>
-      <h1 className='absolute inset-x-4 top-16 truncate text-[13px] text-text-muted'>{data.title}</h1>
+      <div className='absolute inset-x-4 top-16 flex items-center gap-3'>
+        <h1 className='min-w-0 grow truncate text-[13px] text-text-muted'>{data.title}</h1>
+        <StudioGauge s={s} className='w-40 shrink-0 rounded-sm bg-bg/60 px-2 py-1' />
+      </div>
 
       {error && (
         <p role='alert' className='chamfer absolute inset-x-4 top-24 flex items-start gap-2 bg-surface-2/90 px-3 py-2 text-sm [--c:6px]'>

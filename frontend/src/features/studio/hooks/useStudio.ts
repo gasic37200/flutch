@@ -4,6 +4,7 @@ import { useRequireLogin } from '../../auth/hooks/useAuth.ts'
 import { useChat } from '../../chat/hooks/useChat.ts'
 import { useBroadcast, useUpdateBroadcast } from '../../broadcast/hooks/useBroadcasts.ts'
 import { useDonationAlerts } from '../../donation/hooks/useDonationAlerts.ts'
+import { useClutch } from '../../watch/hooks/useClutch.ts'
 import { useBroadcastEvents } from '../../live/hooks/useBroadcastEvents.ts'
 import { usePublisher, type MediaSource } from '../../live/hooks/usePublisher.ts'
 import { useToast } from '../../../hooks/useToast.ts'
@@ -32,6 +33,7 @@ export function useStudio(broadcastId: number | undefined) {
   const [ending, setEnding] = useState(false)
   const data = broadcast.data
   const elapsed = useElapsed(data?.startedAt, data?.endedAt)
+  const clutch = useClutch(data, events.onEvent)
 
   const { onEvent } = events
   useEffect(
@@ -109,6 +111,7 @@ export function useStudio(broadcastId: number | undefined) {
     broadcast,
     chat,
     alerts,
+    clutch,
     data,
     isOwner,
     phase,
