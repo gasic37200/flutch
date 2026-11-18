@@ -198,7 +198,7 @@ pub(super) async fn detail(
     let gauge = if row.status == "LIVE" {
         clutch::gauge_of(&state.db, cfg, id).await?
     } else {
-        clutch::idle_gauge()
+        clutch::idle_gauge(cfg)
     };
     let free_clutches_left = match viewer {
         Some(u) => clutch::free_left(&state.db, cfg, u.id, id).await?,
@@ -211,7 +211,7 @@ pub(super) async fn detail(
     Ok(BroadcastDetail {
         broadcast: into_broadcast(state, row)?,
         gauge,
-        burst_price: cfg.burst_price,
+        burst_min: cfg.burst_min,
         viewer: viewer.map(|_| ViewerState {
             is_owner,
             ban,

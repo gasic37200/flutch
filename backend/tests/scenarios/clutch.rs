@@ -165,14 +165,15 @@ async fn clutch_free_combo_then_paid(db: PgPool) {
         assert_eq!(res.json["freeClutchesLeft"], 5 - n);
         assert_eq!(res.json["balance"], Value::Null);
     }
-    // 5회 × 50점 = 250점 = 2%
+    // 5회 × 10점 = 50점 = 0%, 100%까지 99,950비트
     let d = detail(&app, &viewer, id).await;
     assert_eq!(
         (
             d["gauge"]["percent"].as_i64(),
+            d["gauge"]["bitsToFull"].as_i64(),
             d["viewer"]["freeClutchesLeft"].as_i64()
         ),
-        (Some(2), Some(0))
+        (Some(0), Some(99_950), Some(0))
     );
 
     // 6번째: 잔액 0이면 409, 아무것도 남지 않는다
@@ -211,7 +212,7 @@ async fn clutch_free_combo_then_paid(db: PgPool) {
         ),
         (json!(true), json!(0), json!(999))
     );
-    assert_eq!(count(&db, "SELECT count(*) FROM clutch_events WHERE broadcast_id = $1 AND source = 'paid' AND points = 50", id).await, 1);
+    assert_eq!(count(&db, "SELECT count(*) FROM clutch_events WHERE broadcast_id = $1 AND source = 'paid' AND points = 10", id).await, 1);
     assert_eq!(count(&db, "SELECT count(*) FROM donations WHERE broadcast_id = $1 AND kind = 'clutch' AND amount = 1 AND anonymous", id).await, 1);
     assert_eq!(count(&db, "SELECT count(*) FROM ledger_entries WHERE broadcast_id = $1 AND type = 'clutch' AND amount = -1", id).await, 1);
 
@@ -235,16 +236,16 @@ async fn clutch_gauge_decay_window(db: PgPool) {
     let (viewer, viewer_id) = login_as(&app, "viewer").await;
     let id = live_broadcast(&app, &owner).await;
 
-    seed_points(&db, id, viewer_id, 3_000, 301).await; // 5분 밖: 빠진다
-    seed_points(&db, id, viewer_id, 2_000, 240).await;
-    seed_points(&db, id, viewer_id, 3_000, 5).await;
+    seed_points(&db, id, viewer_id, 30_000, 301).await; // 5분 밖: 빠진다
+    seed_points(&db, id, viewer_id, 20_000, 240).await;
+    seed_points(&db, id, viewer_id, 30_000, 5).await;
     let d = detail(&app, &viewer, id).await;
     assert_eq!(
         (d["gauge"]["percent"].clone(), d["gauge"]["phase"].clone()),
         (json!(50), json!("charging"))
     );
 
-    seed_points(&db, id, viewer_id, 3_000, 1).await; // 8,000점 = 80% 임박
+    seed_points(&db, id, viewer_id, 30_000, 1).await; // 80,000점 = 80% 임박
     let d = detail(&app, &viewer, id).await;
     assert_eq!(
         (d["gauge"]["percent"].clone(), d["gauge"]["phase"].clone()),
@@ -252,7 +253,7 @@ async fn clutch_gauge_decay_window(db: PgPool) {
     );
 
     // 4분 전 점수까지 5분 밖으로 밀려나면 줄어든다
-    sqlx::query("UPDATE clutch_events SET created_at = created_at - interval '70 seconds' WHERE points = 2000")
+    sqlx::query("UPDATE clutch_events SET created_at = created_at - interval '70 seconds' WHERE points = 20000")
         .execute(&db)
         .await
         .unwrap();
@@ -271,8 +272,8 @@ async fn super_clutch_trigger_reset_and_cooldown(db: PgPool) {
         cookies.push(signup(&app, &format!("clutcher{n}"), &format!("클러처{n}")).await);
     }
 
-    // 9,950점 + 동시 4명(각 50점): 모두 100%를 넘길 수 있지만 발동은 한 번이다
-    seed_points(&db, id, viewer_id, 9_950, 10).await;
+    // 99,990점 + 동시 4명(각 10점): 모두 100%를 넘길 수 있지만 발동은 한 번이다
+    seed_points(&db, id, viewer_id, 99_990, 10).await;
     let rs = futures_join(&app, &cookies, id).await;
     assert!(
         rs.iter().all(|r| r.status == StatusCode::OK),
@@ -283,17 +284,21 @@ async fn super_clutch_trigger_reset_and_cooldown(db: PgPool) {
     assert_eq!(count(&db, supers, id).await, 1);
     assert_eq!(count(&db, "SELECT count(*) FROM super_clutches WHERE broadcast_id = $1 AND expires_at = triggered_at + interval '5 minutes'", id).await, 1);
 
-    // 발동 뒤 게이지는 0에서 다시 시작(나머지 3명 150점 = 1%), 쿨다운
+    // 발동 뒤 게이지는 0에서 다시 시작(나머지 3명 30점), 쿨다운
     let d = detail(&app, &viewer, id).await;
     assert_eq!(
-        (d["gauge"]["percent"].clone(), d["gauge"]["phase"].clone()),
-        (json!(1), json!("cooldown"))
+        (
+            d["gauge"]["percent"].clone(),
+            d["gauge"]["phase"].clone(),
+            d["gauge"]["bitsToFull"].clone()
+        ),
+        (json!(0), json!("cooldown"), json!(99_970))
     );
     assert!(d["gauge"]["cooldownUntil"].is_string());
     assert!(d["superClutchUntil"].is_string());
 
     // 쿨다운 중에는 100%가 돼도 재발동 없이 게이지만 오른다
-    seed_points(&db, id, viewer_id, 10_000, 0).await;
+    seed_points(&db, id, viewer_id, 100_000, 0).await;
     let res = clutch(&app, Some(&viewer), id).await;
     assert_eq!(
         (
@@ -407,7 +412,7 @@ async fn clutch_super_event_published(db: PgPool) {
     let id = live_broadcast(&app, &owner).await;
     let mut ws = connect(addr, id, Some(ORIGIN), None).await.unwrap();
 
-    seed_points(&db, id, viewer_id, 9_950, 10).await;
+    seed_points(&db, id, viewer_id, 99_990, 10).await;
     assert_eq!(clutch(&app, Some(&viewer), id).await.status, StatusCode::OK);
     let ev = next_event(&mut ws).await;
     assert_eq!(ev["type"], "clutch.super");
@@ -426,14 +431,20 @@ async fn serve(db: &PgPool) -> (Router, SocketAddr) {
     (flutch::app(state), addr)
 }
 
-async fn burst(app: &Router, cookie: Option<&str>, id: i64, anonymous: bool) -> TestResponse {
+async fn burst(
+    app: &Router,
+    cookie: Option<&str>,
+    id: i64,
+    amount: i64,
+    anonymous: bool,
+) -> TestResponse {
     send(
         app,
         json_req(
             "POST",
             &format!("{B}/{id}/bursts"),
             cookie,
-            json!({ "anonymous": anonymous }),
+            json!({ "amount": amount, "anonymous": anonymous }),
         ),
     )
     .await
@@ -463,18 +474,33 @@ async fn balance(db: &PgPool, user_id: i64) -> i64 {
 }
 
 #[sqlx::test]
-async fn burst_debits_and_boosts_gauge(db: PgPool) {
+async fn burst_amount_raises_gauge_by_bits(db: PgPool) {
     let app = test_app(db.clone());
     let (owner, _) = login_as(&app, "streamer1").await;
     let (viewer, viewer_id) = login_as(&app, "viewer").await;
     let id = live_broadcast(&app, &owner).await;
-    assert_eq!(detail(&app, &viewer, id).await["burstPrice"], 1000);
-    charge(&db, viewer_id, 2500).await;
+    let d = detail(&app, &viewer, id).await;
+    assert_eq!(
+        (d["burstMin"].clone(), d["gauge"]["bitsToFull"].clone()),
+        (json!(1000), json!(100_000))
+    );
+    charge(&db, viewer_id, 6000).await;
 
-    // 1,000비트 = 10,000점 → 혼자서 SUPER CLUTCH 발동(게이지 0, 쿨다운)
-    let res = burst(&app, Some(&viewer), id, false).await;
+    // 최소 미만·상한 초과는 422 fields.amount, 아무것도 남지 않는다
+    for amount in [999, 1_000_001] {
+        let res = burst(&app, Some(&viewer), id, amount, false).await;
+        assert_eq!(res.status, StatusCode::UNPROCESSABLE_ENTITY, "{}", res.json);
+        assert!(
+            res.json["error"]["fields"]["amount"].is_string(),
+            "{}",
+            res.json
+        );
+    }
+    assert_eq!(balance(&db, viewer_id).await, 6000);
+
+    // 5,000비트 = 5,000점 = 5%, 남은 95,000비트
+    let res = burst(&app, Some(&viewer), id, 5000, false).await;
     assert_eq!(res.status, StatusCode::OK, "{}", res.json);
-    assert_eq!(res.json["balance"], 1500);
     let d = &res.json["donation"];
     assert_eq!(
         (
@@ -482,59 +508,70 @@ async fn burst_debits_and_boosts_gauge(db: PgPool) {
             d["amount"].clone(),
             d["donor"]["id"].clone()
         ),
-        (json!("burst"), json!(1000), json!(viewer_id))
+        (json!("burst"), json!(5000), json!(viewer_id))
     );
-    assert_eq!(
-        (
-            res.json["gauge"]["percent"].clone(),
-            res.json["gauge"]["phase"].clone()
-        ),
-        (json!(0), json!("cooldown"))
-    );
-    let supers = "SELECT count(*) FROM super_clutches WHERE broadcast_id = $1";
-    assert_eq!(count(&db, supers, id).await, 1);
-    assert_eq!(count(&db, "SELECT count(*) FROM ledger_entries WHERE broadcast_id = $1 AND type = 'burst' AND amount = -1000", id).await, 1);
-    assert_eq!(count(&db, "SELECT count(*) FROM donations d JOIN ledger_entries l ON l.id = d.ledger_entry_id WHERE d.broadcast_id = $1 AND d.kind = 'burst' AND d.amount = 1000 AND NOT d.anonymous", id).await, 1);
-    assert_eq!(count(&db, "SELECT count(*) FROM clutch_events WHERE broadcast_id = $1 AND source = 'burst' AND points = 10000", id).await, 1);
-
-    // 쿨다운 중 버스트: 게이지만 크게 오른다(재발동 없음)
-    let res = burst(&app, Some(&viewer), id, true).await;
-    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    let g = &res.json["gauge"];
     assert_eq!(
         (
             res.json["balance"].clone(),
-            res.json["gauge"]["percent"].clone(),
-            res.json["gauge"]["phase"].clone()
+            g["percent"].clone(),
+            g["phase"].clone(),
+            g["bitsToFull"].clone()
         ),
-        (json!(500), json!(100), json!("cooldown"))
+        (json!(1000), json!(5), json!("charging"), json!(95_000))
     );
-    assert_eq!(count(&db, supers, id).await, 1);
+    assert_eq!(count(&db, "SELECT count(*) FROM ledger_entries WHERE broadcast_id = $1 AND type = 'burst' AND amount = -5000", id).await, 1);
+    assert_eq!(count(&db, "SELECT count(*) FROM donations d JOIN ledger_entries l ON l.id = d.ledger_entry_id WHERE d.broadcast_id = $1 AND d.kind = 'burst' AND d.amount = 5000 AND NOT d.anonymous", id).await, 1);
+    assert_eq!(count(&db, "SELECT count(*) FROM clutch_events WHERE broadcast_id = $1 AND source = 'burst' AND points = 5000", id).await, 1);
 
     // 잔액 부족: 409, 아무것도 남지 않는다
-    let res = burst(&app, Some(&viewer), id, false).await;
+    let res = burst(&app, Some(&viewer), id, 2000, false).await;
     assert_eq!(
         code(&res),
         (StatusCode::CONFLICT, "WALLET_INSUFFICIENT_BALANCE")
     );
-    assert_eq!(balance(&db, viewer_id).await, 500);
+    assert_eq!(balance(&db, viewer_id).await, 1000);
+    let donations = "SELECT count(*) FROM donations WHERE broadcast_id = $1";
+    assert_eq!(count(&db, donations, id).await, 1);
+    let events = "SELECT count(*) FROM clutch_events WHERE broadcast_id = $1";
+    assert_eq!(count(&db, events, id).await, 1);
+    assert_consistent(&db).await;
+}
+
+#[sqlx::test]
+async fn burst_fill_to_full_triggers_super_clutch(db: PgPool) {
+    let app = test_app(db.clone());
+    let (owner, _) = login_as(&app, "streamer1").await;
+    let (viewer, viewer_id) = login_as(&app, "viewer").await;
+    let id = live_broadcast(&app, &owner).await;
+    charge(&db, viewer_id, 100_000).await;
+    for _ in 0..3 {
+        assert_eq!(clutch(&app, Some(&viewer), id).await.status, StatusCode::OK);
+    }
+    let bits_to_full = |v: &Value| v["gauge"]["bitsToFull"].as_i64().unwrap();
+    assert_eq!(bits_to_full(&detail(&app, &viewer, id).await), 99_970);
+
+    let res = burst(&app, Some(&viewer), id, 1000, false).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    let left = bits_to_full(&res.json);
+    assert_eq!(left, 98_970);
+    let supers = "SELECT count(*) FROM super_clutches WHERE broadcast_id = $1";
+    assert_eq!(count(&db, supers, id).await, 0);
+
+    // 남은 비트만큼 버스트하면 정확히 100% → 발동(게이지 0, 쿨다운, 다시 100,000 남음)
+    let res = burst(&app, Some(&viewer), id, left, true).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    let g = &res.json["gauge"];
     assert_eq!(
-        count(
-            &db,
-            "SELECT count(*) FROM donations WHERE broadcast_id = $1",
-            id
-        )
-        .await,
-        2
+        (
+            res.json["balance"].clone(),
+            g["percent"].clone(),
+            g["phase"].clone(),
+            g["bitsToFull"].clone()
+        ),
+        (json!(30), json!(0), json!("cooldown"), json!(100_000))
     );
-    assert_eq!(
-        count(
-            &db,
-            "SELECT count(*) FROM clutch_events WHERE broadcast_id = $1",
-            id
-        )
-        .await,
-        2
-    );
+    assert_eq!(count(&db, supers, id).await, 1);
     assert_consistent(&db).await;
 }
 
@@ -548,7 +585,7 @@ async fn burst_anonymous_hidden_from_public(db: PgPool) {
     let mut public_ws = connect(addr, id, Some(ORIGIN), None).await.unwrap();
     let mut owner_ws = connect(addr, id, Some(ORIGIN), Some(&owner)).await.unwrap();
 
-    let res = burst(&app, Some(&viewer), id, true).await;
+    let res = burst(&app, Some(&viewer), id, 1000, true).await;
     assert_eq!(res.status, StatusCode::OK, "{}", res.json);
     assert_eq!(res.json["donation"]["donor"]["id"], viewer_id); // 내 버스트는 실명
     assert_eq!(res.json["donation"]["anonymous"], true);
@@ -559,7 +596,9 @@ async fn burst_anonymous_hidden_from_public(db: PgPool) {
     assert_eq!(ev["data"]["total"], 1000);
     let ev = next_of(&mut owner_ws, "donation.created").await;
     assert_eq!(ev["data"]["donation"]["donor"]["id"], viewer_id);
-    next_of(&mut public_ws, "clutch.super").await;
+    // 1,000비트는 이제 1%: 발동 없이 게이지만 오른다
+    let ev = next_of(&mut public_ws, "clutch.gauge").await;
+    assert_eq!(ev["data"]["bitsToFull"], 99_000);
 
     let list = |cookie: Option<String>| {
         let app = app.clone();
@@ -586,26 +625,28 @@ async fn burst_rules(db: PgPool) {
     charge(&db, owner_id, 5000).await;
 
     assert_eq!(
-        burst(&app, None, id, false).await.status,
+        burst(&app, None, id, 1000, false).await.status,
         StatusCode::UNAUTHORIZED
     );
     assert_eq!(
-        burst(&app, Some(&viewer), 999_999, false).await.status,
+        burst(&app, Some(&viewer), 999_999, 1000, false)
+            .await
+            .status,
         StatusCode::NOT_FOUND
     );
-    let res = burst(&app, Some(&owner), id, false).await;
+    let res = burst(&app, Some(&owner), id, 1000, false).await;
     assert_eq!(code(&res), (StatusCode::FORBIDDEN, "CLUTCH_SELF"));
 
     // READY 방송 409
     let body = json!({ "title": "준비중", "category": "game" });
     let res = send(&app, json_req("POST", B, Some(&owner), body)).await;
     let ready = res.json["id"].as_i64().unwrap();
-    let res = burst(&app, Some(&viewer), ready, false).await;
+    let res = burst(&app, Some(&viewer), ready, 1000, false).await;
     assert_eq!(code(&res), (StatusCode::CONFLICT, "BROADCAST_NOT_LIVE"));
 
     // 잔액 0인 사용자 409
     let poor = signup(&app, "poorburst", "빈지갑").await;
-    let res = burst(&app, Some(&poor), id, false).await;
+    let res = burst(&app, Some(&poor), id, 1000, false).await;
     assert_eq!(
         code(&res),
         (StatusCode::CONFLICT, "WALLET_INSUFFICIENT_BALANCE")
@@ -628,7 +669,7 @@ async fn burst_rules(db: PgPool) {
         }
     };
     ban(None).await;
-    let res = burst(&app, Some(&viewer), id, false).await;
+    let res = burst(&app, Some(&viewer), id, 1000, false).await;
     assert_eq!(code(&res), (StatusCode::FORBIDDEN, "MODERATION_BANNED"));
     // 실패한 요청은 원장·후원·게이지에 아무것도 남기지 않는다
     assert_eq!(balance(&db, viewer_id).await, 5000);
@@ -639,7 +680,7 @@ async fn burst_rules(db: PgPool) {
 
     // 임시차단은 허용
     ban(Some(600)).await;
-    let res = burst(&app, Some(&viewer), id, false).await;
+    let res = burst(&app, Some(&viewer), id, 1000, false).await;
     assert_eq!(res.status, StatusCode::OK, "{}", res.json);
     assert_eq!(balance(&db, viewer_id).await, 4000);
     assert_consistent(&db).await;
@@ -688,8 +729,8 @@ async fn burst_concurrent_only_balance_succeeds(db: PgPool) {
         sqlx::query("COMMIT").execute(&mut locker).await.unwrap();
     };
     let (r1, r2, ()) = tokio::join!(
-        burst(&app, Some(&viewer), id, false),
-        burst(&app, Some(&viewer), id, true),
+        burst(&app, Some(&viewer), id, 1000, false),
+        burst(&app, Some(&viewer), id, 1000, true),
         release
     );
     let mut results = [code(&r1), code(&r2)];
@@ -739,6 +780,7 @@ async fn clutch_gauge_event_throttled(db: PgPool) {
                 percent,
                 phase: ClutchPhase::Charging,
                 cooldown_until: None,
+                bits_to_full: 0,
             },
             super_clutch: None,
         };
@@ -751,9 +793,10 @@ async fn clutch_gauge_event_throttled(db: PgPool) {
         clutch(&other, Some(&viewer), id).await.status,
         StatusCode::OK
     );
+    // 두 앱의 클러치 2번(각 10점) = 20점
     assert_eq!(
-        next_of(&mut other_ws, "clutch.gauge").await["data"]["percent"],
-        1
+        next_of(&mut other_ws, "clutch.gauge").await["data"]["bitsToFull"],
+        99_980
     );
 
     assert_eq!(next_of(&mut ws, "clutch.gauge").await["data"]["percent"], 0);
@@ -790,9 +833,9 @@ fn ts(v: &Value) -> chrono::DateTime<chrono::FixedOffset> {
     chrono::DateTime::parse_from_rfc3339(v.as_str().unwrap()).unwrap()
 }
 
-/// 1만 점 + 클러치 1번으로 SUPER CLUTCH 발동
+/// 10만 점 + 클러치 1번으로 SUPER CLUTCH 발동
 async fn trigger(app: &Router, db: &PgPool, viewer: (&str, i64), id: i64) {
-    seed_points(db, id, viewer.1, 10_000, 1).await;
+    seed_points(db, id, viewer.1, 100_000, 1).await;
     let res = clutch(app, Some(viewer.0), id).await;
     assert_eq!(res.status, StatusCode::OK, "{}", res.json);
     assert_eq!(res.json["gauge"]["phase"], "cooldown", "발동해야 한다");
@@ -857,7 +900,7 @@ async fn clutch_rotation(db: PgPool) {
     assert_eq!(active_ids(&hero(&app).await), [b, c, a]);
 
     // 진행 중인 a가 다시 100%가 돼도 재등록하지 않는다(쿨다운)
-    seed_points(&db, a, viewer_id, 10_000, 0).await;
+    seed_points(&db, a, viewer_id, 100_000, 0).await;
     let res = clutch(&app, Some(&viewer), a).await;
     assert_eq!(res.json["gauge"]["phase"], "cooldown");
     let supers = "SELECT count(*) FROM super_clutches WHERE broadcast_id = $1";
@@ -916,7 +959,7 @@ async fn hero_modes(db: PgPool) {
     assert_eq!(h["gauge"]["percent"], 0);
 
     // 게이지가 있으면 게이지 1위
-    seed_points(&db, a, viewer_id, 500, 0).await;
+    seed_points(&db, a, viewer_id, 5_000, 0).await;
     let h = hero(&app).await;
     assert_eq!(
         (

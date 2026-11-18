@@ -72,6 +72,8 @@ pub struct ClutchGauge {
     pub percent: i32,
     pub phase: ClutchPhase,
     pub cooldown_until: Option<DateTime<Utc>>,
+    /// 100%까지 남은 비트(SUPER BURST 1비트 = 1점). 쿨다운 중에도 같은 계산이지만 채워도 쿨다운이 끝나야 발동한다.
+    pub bits_to_full: i64,
 }
 
 /// SUPER CLUTCH 발동(`clutch.super` 이벤트)
@@ -100,7 +102,10 @@ pub struct ClutchResult {
 /// `POST /broadcasts/{id}/bursts` 요청
 #[derive(Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct BurstRequest {
+    /// 쓸 비트 = 게이지 점수. `burstMin` ~ 1,000,000
+    pub amount: i64,
     pub anonymous: bool,
 }
 
@@ -141,7 +146,6 @@ pub enum Source {
     Free,
     Paid,
     Burst,
-    Donation,
 }
 
 impl Source {
@@ -150,7 +154,6 @@ impl Source {
             Self::Free => "free",
             Self::Paid => "paid",
             Self::Burst => "burst",
-            Self::Donation => "donation",
         }
     }
 }
@@ -163,12 +166,8 @@ pub struct Outcome {
 }
 
 /// LIVE가 아닌 방송의 게이지
-pub fn idle_gauge() -> ClutchGauge {
-    ClutchGauge {
-        percent: 0,
-        phase: ClutchPhase::Charging,
-        cooldown_until: None,
-    }
+pub fn idle_gauge(cfg: &ClutchConfig) -> ClutchGauge {
+    build_gauge(0, None, Utc::now(), cfg)
 }
 
 fn build_gauge(
@@ -190,6 +189,7 @@ fn build_gauge(
         percent,
         phase,
         cooldown_until: active,
+        bits_to_full: (cfg.gauge_target - points).max(0),
     }
 }
 
@@ -226,7 +226,7 @@ pub async fn free_left(
 
 /// 게이지 점수를 넣고 SUPER CLUTCH 발동을 판정한다. 호출자의 트랜잭션 안에서 부르고 **커밋 뒤** `publish`한다.
 /// 방송별 트랜잭션 advisory lock으로 직렬화해서 동시에 100%를 넘겨도 발동은 한 번만 한다.
-/// 후원·버스트는 비트 × `cfg.points_per_bit`를 `points`로 넘긴다.
+/// 버스트는 쓴 비트를 그대로 `points`로 넘긴다(1비트 = 1점).
 pub async fn add_points(
     conn: &mut PgConnection,
     cfg: &ClutchConfig,
@@ -348,16 +348,20 @@ mod tests {
         let cfg = ClutchConfig::default();
         let now = Utc::now();
         assert_eq!(
-            build_gauge(7_900, None, now, &cfg).phase,
+            build_gauge(79_000, None, now, &cfg).phase,
             ClutchPhase::Charging
         );
         assert_eq!(
-            build_gauge(8_000, None, now, &cfg).phase,
+            build_gauge(80_000, None, now, &cfg).phase,
             ClutchPhase::Imminent
         );
         let cd = Some(now + chrono::Duration::minutes(1));
-        let g = build_gauge(20_000, cd, now, &cfg);
+        let g = build_gauge(200_000, cd, now, &cfg);
         assert_eq!((g.percent, g.phase), (100, ClutchPhase::Cooldown));
+        assert_eq!(g.bits_to_full, 0);
+        // 99,999점은 99%, 남은 1비트
+        let g = build_gauge(99_999, None, now, &cfg);
+        assert_eq!((g.percent, g.bits_to_full), (99, 1));
         let later = now + chrono::Duration::minutes(2);
         assert_eq!(build_gauge(0, cd, later, &cfg).phase, ClutchPhase::Charging);
     }

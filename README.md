@@ -239,7 +239,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 
 **P17. 지갑·충전·후원**
 1. 로그인(시청자)한 뒤 헤더 비트 알약 또는 "내 지갑"(`/wallet`)에서 잔액과 내역을 본다. 유형(충전·후원·클러치·SUPER BURST·소멸)과 월 필터로 좁혀지고, 유료 클러치는 방송별로 묶여 한 줄로 나온다. "충전하기" → 금액(1,000/5,000/10,000/50,000 또는 직접 입력 1,000~1,000,000) → "결제하기"로 토스 결제위젯이 열리고, 위젯의 "결제하기"를 누르면 토스 결제창이 충전 창 **위에** 떠서 조작할 수 있다(결제창을 닫으면 충전 창으로 돌아온다). 결제를 마치면 `/payments/success`가 승인하고 "충전했어요!"와 잔액이 보인다. 결제창에서 실패하면 `/payments/fail`, 승인이 거절되면(`/payments/success`에서) "결제가 완료되지 않았어요 · 돈은 빠져나가지 않았어요"와 "다시 시도 →"(결제를 시작한 지갑·시청 화면으로)가 나온다. 보유 한도(3,000,000)를 넘는 금액은 막힌다.
-2. 방송 중인 방송을 시청자로 열고 "후원하기": 프리셋(1,000/5,000/10,000) 또는 직접 입력, 메시지(100자), "익명으로 후원" 체크. 잔액이 충분하면 바로 후원되고 잔액 알약이 응답 값으로 줄어든다.
+2. 방송 중인 방송을 시청자로 열고 "후원하기": 프리셋(1,000/5,000/10,000) 또는 직접 입력, 메시지(100자), "익명으로 후원" 체크. 잔액이 충분하면 바로 후원되고 잔액 알약이 응답 값으로 줄어든다. 후원은 Clutch 게이지를 올리지 않는다(비트로 게이지를 올리는 건 SUPER BURST뿐).
 3. 잔액이 모자라면 버튼이 "N비트 충전하고 후원하기"로 바뀌고, 누르면 결제위젯 → 승인 뒤 "후원했어요!"와 "방송으로 돌아가기"가 나온다. 결제 사이 방송이 끝났거나 차단됐으면 "후원 없이 충전만" 안내가 나온다.
 4. 후원이 들어오면 시청 화면·스트리머 화면 영상 위에 알림이 10초(여러 건은 순서대로), 10,000비트 이상은 노란 큰 카드로 뜨고 채팅창에 강조 한 줄이 남는다. 익명 후원은 시청자 화면에 "익명의 후원자", 스트리머 화면에는 실명 + "익명" 배지가 보이며, 스트리머가 "넘기기"를 누르면 모든 시청자 화면의 현재 알림이 넘어간다.
 5. 시청 화면 영상 아래 "이 방송 후원"(모바일은 "후원" 탭)에 합계(유료 클러치·버스트 포함)와 최근 후원 목록이 보인다. 스트리머 페이지 "후원 내역" 탭(본인만)에서 방송을 골라 익명 후원도 실명으로 보고 "차단"으로 바로 차단할 수 있고, "통계" 탭에서 누적·최근 7일·방송별 받은 비트를 본다.
@@ -251,7 +251,7 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 
 **P18. SUPER CLUTCH 회전·홈 히어로**
 1. 스트리머1·스트리머2로 각각 방송을 시작하고 시청자로 홈을 연다. 진행 중인 SUPER CLUTCH가 없으면 히어로는 게이지가 가장 높은 방송(모두 0%면 시청자 수 1위)이고 오른쪽 CLUTCH TIME 패널에 그 방송 게이지와 "지금, 클러치할 시간!"(80% 이상은 "곧 터져요!", 발동 후 쿨다운은 "다음 클러치까지 n분")이 보인다. 모바일은 영상 카드 아래 한 줄 패널.
-2. 두 방송에서 각각 SUPER BURST(1,000비트) 또는 클러치로 게이지를 100%로 만든다. 10초 안에 히어로가 SUPER CLUTCH 배지·그라데이션 테두리로 바뀌고, 패널에 "다음 방송까지" 카운트다운·30초 진행 바·"지금 보러 가기"·진행 중 목록(남은 시간)이 보인다. 시청 화면 영상 왼쪽 위에도 SUPER CLUTCH 배지가 붙는다.
+2. 두 방송에서 각각 SUPER BURST 창의 "100%까지 채우기"로 게이지를 100%로 만든다(100% = 100,000점, 1비트 = 1점 — 테스트 결제로 충전이 필요하다). 10초 안에 히어로가 SUPER CLUTCH 배지·그라데이션 테두리로 바뀌고, 패널에 "다음 방송까지" 카운트다운·30초 진행 바·"지금 보러 가기"·진행 중 목록(남은 시간)이 보인다. 시청 화면 영상 왼쪽 위에도 SUPER CLUTCH 배지가 붙는다.
 3. 기대: 30초마다 히어로가 두 방송을 번갈아 보여 주고, 새로 터진 방송은 바로 다음 차례에 나온다. 목록의 방송을 누르면 바로 시청 화면으로 간다. 발동 5분 뒤나 방송을 끝내면 회전에서 빠지고(노출 중이면 바로 다음 방송), 서버를 다시 띄워도 같은 순서·남은 시간이 이어진다.
 
 **P19. CLUTCH FEED (가상 클립)**
@@ -328,7 +328,8 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `super_clutch_trigger_reset_and_cooldown` | 100% 동시 요청에도 발동 1회, 게이지 0, 쿨다운 중 재발동 없음 | (클러치 절차 추가 시) |
 | `clutch_banned_rules`, `clutch_super_event_published` | 영구 밴은 무료만 허용·임시차단은 둘 다, `clutch.super` 이벤트 | (클러치 절차 추가 시) |
 | `clutch_gauge_event_throttled` | `clutch.gauge`는 방송당 0.5초에 1번, 사이 값은 마지막 것만 | (클러치 절차 추가 시) |
-| `burst_debits_and_boosts_gauge` | SUPER BURST 1,000비트 차감·원장 burst·후원 기록, 혼자 1회로 SUPER CLUTCH 발동, 쿨다운 중엔 게이지만 상승, 잔액 부족 409 | (클러치 절차 추가 시) |
+| `burst_amount_raises_gauge_by_bits` | SUPER BURST 고른 금액 차감·원장 burst·후원 기록, 1비트 = 1점, 최소 미만·상한 초과 422, 잔액 부족 409 | (클러치 절차 추가 시) |
+| `burst_fill_to_full_triggers_super_clutch` | "100%까지 남은 비트"(`bitsToFull`)만큼 버스트하면 SUPER CLUTCH 발동, 남은 비트 응답 정확 | P18 |
 | `burst_anonymous_hidden_from_public` | 익명 버스트는 공개 이벤트·목록에서 후원자 숨김, 소유자에게만 실명 | (클러치 절차 추가 시) |
 | `burst_rules`, `burst_concurrent_only_balance_succeeds` | 비로그인 401·내 방송 403·영구 밴 403·임시차단 허용·비LIVE 409, 동시 2건은 잔액만큼만 성공 | (클러치 절차 추가 시) |
 | `clutch_rotation` | 진행 중 SUPER CLUTCH 30초 교대, 새 발동은 바로 다음, 진행 중 재발동 없음, 방송 종료 즉시 제외(다음이 새 슬롯), 5분 뒤 제외 | P18 |
@@ -336,7 +337,8 @@ cd ~/flutch && docker compose -f compose.prod.yml pull && docker compose -f comp
 | `hero_modes`, `rotation_survives_restart` | 히어로 empty·top_viewers·top_gauge·super_clutch, 진행 중 목록 최대 5, 30초 슬롯, 새 앱 인스턴스도 같은 슬롯 | P18 |
 | `donation_amount_mismatch_rejected` | 주문과 다른 금액 승인 거절(토스 호출 없음) | P17 |
 | `donation_after_end_becomes_charge`, `banned_user_cannot_donate` | 승인 시 방송 종료·영구 밴이면 충전만, 주문 단계 거절 | P17 |
-| `donation_live_only`, `donation_input_rules`, `banned_user_cannot_donate` | 잔액 후원: LIVE 중에만, 자기 방송·금지어·금액·잔액 부족·영구 밴 거절, 게이지 반영 | P17 |
+| `donation_live_only`, `donation_input_rules`, `banned_user_cannot_donate` | 잔액 후원: LIVE 중에만, 자기 방송·금지어·금액·잔액 부족·영구 밴 거절 | P17 |
+| `donation_does_not_raise_gauge` | 잔액 후원·충전하고 후원하기 모두 게이지 점수 0 | P17 |
 | `donation_balance_conditional_debit` | 동시 잔액 후원 2건 → 잔액만큼만 성공, 음수 잔액 없음 | (서버 내부) |
 | `donation_anonymous_name_visibility` | 익명 후원: 공개 목록·비로그인·다른 사용자 이벤트는 익명, 소유자만 실명, 후원자 배지 | P17 |
 | `donation_skip_owner_only`, `donation_created_on_charge_and_donate` | 알림 스킵은 소유자만, 충전하고 후원하기도 알림 | P17 |

@@ -180,17 +180,6 @@ async fn donation_live_only(db: PgPool) {
     assert_eq!(res.json["donation"]["amount"], 1000);
     assert_eq!(res.json["donation"]["kind"], "donation");
     assert_eq!(res.json["donation"]["donor"]["id"], viewer_id);
-    // 후원 비트 × 10점이 게이지에 들어간다(1,000비트 = 10,000점 = SUPER CLUTCH 발동 → 쿨다운)
-    let points: i64 = sqlx::query_scalar(
-        "SELECT points FROM clutch_events WHERE broadcast_id = $1 AND source = 'donation'",
-    )
-    .bind(b)
-    .fetch_one(&db)
-    .await
-    .unwrap();
-    assert_eq!(points, 10_000);
-    let detail = send(&app, empty_req("GET", &format!("{B}/{b}"), None)).await;
-    assert_eq!(detail.json["gauge"]["phase"], "cooldown", "{}", detail.json);
     end_live(&app, &owner, b).await;
     let res = donate(&app, Some(&viewer), b, gift(1000)).await;
     assert_eq!(code(&res), (StatusCode::CONFLICT, "BROADCAST_NOT_LIVE"));
@@ -772,10 +761,55 @@ async fn donation_created_on_charge_and_donate(db: PgPool) {
         next_donation_event(&mut guest_ws).await["type"],
         "donation.skipped"
     );
-    // 충전하고 후원하기도 게이지에 들어간다(재시도해도 한 번)
-    let gauge_rows =
-        "SELECT count(*) FROM clutch_events WHERE broadcast_id = $1 AND source = 'donation'";
-    assert_eq!(scalar(&db, gauge_rows, b).await, 1);
+    assert_consistent(&db).await;
+}
+
+/// 후원은 게이지에 넣지 않는다(decisions §8, 11/17): 잔액 후원·충전하고 후원하기 모두 점수 0.
+#[sqlx::test]
+async fn donation_does_not_raise_gauge(db: PgPool) {
+    let (app, _) = setup(&db).await;
+    let (owner, _) = login_as(&app, "streamer1").await;
+    let (viewer, viewer_id) = login_as(&app, "viewer").await;
+    let b = live_broadcast(&app, &owner).await;
+
+    // 잔액 후원
+    charge(&db, viewer_id, 50_000).await;
+    let res = donate(&app, Some(&viewer), b, gift(50_000)).await;
+    assert_eq!(res.status, StatusCode::CREATED, "{}", res.json);
+
+    // 잔액 0 → 충전하고 후원하기(승인 확정 = 충전 + 후원)
+    let body = json!({ "purpose": "donation", "broadcastId": b,
+                       "donation": { "amount": 60_000, "anonymous": false } });
+    let res = send(
+        &app,
+        json_req("POST", "/api/v1/payments/orders", Some(&viewer), body),
+    )
+    .await;
+    assert_eq!(res.status, StatusCode::CREATED, "{}", res.json);
+    let body = json!({ "paymentKey": "pk_no_gauge", "orderId": res.json["orderId"],
+                       "amount": res.json["amount"] });
+    let res = send(
+        &app,
+        json_req("POST", "/api/v1/payments/confirm", Some(&viewer), body),
+    )
+    .await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    assert!(res.json["donation"]["id"].is_i64(), "{}", res.json);
+
+    // 110,000비트를 후원해도 게이지는 그대로
+    assert_eq!(donation_count(&db, viewer_id).await, 2);
+    let events = "SELECT count(*) FROM clutch_events WHERE broadcast_id = $1";
+    assert_eq!(scalar(&db, events, b).await, 0);
+    let detail = send(&app, empty_req("GET", &format!("{B}/{b}"), None)).await;
+    let g = &detail.json["gauge"];
+    assert_eq!(
+        (
+            g["percent"].clone(),
+            g["phase"].clone(),
+            g["bitsToFull"].clone()
+        ),
+        (json!(0), json!("charging"), json!(100_000))
+    );
     assert_consistent(&db).await;
 }
 

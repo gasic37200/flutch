@@ -3,4 +3,8 @@
 /**
  * `POST /broadcasts/{id}/bursts` 요청
  */
-export type BurstRequest = { anonymous: boolean, };
+export type BurstRequest = { 
+/**
+ * 쓸 비트 = 게이지 점수. `burstMin` ~ 1,000,000
+ */
+amount: number, anonymous: boolean, };
