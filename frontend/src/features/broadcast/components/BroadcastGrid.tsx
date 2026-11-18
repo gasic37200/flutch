@@ -18,6 +18,7 @@ export function BroadcastCard({ broadcast: b }: { broadcast: Broadcast }) {
       streamerId={b.owner.id}
       streamerName={b.owner.nickname}
       category={CATEGORY_LABEL[b.category]}
+      tags={b.tags}
       thumbnailUrl={b.thumbnailUrl}
       live
       viewerCount={b.viewerCount}
