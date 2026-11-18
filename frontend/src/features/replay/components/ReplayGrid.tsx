@@ -9,8 +9,7 @@ import { cardGrid, GridSkeleton } from '../../broadcast/components/BroadcastGrid
 import { count, durationLabel, kstDate } from '../format.ts'
 import type { useRecordings } from '../hooks/useRecordings.ts'
 
-// 다시보기 카드는 제목·메타가 길어 375에서는 1열
-export const gridClass = `${cardGrid} grid-cols-1`
+export const gridClass = `${cardGrid}`
 
 export function ReplayCard({ recording: r }: { recording: RecordingCard }) {
   return (

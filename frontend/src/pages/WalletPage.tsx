@@ -26,7 +26,7 @@ export default function WalletPage() {
   if (!w.me) return null;
 
   return (
-    <div className="flex max-w-[860px] flex-col gap-5 2xl:max-w-[1500px]">
+    <div className="mx-auto flex max-w-[1200px] flex-col gap-5">
       <h1 className="text-[22px] font-black sm:text-[26px]">내 지갑</h1>
 
       {/* 넓은 화면(2xl~): 잔액 카드 왼쪽 고정, 내역 오른쪽 */}

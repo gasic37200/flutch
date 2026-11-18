@@ -47,7 +47,7 @@ function StreamerPageBody() {
   ]
 
   return (
-    <div className='flex flex-col gap-6'>
+    <div className='mx-auto flex max-w-[1200px] flex-col gap-6'>
       <div className='flex flex-wrap items-end gap-x-4 gap-y-3 sm:gap-x-5'>
         <Avatar userId={user.id} nickname={user.nickname} size='lg' className='sm:size-28' />
         <div className='flex min-w-0 flex-col gap-1.5'>

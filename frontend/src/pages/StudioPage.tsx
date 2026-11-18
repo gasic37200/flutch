@@ -144,7 +144,7 @@ export default function StudioPage() {
         )}
       </header>
 
-      <div className='flex flex-col gap-5 xl:flex-row'>
+      <div className='flex flex-col gap-5 lg:flex-row'>
         <div className='min-w-0 grow space-y-3.5'>
           {live && <Bar role='alert'>방송 시작 3시간이 되면 자동으로 종료돼요.</Bar>}
           {resumable && <Bar role='status'>방송이 아직 진행 중이에요. 소스를 다시 켜고 이어서 송출하거나, 지금 방송을 종료할 수 있어요.</Bar>}
@@ -231,7 +231,7 @@ export default function StudioPage() {
           )}
         </div>
 
-        <aside className='w-full shrink-0 space-y-3.5 xl:w-[340px]'>
+        <aside className='w-full shrink-0 space-y-3.5 lg:w-80 xl:w-[360px]'>
           <StudioAside s={s} live={live} />
         </aside>
       </div>
