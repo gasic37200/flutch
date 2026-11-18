@@ -85,13 +85,9 @@ function gaugeText(g: Gauge, cooldownMin: number | null) {
   return '지금, 클러치할 시간!'
 }
 
-// 심박 라인: 임박이면 맥박 연출
+// 심박 파동: 임박이면 맥박 연출
 function Heartbeat({ fast }: { fast: boolean }) {
-  return (
-    <svg viewBox='0 0 240 28' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' aria-hidden className={`relative h-7 w-full max-w-[260px] text-brand ${fast ? 'animate-beat motion-reduce:animate-none' : ''}`}>
-      <path d='M0 14h80l8-10 10 20 8-14 6 4h128' />
-    </svg>
-  )
+  return <Icon name='pulse' className={`relative h-7 w-5 text-brand ${fast ? 'animate-beat motion-reduce:animate-none' : ''}`} />
 }
 
 function ClutchTimePanel({ broadcast: b, gauge: g, topGauge, cooldownMin }: { broadcast: Broadcast; gauge: Gauge; topGauge: boolean; cooldownMin: number | null }) {

@@ -1,2 +1,11 @@
 @import 'tailwindcss';
 @import './styles/tokens.css';
+
+/* 파동 아이콘: 시안 이미지를 마스크로 쓰고 글자색(currentColor)으로 칠한다 */
+.wave {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+  background: currentColor;
+  mask: url(/brand/wave.png) center / contain no-repeat;
+}
