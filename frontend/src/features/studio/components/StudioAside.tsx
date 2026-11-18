@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
-import { CATEGORY_LABEL } from '../../broadcast/categories.ts'
 import ChatCard from '../../chat/components/ChatCard.tsx'
-import { Chip } from '../../../components/ui/Chip.tsx'
 import Icon from '../../../components/ui/Icon.tsx'
 import Panel from '../../../components/ui/Panel.tsx'
+import DonationQueueCard from './DonationQueueCard.tsx'
+import StudioInfoForm from './StudioInfoForm.tsx'
 import type { useStudio } from '../hooks/useStudio.ts'
 
 type S = ReturnType<typeof useStudio>
@@ -27,7 +27,7 @@ function Check({ done, off, children }: { done: boolean; off?: boolean; children
   )
 }
 
-// 송출 전: 시작 전 확인 · 권한 안내 · 지원 환경. 방송 중: 방송 정보(읽기 전용) · 채팅.
+// 송출 전: 시작 전 확인 · 권한 안내 · 지원 환경. 방송 중: 방송 정보 수정 · 후원 알림 대기열 · 채팅.
 export default function StudioAside({ s, live }: { s: S; live: boolean }) {
   const { data, media } = s
   if (!data) return null
@@ -63,33 +63,14 @@ export default function StudioAside({ s, live }: { s: S; live: boolean }) {
     )
   return (
     <>
-      <Card title='방송 정보'>
-        <dl className='space-y-3 text-[13px]'>
-          <div>
-            <dt className='text-text-muted'>제목</dt>
-            <dd className='mt-1 text-sm break-words'>{data.title}</dd>
-          </div>
-          <div>
-            <dt className='text-text-muted'>카테고리</dt>
-            <dd className='mt-1 text-sm'>{CATEGORY_LABEL[data.category]}</dd>
-          </div>
-          {data.tags.length > 0 && (
-            <div>
-              <dt className='text-text-muted'>태그</dt>
-              <dd className='mt-1'>
-                <ul className='flex flex-wrap gap-1.5' aria-label='태그'>
-                  {data.tags.map((t) => (
-                    <li key={t}>
-                      <Chip>#{t}</Chip>
-                    </li>
-                  ))}
-                </ul>
-              </dd>
-            </div>
-          )}
-        </dl>
-        <p className='text-xs text-text-dim'>{data.record ? '방송이 끝나면 다시보기로 남아요.' : '녹화하지 않는 방송이에요.'}</p>
-      </Card>
+      <Panel innerClassName='flex flex-col gap-3 p-4'>
+        <div className='flex items-center'>
+          <h2 className='text-[15px] font-bold'>방송 정보</h2>
+          <span className='ml-auto text-xs text-text-dim'>방송 중에도 바로 반영</span>
+        </div>
+        <StudioInfoForm broadcast={data} />
+      </Panel>
+      <DonationQueueCard alerts={s.alerts} />
       <ChatCard chat={s.chat} broadcast={data} className='h-96' />
     </>
   )

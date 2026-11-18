@@ -50,7 +50,7 @@ export default function ReplayVideo({ recording: r, onPlay, clip, onTime, alert,
       {/* 아래쪽 브라우저 재생 컨트롤을 가리지 않게 띄운다 */}
       {chats && chats.length > 0 && <ChatOverlay items={chats} className='absolute bottom-[4.5rem] left-3 max-h-[30%] w-[min(22rem,65%)] sm:max-h-[45%]' />}
       <DonationAlert key={alert?.id} alerts={{ current: alert as Donation, // 타입상 항상 있다고 나오지만 없으면 알림을 그리지 않는다
- waiting: 0, skip: async () => {}, skipping: false }} />
+ next: undefined, waiting: 0, skip: async () => {}, skipping: false }} />
     </div>
   )
 }

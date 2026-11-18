@@ -49,5 +49,5 @@ export function useDonationAlerts(onEvent: OnEvent) {
     }
   }
 
-  return { current: current?.donation, waiting: Math.max(0, queue.length - 1), skip, skipping }
+  return { current: current?.donation, next: queue.at(1)?.donation, waiting: Math.max(0, queue.length - 1), skip, skipping }
 }
