@@ -16,7 +16,7 @@ export default function KakaoSignupForm() {
     return (
       <AuthCard title='닉네임 설정'>
         <FormAlert message='카카오 로그인 시간이 지났어요. 처음부터 다시 시도해 주세요.' />
-        <Button to='/login' size='lg' className='h-[50px] w-full'>
+        <Button to='/login' size='xl' className='w-full'>
           로그인으로 돌아가기
         </Button>
       </AuthCard>
@@ -43,7 +43,7 @@ export default function KakaoSignupForm() {
           </CheckRow>
         </Panel>
         <FormAlert message={f.error?.message} />
-        <Button type='submit' size='lg' loading={f.pending} disabled={!f.canSubmit} className='h-[50px] w-full'>
+        <Button type='submit' size='xl' loading={f.pending} disabled={!f.canSubmit} className='w-full'>
           시작하기
         </Button>
       </form>

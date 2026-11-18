@@ -42,7 +42,7 @@ export default function WalletPage() {
               className="text-3xl sm:text-[40px]"
             />
             <span className="text-xs text-text-dim">
-              1비트 = 1원 · 보유 한도 3,000,000
+              1 Beat = 1원 · 보유 한도 3,000,000
             </span>
           </div>
           <Button size="lg" onClick={() => setCharging(true)}>

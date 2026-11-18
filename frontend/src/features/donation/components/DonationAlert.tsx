@@ -27,7 +27,7 @@ export default function DonationAlert({ alerts, owner, className = 'top-3' }: Pr
                 {owner && d.anonymous && <Badge tone='anonymous' />}
               </b>
               <b className={`font-mono ${big ? 'text-[28px] text-burst' : 'text-[15px] text-brand'}`}>
-                {beats(d.amount)} <span className='font-display text-[0.7em]'>비트 후원</span>
+                {beats(d.amount)} <span className='font-display text-[0.7em]'>Beat 후원</span>
               </b>
               {d.message && <span className='text-sm break-words text-text-muted'>{d.message}</span>}
             </div>

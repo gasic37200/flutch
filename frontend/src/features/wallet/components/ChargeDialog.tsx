@@ -48,7 +48,7 @@ export default function ChargeDialog({ balance, onClose }: { balance: number; on
             </div>
             <div className='flex justify-between'>
               <dt className='text-text-muted'>충전 후 잔액</dt>
-              <dd className='font-mono font-bold text-brand'>{c.canSubmit ? `${won(c.after)} 비트` : '-'}</dd>
+              <dd className='font-mono font-bold text-brand'>{c.canSubmit ? `${won(c.after)} Beat` : '-'}</dd>
             </div>
           </dl>
           <Button type='submit' size='lg' loading={c.busy} disabled={!c.canSubmit}>

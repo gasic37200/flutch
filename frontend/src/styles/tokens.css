@@ -130,6 +130,10 @@
     word-break: keep-all;
     overflow-wrap: anywhere;
   }
+  /* 시안 체크박스는 흰 박스 + 라임 체크(시안은 라이트 컬러 스킴으로 그려짐) */
+  input[type='checkbox'] {
+    color-scheme: light;
+  }
   :focus-visible {
     outline: 3px solid var(--color-text);
     outline-offset: 2px;

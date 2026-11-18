@@ -50,7 +50,7 @@ export function useDonate(broadcastId: number, balance: number, onClose: () => v
       qc.setQueryData<Me | null>(ME_KEY, (m) => m && { ...m, balance: r.balance })
       void qc.invalidateQueries({ queryKey: WALLET_KEY })
       void qc.invalidateQueries({ queryKey: donationsKey(broadcastId) })
-      toast({ tone: 'success', message: `${amount.toLocaleString('ko-KR')}비트를 후원했어요` })
+      toast({ tone: 'success', message: `${amount.toLocaleString('ko-KR')} Beat를 후원했어요` })
       onClose()
     } catch (e) {
       if (e instanceof ApiRequestError && e.code === 'WALLET_INSUFFICIENT_BALANCE') {

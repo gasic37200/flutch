@@ -63,13 +63,13 @@ export default function DonateDialog({ broadcast, nickname, balance, onClose }: 
         />
         <div className='flex justify-between'>
           <span className='text-text-muted'>내 잔액</span>
-          <b className='font-mono'>{beats(balance)} 비트</b>
+          <b className='font-mono'>{beats(balance)} Beat</b>
         </div>
         <FormAlert message={d.error} />
         <Button type='submit' size='lg' loading={d.sending} disabled={!d.valid}>
-          {!d.valid ? '후원하기' : d.needsCharge ? `${beats(d.chargeAmount)}비트 충전하고 후원하기` : `${beats(d.amount)}비트 후원하기`}
+          {!d.valid ? '후원하기' : d.needsCharge ? `${beats(d.chargeAmount)} Beat 충전하고 후원하기` : `${beats(d.amount)} Beat 후원하기`}
         </Button>
-        {d.needsCharge && d.chargeAmount > d.shortage && <p className='text-xs text-text-dim'>최소 충전 단위(1,000비트) 때문에 남는 비트는 잔액에 남아요.</p>}
+        {d.needsCharge && d.chargeAmount > d.shortage && <p className='text-xs text-text-dim'>최소 충전 단위(1,000 Beat) 때문에 남는 비트는 잔액에 남아요.</p>}
         <p className='text-xs text-text-dim'>테스트 모드 충전은 환불을 지원하지 않아요.</p>
       </form>
     </Modal>

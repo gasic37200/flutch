@@ -47,12 +47,12 @@ export default function LiveCard({ to, title, streamerId, streamerName, streamer
             {live && <Badge tone='live' className='absolute top-2.5 left-2.5' />}
             {superClutch && <Badge tone='superClutch' className='absolute top-2.5 right-2.5' />}
             {live && viewerCount !== undefined && (
-              <span className='absolute bottom-2.5 left-2.5 bg-bg/85 px-1.5 py-0.5 font-mono text-xs font-bold text-live'>
+              <span className='absolute bottom-2 left-2 bg-bg/85 px-1.5 py-0.5 font-mono text-xs font-bold text-live'>
                 {viewerCount.toLocaleString('ko-KR')}
                 <span className='sr-only'>명 시청 중</span>
               </span>
             )}
-            {durationLabel && <span className='absolute bottom-2.5 left-2.5 bg-bg/85 px-1.5 py-0.5 font-mono text-xs font-bold'>{durationLabel}</span>}
+            {durationLabel && <span className='absolute bottom-2 left-2 bg-bg/85 px-1.5 py-0.5 font-mono text-xs font-bold'>{durationLabel}</span>}
             {!hasThumb && <img src={faceSrc('sleepy')} alt='' className='absolute right-2.5 bottom-2.5 size-[26px] rounded-full opacity-85' />}
           </div>
         </div>
