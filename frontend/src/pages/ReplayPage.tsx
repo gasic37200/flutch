@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { ApiRequestError } from '../api/client.ts'
 import Avatar from '../components/ui/Avatar.tsx'
@@ -11,6 +12,8 @@ import ChatHistory from '../features/replay/components/ChatHistory.tsx'
 import ReplayVideo from '../features/replay/components/ReplayVideo.tsx'
 import { count, kstDate } from '../features/replay/format.ts'
 import { useCountView, useRecording } from '../features/replay/hooks/useRecordings.ts'
+import { useReplayTimeline } from '../features/replay/hooks/useReplayTimeline.ts'
+import { alertAt } from '../features/replay/timeline.ts'
 import { useNow } from '../features/watch/hooks/useWatch.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
 import ShellBody from '../layouts/ShellBody.tsx'
@@ -27,6 +30,8 @@ export default function ReplayPage() {
   const { data: r, error, refetch } = useRecording(id)
   const countView = useCountView(id)
   const now = useNow(false)
+  const [time, setTime] = useState(clip?.start ?? 0)
+  const timeline = useReplayTimeline(r?.broadcastId, r?.startedAt)
 
   if (id === undefined) return <ErrorScreen kind='notFound' />
   if (error instanceof ApiRequestError && error.code === 'RECORDING_EXPIRED') {
@@ -39,10 +44,11 @@ export default function ReplayPage() {
   if (!r) return <Skeleton className='aspect-video w-full max-w-4xl' />
 
   const daysLeft = r.expiresAt ? Math.max(0, Math.ceil((Date.parse(r.expiresAt) - now) / DAY_MS)) : null
+  const synced = r.status === 'ready' && !!r.videoUrl // 영상이 없으면 동기화할 재생 시각이 없어 전체 목록
   return (
-    <ShellBody aside={<ChatHistory broadcastId={r.broadcastId} startedAt={r.startedAt} />}>
+    <ShellBody aside={<ChatHistory timeline={timeline} time={time} synced={synced} />}>
       <div className='flex flex-col gap-3.5'>
-        <ReplayVideo recording={r} onPlay={countView} clip={clip} />
+        <ReplayVideo recording={r} onPlay={countView} clip={clip} onTime={setTime} alert={synced ? alertAt(timeline.items, time) : undefined} />
         <h1 className='text-base font-bold break-words sm:text-xl'>{r.title}</h1>
         <div className='flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-text-muted'>
           <Link to={`/users/${r.owner.id}`} className='inline-flex items-center gap-2 text-sm font-bold text-text hover:text-brand'>

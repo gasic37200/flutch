@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { RecordingDetail } from '../../../api/generated/RecordingDetail.ts'
 import Icon from '../../../components/ui/Icon.tsx'
+import type { Donation } from '../../../api/generated/Donation.ts'
+import DonationAlert from '../../donation/components/DonationAlert.tsx'
 import { useAuth } from '../../auth/hooks/useAuth.ts'
 
 function Notice({ title, sub, busy }: { title: string; sub?: string; busy?: boolean }) {
@@ -13,9 +15,11 @@ function Notice({ title, sub, busy }: { title: string; sub?: string; busy?: bool
   )
 }
 
+type Props = { recording: RecordingDetail; onPlay: () => void; clip?: { start: number; end?: number }; onTime?: (sec: number) => void; alert?: Donation }
+
 // 탐색·볼륨·전체화면·배속은 브라우저 기본 컨트롤을 쓴다. 영상이 아니면 같은 비율의 안내 박스를 보여 준다.
-/** `clip`이 있으면 그 구간(초)만 재생한다(미디어 프래그먼트 `#t=시작,끝`: 구간 끝에서 멈춘다). */
-export default function ReplayVideo({ recording: r, onPlay, clip }: { recording: RecordingDetail; onPlay: () => void; clip?: { start: number; end?: number } }) {
+/** `clip`이 있으면 그 구간(초)만 재생한다(미디어 프래그먼트 `#t=시작,끝`: 구간 끝에서 멈춘다). `onTime`은 재생 위치(초)를 알리고, `alert`는 영상 위에 후원 알림으로 띄운다(채팅·후원 리플레이). */
+export default function ReplayVideo({ recording: r, onPlay, clip, onTime, alert }: Props) {
   const [broken, setBroken] = useState(false)
   const { me } = useAuth()
   return (
@@ -30,6 +34,8 @@ export default function ReplayVideo({ recording: r, onPlay, clip }: { recording:
           aria-label={`${r.title} 다시보기`}
           onPlay={onPlay}
           onError={() => setBroken(true)}
+          onTimeUpdate={(e) => onTime?.(e.currentTarget.currentTime)}
+          onSeeked={(e) => onTime?.(e.currentTarget.currentTime)}
           className='size-full bg-bg object-contain'
         />
       ) : r.status === 'recording' ? (
@@ -39,6 +45,8 @@ export default function ReplayVideo({ recording: r, onPlay, clip }: { recording:
       ) : (
         <Notice title='영상을 불러올 수 없어요' sub='잠시 후 다시 시도해 주세요' />
       )}
+      <DonationAlert key={alert?.id} alerts={{ current: alert as Donation, // 타입상 항상 있다고 나오지만 없으면 알림을 그리지 않는다
+ waiting: 0, skip: async () => {}, skipping: false }} />
     </div>
   )
 }

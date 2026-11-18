@@ -48,11 +48,11 @@ export function useCountView(id: number | undefined) {
   }
 }
 
-/** 방송 채팅 전체 기록(읽기 전용). 처음엔 최신 50개, "이전 채팅"으로 더 거슬러 오른다. */
+/** 방송 채팅 전체 기록(읽기 전용). 처음엔 최신 100개, "이전 채팅"으로 더 거슬러 오른다. */
 export function useReplayChats(broadcastId: number | undefined) {
   const q = useInfiniteQuery({
     queryKey: ['recording', 'chats', broadcastId],
-    queryFn: ({ pageParam }) => api<ChatPage>(`/broadcasts/${broadcastId}/chats?limit=50${pageParam ? `&before=${pageParam}` : ''}`),
+    queryFn: ({ pageParam }) => api<ChatPage>(`/broadcasts/${broadcastId}/chats?limit=100${pageParam ? `&before=${pageParam}` : ''}`),
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (last) => (last.hasMore && last.items.length > 0 ? last.items[0].id : undefined),
     enabled: broadcastId !== undefined,
