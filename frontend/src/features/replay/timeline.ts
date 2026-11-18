@@ -28,3 +28,7 @@ export function alertAt(items: ReplayItem[], t: number): Donation | undefined {
     if (i.kind === 'donation' && i.at <= t && t < i.at + win) return i.donation
   }
 }
+
+/** 영상 위에 겹쳐 보일 채팅: 재생 시각 `t` 전 `win`초 안에 올라온 것(오버레이가 최근 몇 줄만 보여 준다). 오래된 채팅이 영상 위에 남지 않게 창을 둔다. */
+export const recentChatsAt = (items: ReplayItem[], t: number, win = 30): Chat[] =>
+  items.flatMap((i) => (i.kind === 'chat' && i.at <= t && i.at > t - win ? [i.chat] : []))
