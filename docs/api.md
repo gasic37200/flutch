@@ -56,7 +56,7 @@ type Broadcast = {
 
 type BroadcastDetail = Broadcast & {
   gauge: ClutchGauge                   // LIVE가 아니면 percent 0, phase 'charging'
-  burstPrice: number                   // SUPER BURST 가격(설정값)
+  burstMin: number                     // SUPER BURST 최소 금액(설정값 1,000). 최대는 1,000,000
   viewer: {                            // 요청자 기준. 비로그인은 null
     isOwner: boolean
     ban: { permanent: boolean; until: string | null } | null   // 이 스트리머에게 차단된 상태(풀린 임시차단은 null)
@@ -86,6 +86,8 @@ type ClutchGauge = {
   percent: number                      // 0~100 정수
   phase: 'charging' | 'imminent' | 'cooldown'   // imminent = 80% 이상(설정값)
   cooldownUntil: string | null         // phase=cooldown일 때 재발동 가능 시각
+  bitsToFull: number                   // 100%까지 남은 비트 = max(0, 100% 기준 − 현재 점수)(SUPER BURST 1비트 = 1점).
+                                       // LIVE 아님·발동 직후는 100% 기준 전체. 쿨다운 중에도 같은 계산이지만 채워도 쿨다운이 끝나야 발동
 }
 
 type RecordingStatus = 'recording' | 'ready' | 'failed' | 'deleted'
@@ -285,7 +287,7 @@ type DonationStats = Page<{ broadcast: BroadcastRef & { startedAt: string }; tot
 - 금액: 충전 `amount`·후원 `amount` 모두 1,000~1,000,000 정수. 충전 후 잔액이 3,000,000을 넘으면 `WALLET_BALANCE_LIMIT`. 후원 `message` 0~100자, 욕설 가림·FLUTCH 금지어 `DONATION_BANNED_WORD`.
 - **후원 주문의 결제 금액은 서버가 계산**: N = max(후원액 − 현재 잔액, 1,000). 잔액이 이미 충분하면 `PAYMENT_NOT_NEEDED`(잔액 후원을 쓰라는 뜻). 클라이언트가 보낸 결제 금액은 받지 않는다.
 - 주문은 30분 후 만료(`PAYMENT_ORDER_EXPIRED`). `orderId`는 서버 생성 `^[A-Za-z0-9_-]{6,64}$`. 토스 위젯 `customerKey`는 `ANONYMOUS`.
-- confirm 순서: 주문 조회·주문자 확인 → `amount`가 주문 금액과 다르면 `PAYMENT_AMOUNT_MISMATCH`(토스 호출 안 함) → 만료 확인 → 토스 승인 API → **한 트랜잭션**: 주문 `done` + 원장 `charge +N` + (후원 주문이고 방송이 LIVE·미밴이면) 원장 `donation −금액` + 후원 기록 + 게이지 점수. 방송이 끝났거나 그 사이 밴되면 충전만 하고 `notice`.
+- confirm 순서: 주문 조회·주문자 확인 → `amount`가 주문 금액과 다르면 `PAYMENT_AMOUNT_MISMATCH`(토스 호출 안 함) → 만료 확인 → 토스 승인 API → **한 트랜잭션**: 주문 `done` + 원장 `charge +N` + (후원 주문이고 방송이 LIVE·미밴이면) 원장 `donation −금액` + 후원 기록(게이지 점수 없음, T43). 방송이 끝났거나 그 사이 밴되면 충전만 하고 `notice`.
 - **멱등**: 이미 `done`인 주문에 같은 `paymentKey`로 다시 confirm → 200 같은 `PaymentResult`(재적립 없음). 다른 `paymentKey` → `PAYMENT_ALREADY_CONFIRMED`. 웹훅은 본문 `paymentKey`로 토스 결제 조회 API를 다시 불러 상태·금액·`secret`을 확인한 뒤 같은 확정 함수를 탄다(`payment_key`·`ledger_entries.payment_order_id` 유니크).
 - 잔액 후원: `UPDATE wallets … WHERE balance >= $amount` 조건부 차감, 0행이면 `WALLET_INSUFFICIENT_BALANCE` → 화면은 "N비트 충전하고 후원하기"(후원 주문)로 전환.
 - 지갑 `type` 필터는 원장 유형 5개 중 하나, `month`는 KST 기준 월. **유료 클러치는 같은 방송의 연속된 원장을 한 줄로 묶어**(`count`, 합계 `amount`) 내려준다. 숨긴 방송은 `broadcast.hidden=true`.
@@ -299,19 +301,19 @@ type DonationStats = Page<{ broadcast: BroadcastRef & { startedAt: string }; tot
   - 웹훅: 본문 `{eventType, createdAt, data: Payment}`에서 `eventType=PAYMENT_STATUS_CHANGED`만 본다. `data.paymentKey`로 조회한 결제의 `secret`이 본문 `data.secret`과 다르거나 DONE이 아니거나 금액이 주문과 다르면 무시(200). 조회 통신 실패·DB 오류만 500.
   - `Donation.kind` TS 타입은 `donation | clutch | burst`(후원 기록 공용). 목록·이벤트에는 clutch가 나오지 않는다.
 - 구현(T22):
-  - 잔액 후원 검사 순서: 방송 404 → `DONATION_SELF` → 영구 밴 `MODERATION_BANNED`(임시차단은 후원 가능) → 금액·메시지 422 → `BROADCAST_NOT_LIVE` → `WALLET_INSUFFICIENT_BALANCE`. 한 트랜잭션: 방송 `FOR SHARE`(LIVE 재확인, 커밋 전 종료 방지) → 조건부 차감 → 후원 기록 → 게이지 점수(비트 × `points_per_bit`, `clutch_events source=donation`). 커밋 뒤 `donation.created`(split)·`clutch.gauge`/`clutch.super`. 응답 `balance`는 차감 후 잔액.
-  - 충전하고 후원하기(`finalize`)도 후원까지 확정된 그 확정에서만 `donation.created`·게이지 점수를 낸다(같은 승인 재시도·웹훅은 다시 내지 않음).
+  - 잔액 후원 검사 순서: 방송 404 → `DONATION_SELF` → 영구 밴 `MODERATION_BANNED`(임시차단은 후원 가능) → 금액·메시지 422 → `BROADCAST_NOT_LIVE` → `WALLET_INSUFFICIENT_BALANCE`. 한 트랜잭션: 방송 `FOR SHARE`(LIVE 재확인, 커밋 전 종료 방지) → 조건부 차감 → 후원 기록. 커밋 뒤 `donation.created`(split). 응답 `balance`는 차감 후 잔액. 후원은 게이지에 넣지 않는다(T43, decisions §8).
+  - 충전하고 후원하기(`finalize`)도 후원까지 확정된 그 확정에서만 `donation.created`를 낸다(같은 승인 재시도·웹훅은 다시 내지 않음). 게이지 점수는 없다(T43).
   - 공개형/소유자형은 `Donation::visible_to(is_owner)` 하나로 만든다. 목록의 소유자 판정은 요청 세션(후원자 본인도 소유자가 아니면 익명 `donor=null`).
   - 목록 `cursor`는 이전 페이지 마지막 후원 id, `limit` 기본 20·최대 50, 형식이 틀리면 422 `fields.cursor`·`fields.limit`. `count`는 donation·burst 건수, `total`은 clutch 포함.
   - 스킵: 숨긴 방송의 후원·없는 후원 404, 소유자 아님 403 `BROADCAST_NOT_OWNER`. 방송 상태와 상관없이 `donation.skipped {id}`만 보낸다. 알림 표시 큐(10초·순서대로·10,000비트 이상 큰 연출)는 클라이언트가 `donation.created`/`donation.skipped`로 관리한다.
   - 통계: 내가 송출한 적 있는(`startedAt` 있는) 방송을 id 최신순, 커서 = 마지막 방송 id. 받은 기록이 없는 숨긴 방송은 빼고, 있으면 `title: "삭제된 방송"`·`hidden: true`. `total`은 clutch 포함, `count`는 donation·burst. `last7Days`는 KST 달력 기준 오늘 포함 7일(6일 전 00:00 KST 이후).
-- 시나리오: `donation_confirm_idempotent` `donation_amount_mismatch_rejected` `donation_balance_conditional_debit` `donation_live_only` `donation_after_end_becomes_charge` `donation_anonymous_name_visibility` `charge_limits_and_order_expiry` `banned_user_cannot_donate` · 후원(T22): `donation_input_rules` `donation_skip_owner_only` `donation_list_totals_and_pages` `donation_stats_kst_7_days` `donation_stats_only_mine` `donation_created_on_charge_and_donate` · 결제(T21): `payment_toss_rejected_or_unavailable` `payment_confirm_owner_only` `payment_webhook_secret_mismatch_ignored` `payment_concurrent_confirm_credits_once` · 지갑·원장(T20): `wallet_concurrent_debit_only_one_succeeds` `wallet_charge_limit_and_idempotent` `wallet_list_filters_and_clutch_grouping` `wallet_month_filter_kst_boundary` `wallet_requires_login_and_hides_others`
+- 시나리오: `donation_confirm_idempotent` `donation_amount_mismatch_rejected` `donation_balance_conditional_debit` `donation_live_only` `donation_after_end_becomes_charge` `donation_anonymous_name_visibility` `charge_limits_and_order_expiry` `banned_user_cannot_donate` · 후원(T22): `donation_input_rules` `donation_skip_owner_only` `donation_list_totals_and_pages` `donation_stats_kst_7_days` `donation_stats_only_mine` `donation_created_on_charge_and_donate` `donation_does_not_raise_gauge` · 결제(T21): `payment_toss_rejected_or_unavailable` `payment_confirm_owner_only` `payment_webhook_secret_mismatch_ignored` `payment_concurrent_confirm_credits_once` · 지갑·원장(T20): `wallet_concurrent_debit_only_one_succeeds` `wallet_charge_limit_and_idempotent` `wallet_list_filters_and_clutch_grouping` `wallet_month_filter_kst_boundary` `wallet_requires_login_and_hides_others`
 
 ## 7. Clutch (f07)
 | 메서드·경로 | 권한 | 요청 | 응답 | 에러 |
 |---|---|---|---|---|
 | POST `/broadcasts/{id}/clutches` | 로그인·LIVE·소유자 아님 | — | 200 `{paid: boolean, combo: number /* 무료 1~5, 유료 0 */, freeClutchesLeft, balance: number \| null /* 유료일 때만 */, gauge: ClutchGauge}` | 401, 404, 403 `CLUTCH_SELF`·`MODERATION_BANNED`(유료만), 409 `BROADCAST_NOT_LIVE`·`WALLET_INSUFFICIENT_BALANCE`, 429 `RATE_LIMITED`(초당 10회) |
-| POST `/broadcasts/{id}/bursts` | 로그인·LIVE·미밴·소유자 아님 | `{anonymous: boolean}` | 200 `{donation: Donation, balance, gauge}`, `donation.created` | 401, 404, 403 `CLUTCH_SELF`·`MODERATION_BANNED`, 409 `BROADCAST_NOT_LIVE`·`WALLET_INSUFFICIENT_BALANCE` |
+| POST `/broadcasts/{id}/bursts` | 로그인·LIVE·미밴·소유자 아님 | `{amount: number /* burstMin ~ 1,000,000 */, anonymous: boolean}` | 200 `{donation: Donation, balance, gauge}`, `donation.created` | 401, 404, 403 `CLUTCH_SELF`·`MODERATION_BANNED`, 422 `fields.amount`, 409 `BROADCAST_NOT_LIVE`·`WALLET_INSUFFICIENT_BALANCE` |
 | GET `/home/hero` | 누구나 | — | 200 `Hero` | — |
 | GET `/clips` (T30) | 누구나 | `?cursor=&limit=` | 200 `Page<Clip>` 최신순 | — |
 
@@ -325,14 +327,14 @@ type Hero = {
 }
 type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: string; broadcast: Broadcast; startSec: number; durationSec: number; triggeredAt: string }
 ```
-- 클러치: 사용자·방송별 **최근 30초 무료 5회**(DB 기준, 재시작 안전), 6번째부터 1회 1비트 조건부 차감(원장 `clutch`, 후원 기록 kind `clutch`, 알림 없음). 점수: 클러치 50점, 후원·버스트 1비트당 10점(설정값).
-- 버스트: 가격 `burstPrice`(설정값 1,000) 차감, 원장 `burst` + 후원 기록 kind `burst`(표시 이름은 `anonymous`). 검사 순서: 방송 404 → `CLUTCH_SELF` → 영구 밴 `MODERATION_BANNED`(임시차단은 허용) → `BROADCAST_NOT_LIVE` → `WALLET_INSUFFICIENT_BALANCE`. 한 트랜잭션: 방송 `FOR SHARE` → 조건부 차감 → 후원 기록 → 게이지 점수(가격 × `points_per_bit`, `clutch_events source=burst`). 커밋 뒤 `donation.created`(split, 익명이면 공개 쪽 `donor=null`)·`clutch.gauge`/`clutch.super`. 응답 `donation`은 실명, `balance`는 차감 후 잔액, `gauge`는 반영 후(발동했으면 0·cooldown).
-- 게이지는 최근 5분 슬라이딩 합계 / 10,000점. 100% 도달 시 쿨다운(진행 중이거나 마지막 발동 30분 이내)이 아니면 SUPER CLUTCH: 게이지 0, `super_clutches` 추가(5분, 회전 바로 다음 순서), `clutch.super` 발행. 쿨다운 중이면 게이지만 오르고 phase `cooldown`.
+- 클러치: 사용자·방송별 **최근 30초 무료 5회**(DB 기준, 재시작 안전), 6번째부터 1회 1비트 조건부 차감(원장 `clutch`, 후원 기록 kind `clutch`, 알림 없음). 점수: 클러치 10점, SUPER BURST 1비트당 1점(설정값). 후원은 0점(T43).
+- 버스트(T43): 요청 `amount`(`burstMin` 1,000 ~ 1,000,000, 후원 금액 범위와 같음) 차감, 원장 `burst` + 후원 기록 kind `burst`(표시 이름은 `anonymous`). 검사 순서: 방송 404 → `CLUTCH_SELF` → 영구 밴 `MODERATION_BANNED`(임시차단은 허용) → 금액 422 `fields.amount` → `BROADCAST_NOT_LIVE` → `WALLET_INSUFFICIENT_BALANCE`. 한 트랜잭션: 방송 `FOR SHARE` → 조건부 차감 → 후원 기록 → 게이지 점수(`amount` 그대로, `clutch_events source=burst`). 커밋 뒤 `donation.created`(split, 익명이면 공개 쪽 `donor=null`)·`clutch.gauge`/`clutch.super`. 응답 `donation`은 실명, `balance`는 차감 후 잔액, `gauge`는 반영 후(발동했으면 0·cooldown).
+- 게이지는 최근 5분 슬라이딩 합계 / 100,000점. 100% 도달 시 쿨다운(진행 중이거나 마지막 발동 30분 이내)이 아니면 SUPER CLUTCH: 게이지 0, `super_clutches` 추가(5분, 회전 바로 다음 순서), `clutch.super` 발행. 쿨다운 중이면 게이지만 오르고 phase `cooldown`.
 - 점수는 마지막 SUPER CLUTCH 이후 이벤트만 센다. 시연용으로 환경변수 `CLUTCH_GAUGE_TARGET`·`CLUTCH_POINTS`가 기준·클러치 점수를 바꾼다. 감소(5분 창 밖으로 빠짐)는 이벤트가 없어 클라이언트가 20초마다 상세를 다시 받는다.
 - 히어로: 진행 중 SUPER CLUTCH가 있으면 30초씩 회전(`mode=super_clutch`, 서버 1초 스케줄러가 DB 기준으로 진행), 없으면 게이지 1위 LIVE(`top_gauge`), 모두 0%면 시청자 수 1위(`top_viewers`, 동률은 최신 방송), LIVE가 없으면 `empty`. 홈은 10초 폴링하고 `slot.nextSwitchAt`이 더 이르면 그때 다시 조회.
   - 회전(T29): 진행 중 = 미만료 + 방송 LIVE·미숨김(종료되면 바로 빠진다). 상태는 `super_clutches.shown_at`(마지막 슬롯 시작)뿐이다. 현재 = `shown_at`이 가장 늦은 것, 다음 = 아직 노출 전(`rotation_order`, 같으면 id — 동시 발동이면 같은 값일 수 있다) → 오래전에 노출된 순. 슬롯이 30초를 넘었거나 현재가 빠지면 다음의 `shown_at`을 지금으로 바꾼다(혼자면 같은 방송으로 새 슬롯). 1초 작업과 `GET /home/hero`(슬롯이 끝났을 때만, 잠금으로 직렬화)가 같은 규칙으로 진행한다.
 - 클립: 녹화 `ready`인 방송의 SUPER CLUTCH마다 `startSec = max(0, 발동시각 − startedAt − 30)`, `durationSec = 45`. 클립이 없으면 홈은 `GET /recordings`(최근 다시보기)를 보여준다.
-- 시나리오: `clutch_free_combo_then_paid` `clutch_gauge_decay_window` `super_clutch_trigger_reset_and_cooldown` `clutch_rotation` `hero_modes` `rotation_survives_restart` `clutch_banned_rules` `clutch_gauge_event_throttled` · 버스트(T24): `burst_debits_and_boosts_gauge` `burst_anonymous_hidden_from_public` `burst_rules` `burst_concurrent_only_balance_succeeds`
+- 시나리오: `clutch_free_combo_then_paid` `clutch_gauge_decay_window` `super_clutch_trigger_reset_and_cooldown` `clutch_rotation` `hero_modes` `rotation_survives_restart` `clutch_banned_rules` `clutch_gauge_event_throttled` · 버스트(T24·T43): `burst_amount_raises_gauge_by_bits` `burst_fill_to_full_triggers_super_clutch` `burst_anonymous_hidden_from_public` `burst_rules` `burst_concurrent_only_balance_succeeds`
 
 ## 8. 녹화·다시보기 (f08)
 | 메서드·경로 | 권한 | 요청 | 응답 | 에러 |

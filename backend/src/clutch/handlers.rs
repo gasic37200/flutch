@@ -76,7 +76,7 @@ pub async fn create(
     }))
 }
 
-/// SUPER BURST: 가격 차감 + 후원 기록(kind burst) + 게이지 점수를 한 트랜잭션으로.
+/// SUPER BURST: 고른 금액 차감 + 후원 기록(kind burst) + 게이지 점수(1비트 = 1점)를 한 트랜잭션으로.
 /// 잠금 순서: 방송 FOR SHARE → 지갑 차감 → 게이지(후원·클러치와 같은 순서라 교착 없음).
 pub async fn burst(
     State(state): State<Arc<AppState>>,
@@ -85,7 +85,7 @@ pub async fn burst(
     JsonBody(req): JsonBody<BurstRequest>,
 ) -> Result<Json<BurstResult>, AppError> {
     let cfg = &state.config.clutch;
-    let price = cfg.burst_price;
+    let amount = req.amount;
     let mut tx = state.db.begin().await?;
     // FOR SHARE: 차감·기록이 커밋되기 전에 방송이 종료되지 않는다(LIVE 중 버스트만 남는다).
     let (owner_id, status) = db::broadcast_for_share(&mut tx, id)
@@ -100,13 +100,23 @@ pub async fn burst(
     {
         return Err(DonationError::Banned.into());
     }
+    wallet::check_amount(amount)?; // 후원과 같은 1,000~1,000,000
+    if amount < cfg.burst_min {
+        return Err(AppError::Validation(
+            [(
+                "amount".to_owned(),
+                format!("{}비트 이상으로 입력해 주세요.", cfg.burst_min),
+            )]
+            .into(),
+        ));
+    }
     if status != "LIVE" {
         return Err(ClutchError::NotLive.into());
     }
     let posted = wallet::debit(
         &mut tx,
         user.id,
-        price,
+        amount,
         DebitKind::Burst { broadcast_id: id },
     )
     .await?;
@@ -116,22 +126,14 @@ pub async fn burst(
             broadcast_id: id,
             donor_id: user.id,
             kind: DonationKind::Burst,
-            amount: price,
+            amount,
             anonymous: req.anonymous,
             message: None,
             ledger_entry_id: posted.ledger_entry_id,
         },
     )
     .await?;
-    let out = add_points(
-        &mut tx,
-        cfg,
-        id,
-        user.id,
-        Source::Burst,
-        price * cfg.points_per_bit,
-    )
-    .await?;
+    let out = add_points(&mut tx, cfg, id, user.id, Source::Burst, amount).await?;
     tx.commit().await?;
 
     metrics::counter!("donations_total").increment(1);

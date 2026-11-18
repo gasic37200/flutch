@@ -5,4 +5,8 @@ export type ClutchGauge = {
 /**
  * 0~100 정수
  */
-percent: number, phase: ClutchPhase, cooldownUntil: string | null, };
+percent: number, phase: ClutchPhase, cooldownUntil: string | null, 
+/**
+ * 100%까지 남은 비트(SUPER BURST 1비트 = 1점). 쿨다운 중에도 같은 계산이지만 채워도 쿨다운이 끝나야 발동한다.
+ */
+bitsToFull: number, };

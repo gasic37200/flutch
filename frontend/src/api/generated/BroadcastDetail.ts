@@ -11,7 +11,11 @@ export type BroadcastDetail = {
 /**
  * LIVE가 아니면 percent 0·charging
  */
-gauge: ClutchGauge, burstPrice: number, 
+gauge: ClutchGauge, 
+/**
+ * SUPER BURST 최소 금액(설정값)
+ */
+burstMin: number, 
 /**
  * 비로그인은 null
  */

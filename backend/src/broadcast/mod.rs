@@ -165,7 +165,8 @@ pub struct BroadcastDetail {
     pub broadcast: Broadcast,
     /// LIVE가 아니면 percent 0·charging
     pub gauge: ClutchGauge,
-    pub burst_price: i64,
+    /// SUPER BURST 최소 금액(설정값)
+    pub burst_min: i64,
     /// 비로그인은 null
     pub viewer: Option<ViewerState>,
 }

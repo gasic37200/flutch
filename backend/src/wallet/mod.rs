@@ -74,7 +74,7 @@ pub async fn expire_pending_orders(db: &PgPool) -> Result<u64, sqlx::Error> {
 }
 
 /// 1,000~1,000,000 정수가 아니면 422 `fields.amount`.
-fn check_amount(amount: i64) -> Result<(), AppError> {
+pub fn check_amount(amount: i64) -> Result<(), AppError> {
     if (AMOUNT_MIN..=AMOUNT_MAX).contains(&amount) {
         return Ok(());
     }

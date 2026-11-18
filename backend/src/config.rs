@@ -28,10 +28,8 @@ pub struct ClutchConfig {
     pub gauge_target: i64,
     /// 게이지 슬라이딩 창(초)
     pub window_secs: i64,
-    /// 클러치(무료·유료) 1회 점수
+    /// 클러치(무료·유료) 1회 점수. SUPER BURST는 1비트 = 1점, 후원은 게이지에 넣지 않는다(decisions §8).
     pub clutch_points: i64,
-    /// 후원·버스트 1비트당 점수
-    pub points_per_bit: i64,
     /// 임박 기준(%)
     pub imminent_percent: i32,
     /// 마지막 발동 후 재발동 쿨다운(초)
@@ -43,24 +41,23 @@ pub struct ClutchConfig {
     /// 무료 클러치 창(초)·창당 횟수
     pub free_window_secs: i64,
     pub free_per_window: i64,
-    /// SUPER BURST 가격(비트)
-    pub burst_price: i64,
+    /// SUPER BURST 최소 금액(비트). 최대는 후원 상한(1,000,000)
+    pub burst_min: i64,
 }
 
 impl Default for ClutchConfig {
     fn default() -> Self {
         Self {
-            gauge_target: 10_000,
+            gauge_target: 100_000,
             window_secs: 5 * 60,
-            clutch_points: 50,
-            points_per_bit: 10,
+            clutch_points: 10,
             imminent_percent: 80,
             cooldown_secs: 30 * 60,
             super_secs: 5 * 60,
             rotation_secs: 30,
             free_window_secs: 30,
             free_per_window: 5,
-            burst_price: 1_000,
+            burst_min: 1_000,
         }
     }
 }
