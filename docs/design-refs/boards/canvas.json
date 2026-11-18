@@ -3,177 +3,408 @@
   "attachments": {},
   "boards": {
     "Auth.dc.html": {
-      "expand": "fill",
+      "page": "account",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
       "h": 900,
-      "title": "로그인",
+      "title": "로그인 · 1440 (원본)",
+      "expand": "fill"
+    },
+    "BrandAssets.dc.html": {
+      "h": 1000,
+      "page": "system",
+      "title": "E · 브랜드 에셋 · 이모티콘 · 배너",
       "w": 1440,
       "x": 0,
-      "y": 3820
+      "y": 3120
     },
     "BroadcastForm.dc.html": {
       "expand": "fill",
       "h": 1000,
-      "title": "방송 등록·수정",
+      "page": "studio",
+      "title": "방송 등록·수정 · 1440",
+      "w": 1440,
+      "x": 0,
+      "y": 3800
+    },
+    "BroadcastFormMobile.dc.html": {
+      "h": 1700,
+      "page": "studio",
+      "title": "방송 등록·수정 · 390",
+      "w": 390,
+      "x": 1520,
+      "y": 3800
+    },
+    "CompActions.dc.html": {
+      "h": 1120,
+      "page": "system",
+      "title": "A · 버튼 · 입력",
       "w": 1440,
       "x": 1520,
-      "y": 5480
+      "y": 0
     },
-    "Components.dc.html": {
-      "h": 1400,
-      "title": "공통 컴포넌트 · 모달 (사용처 표시)",
+    "CompData.dc.html": {
+      "h": 1280,
+      "page": "system",
+      "title": "D · 데이터 표시",
+      "w": 1440,
+      "x": 1520,
+      "y": 1720
+    },
+    "CompFeedback.dc.html": {
+      "h": 1060,
+      "page": "system",
+      "title": "B · 피드백 · 상태",
       "w": 1440,
       "x": 3040,
-      "y": 9840
+      "y": 0
+    },
+    "CompOverlay.dc.html": {
+      "h": 1000,
+      "page": "system",
+      "title": "C · 오버레이",
+      "w": 1440,
+      "x": 0,
+      "y": 1720
     },
     "Errors.dc.html": {
       "h": 1000,
+      "page": "system",
       "title": "에러 화면 3종",
       "w": 1440,
       "x": 3040,
-      "y": 6900
+      "y": 1720
     },
     "Explore.dc.html": {
       "expand": "fill",
-      "h": 1240,
-      "title": "탐색 · 카테고리 + 검색 결과",
+      "h": 1300,
+      "page": "home",
+      "title": "탐색 · 1440",
       "w": 1440,
       "x": 0,
-      "y": 9840
+      "y": 6100
+    },
+    "ExploreMobile.dc.html": {
+      "h": 2500,
+      "page": "home",
+      "title": "탐색 · 390",
+      "w": 390,
+      "x": 1520,
+      "y": 6100
     },
     "Following.dc.html": {
       "expand": "fill",
-      "h": 1000,
-      "title": "PULSE (팔로우한 채널)",
+      "h": 1040,
+      "page": "home",
+      "title": "PULSE · 1440",
       "w": 1440,
-      "x": 1520,
-      "y": 9840
+      "x": 1990,
+      "y": 6100
+    },
+    "FollowingMobile.dc.html": {
+      "h": 2000,
+      "page": "home",
+      "title": "PULSE · 390",
+      "w": 390,
+      "x": 3510,
+      "y": 6100
     },
     "Guest.dc.html": {
       "h": 1000,
+      "page": "watch",
       "title": "비로그인 상태 (헤더 · 채팅)",
       "w": 1440,
-      "x": 1520,
-      "y": 6900
+      "x": 3040,
+      "y": 2300
     },
     "HeroSuper.dc.html": {
       "h": 1100,
+      "page": "home",
       "title": "홈 히어로 · SUPER CLUTCH 노출 중",
       "w": 1440,
-      "x": 3040,
-      "y": 8320
+      "x": 2422,
+      "y": 2300
     },
     "Home.dc.html": {
       "expand": "fill",
-      "h": 1880,
-      "title": "홈 · 데스크톱 (로그인)",
+      "h": 1900,
+      "page": "home",
+      "title": "홈 · 1440 (원본, 폭에 따라 바뀜)",
       "w": 1440,
-      "x": 1520,
+      "x": 0,
       "y": 0
     },
     "HomeMobile.dc.html": {
-      "h": 1880,
-      "title": "홈 · 모바일",
+      "h": 3400,
+      "page": "home",
+      "title": "홈 · 390 (모바일)",
       "w": 390,
-      "x": 3040,
+      "x": 1952,
+      "y": 2300
+    },
+    "HomeW1024.dc.html": {
+      "h": 2200,
+      "page": "home",
+      "title": "홈 · 1024 (사이드바 아이콘만)",
+      "w": 1024,
+      "x": 0,
+      "y": 2300
+    },
+    "HomeW1920.dc.html": {
+      "h": 1760,
+      "page": "home",
+      "title": "홈 · 1920 (사이드바+본문 한 덩어리, 가운데)",
+      "w": 1920,
+      "x": 1520,
       "y": 0
     },
+    "HomeW768.dc.html": {
+      "h": 2700,
+      "page": "home",
+      "title": "홈 · 768 (사이드바 숨김)",
+      "w": 768,
+      "x": 1104,
+      "y": 2300
+    },
     "Main.dc.html": {
-      "h": 1880,
-      "title": "디자인 시스템",
+      "h": 1600,
+      "page": "system",
+      "title": "디자인 시스템 · 로고·색·글꼴·프로필·게이지",
       "w": 1440,
       "x": 0,
       "y": 0
     },
     "Overlays.dc.html": {
       "h": 1240,
+      "page": "watch",
       "title": "오버레이 · 후원 창 · 알림 · SUPER CLUTCH · 시청자 팝업",
       "w": 1440,
-      "x": 3040,
-      "y": 3820
+      "x": 0,
+      "y": 2300
     },
     "Replay.dc.html": {
-      "expand": "fill",
-      "h": 1100,
-      "title": "다시보기 목록 · 상세",
+      "page": "channel",
+      "x": 3040,
+      "y": 0,
       "w": 1440,
-      "x": 1520,
-      "y": 8320
+      "h": 1100,
+      "title": "다시보기 목록 · 상세 · 1440",
+      "expand": "fill"
     },
     "Signup.dc.html": {
-      "expand": "fill",
-      "h": 1000,
-      "title": "회원가입",
+      "page": "account",
+      "x": 1520,
+      "y": 0,
       "w": 1440,
-      "x": 0,
-      "y": 5480
+      "h": 1000,
+      "title": "회원가입 · 1440 (원본)",
+      "expand": "fill"
     },
     "SmallScreens.dc.html": {
-      "h": 1300,
-      "title": "작은 화면 · 내 정보 · 탈퇴 · 카카오 · 결제 결과 · 약관 · 스튜디오 모달",
-      "w": 1440,
+      "page": "account",
       "x": 0,
-      "y": 11660
+      "y": 3100,
+      "w": 1440,
+      "h": 1300,
+      "title": "작은 화면 · 내 정보 · 탈퇴 · 카카오 · 결제 결과 · 약관 · 스튜디오 모달"
     },
     "Streamer.dc.html": {
-      "expand": "fill",
-      "h": 1240,
-      "title": "스트리머 페이지 · 본인 관리 탭",
+      "page": "channel",
+      "x": 0,
+      "y": 0,
       "w": 1440,
-      "x": 1520,
-      "y": 3820
+      "h": 1240,
+      "title": "스트리머 페이지 · 본인 관리 탭 · 1440",
+      "expand": "fill"
     },
     "Studio.dc.html": {
       "expand": "fill",
       "h": 1100,
-      "title": "송출 스튜디오 · PC (방송 중)",
+      "page": "studio",
+      "title": "방송 중 · 1440 (원본)",
       "w": 1440,
-      "x": 1990,
-      "y": 2300
+      "x": 1520,
+      "y": 0
     },
     "StudioMobile.dc.html": {
       "h": 844,
-      "title": "송출 스튜디오 · 모바일 (방송 중)",
+      "page": "studio",
+      "title": "모바일 카메라 송출 (방송 중)",
       "w": 390,
-      "x": 3510,
-      "y": 2300
+      "x": 3040,
+      "y": 0
     },
     "StudioPrelive.dc.html": {
       "expand": "fill",
       "h": 1000,
-      "title": "송출 스튜디오 · 송출 전",
-      "w": 1440,
-      "x": 3040,
-      "y": 5480
-    },
-    "Wallet.dc.html": {
-      "expand": "fill",
-      "h": 1100,
-      "title": "내 지갑 · 충전 창",
+      "page": "studio",
+      "title": "송출 전 · 1440 (원본)",
       "w": 1440,
       "x": 0,
-      "y": 8320
+      "y": 0
+    },
+    "StudioPreliveW768.dc.html": {
+      "h": 1700,
+      "page": "studio",
+      "title": "송출 전 · 768",
+      "w": 768,
+      "x": 1952,
+      "y": 1500
+    },
+    "StudioW1024.dc.html": {
+      "h": 1500,
+      "page": "studio",
+      "title": "방송 중 · 1024",
+      "w": 1024,
+      "x": 0,
+      "y": 1500
+    },
+    "StudioW768.dc.html": {
+      "h": 1900,
+      "page": "studio",
+      "title": "방송 중 · 768 (패널이 아래로)",
+      "w": 768,
+      "x": 1104,
+      "y": 1500
+    },
+    "Wallet.dc.html": {
+      "page": "channel",
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 1100,
+      "title": "내 지갑 · 충전 창 · 1440",
+      "expand": "fill"
     },
     "Watch.dc.html": {
       "expand": "fill",
       "h": 1100,
-      "title": "시청 · 데스크톱",
+      "page": "watch",
+      "title": "시청 · 1440 (원본, 폭에 따라 바뀜)",
       "w": 1440,
       "x": 0,
-      "y": 2300
+      "y": 0
     },
     "WatchMobile.dc.html": {
-      "h": 1100,
-      "title": "시청 · 모바일",
+      "h": 1250,
+      "page": "watch",
+      "title": "시청 · 390 (모바일)",
       "w": 390,
-      "x": 1520,
-      "y": 2300
+      "x": 3472,
+      "y": 0
     },
     "WatchStates.dc.html": {
       "h": 1000,
+      "page": "watch",
       "title": "시청 화면 상태 4종",
       "w": 1440,
+      "x": 1520,
+      "y": 2300
+    },
+    "WatchW1024.dc.html": {
+      "h": 1900,
+      "page": "watch",
+      "title": "시청 · 1024 (채팅이 아래로)",
+      "w": 1024,
+      "x": 1520,
+      "y": 0
+    },
+    "WatchW768.dc.html": {
+      "h": 1750,
+      "page": "watch",
+      "title": "시청 · 768",
+      "w": 768,
+      "x": 2624,
+      "y": 0
+    },
+    "AuthW1920.dc.html": {
+      "page": "account",
       "x": 0,
-      "y": 6900
+      "y": 1400,
+      "w": 1920,
+      "h": 900,
+      "title": "로그인 · 1920"
+    },
+    "AuthW768.dc.html": {
+      "page": "account",
+      "x": 2000,
+      "y": 1400,
+      "w": 768,
+      "h": 1000,
+      "title": "로그인 · 768"
+    },
+    "AuthMobile.dc.html": {
+      "page": "account",
+      "x": 2848,
+      "y": 1400,
+      "w": 390,
+      "h": 1200,
+      "title": "로그인 · 390"
+    },
+    "SignupMobile.dc.html": {
+      "page": "account",
+      "x": 3318,
+      "y": 1400,
+      "w": 390,
+      "h": 1300,
+      "title": "회원가입 · 390"
+    },
+    "StreamerMobile.dc.html": {
+      "page": "channel",
+      "x": 0,
+      "y": 1700,
+      "w": 390,
+      "h": 2300,
+      "title": "스트리머 페이지 · 390"
+    },
+    "WalletW768.dc.html": {
+      "page": "channel",
+      "x": 470,
+      "y": 1700,
+      "w": 768,
+      "h": 1900,
+      "title": "내 지갑 · 768 (충전 창이 아래로)"
+    },
+    "WalletMobile.dc.html": {
+      "page": "channel",
+      "x": 1318,
+      "y": 1700,
+      "w": 390,
+      "h": 2100,
+      "title": "내 지갑 · 390"
+    },
+    "ReplayMobile.dc.html": {
+      "page": "channel",
+      "x": 1788,
+      "y": 1700,
+      "w": 390,
+      "h": 2000,
+      "title": "다시보기 · 390"
+    },
+    "HomeW2560.dc.html": {
+      "page": "home",
+      "x": 0,
+      "y": 7900,
+      "w": 2560,
+      "h": 1760,
+      "title": "홈 · 2560 (최대 1840, 가운데)"
+    },
+    "WatchW2560.dc.html": {
+      "page": "watch",
+      "x": 0,
+      "y": 3900,
+      "w": 2560,
+      "h": 1500,
+      "title": "시청 · 2560 (최대 1920, 가운데)"
+    },
+    "StreamerW2560.dc.html": {
+      "page": "channel",
+      "x": 0,
+      "y": 4400,
+      "w": 2560,
+      "h": 1300,
+      "title": "스트리머 페이지 · 2560 (최대 1200, 가운데)"
     }
   },
   "createdOnFiles": {
@@ -182,99 +413,240 @@
   },
   "designSystems": [],
   "launch": {
+    "page": "system",
     "view": "canvas"
   },
   "notes": {
     "t1": {
       "kind": "title1",
-      "maxW": 3430,
-      "text": "FLUTCH 디자인 시안 · 1차 (디자인 시스템 + 홈)",
+      "maxW": 4480,
+      "page": "system",
+      "text": "디자인 시스템 · 공통 컴포넌트",
       "w": 240,
       "x": 0,
       "y": -300
     },
     "t2": {
       "kind": "title1",
-      "maxW": 3900,
-      "text": "시청 · 송출",
+      "maxW": 3440,
+      "page": "home",
+      "text": "홈 · 데스크톱 기준",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "t2b": {
+      "kind": "title1",
+      "maxW": 3862,
+      "page": "home",
+      "text": "홈 · 폭별 미리보기",
       "w": 240,
       "x": 0,
       "y": 2000
     },
-    "t3": {
+    "t2c": {
       "kind": "title1",
-      "maxW": 4480,
-      "text": "로그인 · 스트리머 페이지 · 오버레이",
+      "maxW": 3900,
+      "page": "home",
+      "text": "탐색 · PULSE",
       "w": 240,
       "x": 0,
-      "y": 3520
+      "y": 5800
+    },
+    "t3": {
+      "kind": "title1",
+      "maxW": 3862,
+      "page": "watch",
+      "text": "시청 · 폭별",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "t3b": {
+      "kind": "title1",
+      "maxW": 4480,
+      "page": "watch",
+      "text": "시청 · 오버레이 · 상태",
+      "w": 240,
+      "x": 0,
+      "y": 2000
     },
     "t4": {
       "kind": "title1",
-      "maxW": 4480,
-      "text": "필수 흐름 · 회원가입 · 방송 등록 · 송출 전",
+      "maxW": 3430,
+      "page": "studio",
+      "text": "송출 스튜디오",
       "w": 240,
       "x": 0,
-      "y": 5180
+      "y": -300
+    },
+    "t4b": {
+      "kind": "title1",
+      "maxW": 2720,
+      "page": "studio",
+      "text": "스튜디오 · 폭별",
+      "w": 240,
+      "x": 0,
+      "y": 1200
+    },
+    "t4c": {
+      "kind": "title1",
+      "maxW": 1910,
+      "page": "studio",
+      "text": "방송 등록",
+      "w": 240,
+      "x": 0,
+      "y": 3500
     },
     "t5": {
+      "page": "account",
       "kind": "title1",
-      "maxW": 4480,
-      "text": "상태 · 비로그인 · 에러",
+      "maxW": 2960,
+      "text": "로그인 · 회원가입",
       "w": 240,
       "x": 0,
-      "y": 6600
+      "y": -300
     },
     "t6": {
+      "page": "channel",
       "kind": "title1",
       "maxW": 4480,
-      "text": "지갑 · 다시보기 · SUPER CLUTCH 히어로",
+      "text": "채널 · 지갑 · 다시보기",
       "w": 240,
       "x": 0,
-      "y": 8020
+      "y": -300
     },
-    "t7": {
+    "t5b": {
+      "page": "account",
       "kind": "title1",
-      "maxW": 4480,
-      "text": "탐색 · PULSE · 공통 컴포넌트",
+      "maxW": 3708,
+      "text": "폭별 미리보기",
       "w": 240,
       "x": 0,
-      "y": 9540
+      "y": 1100
     },
-    "t8": {
+    "t5c": {
+      "page": "account",
       "kind": "title1",
       "maxW": 1440,
       "text": "작은 화면",
       "w": 240,
       "x": 0,
-      "y": 11360
+      "y": 2800
+    },
+    "t6b": {
+      "page": "channel",
+      "kind": "title1",
+      "maxW": 2178,
+      "text": "폭별 미리보기",
+      "w": 240,
+      "x": 0,
+      "y": 1400
+    },
+    "t2d": {
+      "page": "home",
+      "kind": "title1",
+      "maxW": 2560,
+      "text": "넓은 화면 2560",
+      "w": 240,
+      "x": 0,
+      "y": 7600
+    },
+    "t3c": {
+      "page": "watch",
+      "kind": "title1",
+      "maxW": 2560,
+      "text": "넓은 화면 2560",
+      "w": 240,
+      "x": 0,
+      "y": 3600
+    },
+    "t6c": {
+      "page": "channel",
+      "kind": "title1",
+      "maxW": 2560,
+      "text": "넓은 화면 2560",
+      "w": 240,
+      "x": 0,
+      "y": 4100
     }
   },
   "order": [
     "Main.dc.html",
-    "Home.dc.html",
-    "HomeMobile.dc.html",
-    "Watch.dc.html",
-    "WatchMobile.dc.html",
-    "Studio.dc.html",
-    "StudioMobile.dc.html",
-    "Auth.dc.html",
-    "Streamer.dc.html",
-    "Overlays.dc.html",
-    "Signup.dc.html",
-    "BroadcastForm.dc.html",
-    "StudioPrelive.dc.html",
-    "WatchStates.dc.html",
-    "Guest.dc.html",
+    "CompActions.dc.html",
+    "CompFeedback.dc.html",
+    "CompOverlay.dc.html",
+    "CompData.dc.html",
     "Errors.dc.html",
-    "Wallet.dc.html",
-    "Replay.dc.html",
+    "BrandAssets.dc.html",
+    "Home.dc.html",
+    "HomeW1920.dc.html",
+    "HomeW1024.dc.html",
+    "HomeW768.dc.html",
+    "HomeMobile.dc.html",
     "HeroSuper.dc.html",
     "Explore.dc.html",
+    "ExploreMobile.dc.html",
     "Following.dc.html",
-    "Components.dc.html",
-    "SmallScreens.dc.html"
+    "FollowingMobile.dc.html",
+    "HomeW2560.dc.html",
+    "Watch.dc.html",
+    "WatchW1024.dc.html",
+    "WatchW768.dc.html",
+    "WatchMobile.dc.html",
+    "Overlays.dc.html",
+    "WatchStates.dc.html",
+    "Guest.dc.html",
+    "WatchW2560.dc.html",
+    "Auth.dc.html",
+    "Signup.dc.html",
+    "AuthW1920.dc.html",
+    "AuthW768.dc.html",
+    "AuthMobile.dc.html",
+    "SignupMobile.dc.html",
+    "SmallScreens.dc.html",
+    "Streamer.dc.html",
+    "Wallet.dc.html",
+    "Replay.dc.html",
+    "StreamerMobile.dc.html",
+    "WalletW768.dc.html",
+    "WalletMobile.dc.html",
+    "ReplayMobile.dc.html",
+    "StreamerW2560.dc.html",
+    "StudioPrelive.dc.html",
+    "Studio.dc.html",
+    "StudioMobile.dc.html",
+    "StudioW1024.dc.html",
+    "StudioW768.dc.html",
+    "StudioPreliveW768.dc.html",
+    "BroadcastForm.dc.html",
+    "BroadcastFormMobile.dc.html"
   ],
-  "pages": [],
+  "pages": [
+    {
+      "id": "system",
+      "name": "디자인 시스템"
+    },
+    {
+      "id": "home",
+      "name": "홈·탐색"
+    },
+    {
+      "id": "watch",
+      "name": "시청"
+    },
+    {
+      "id": "studio",
+      "name": "송출"
+    },
+    {
+      "id": "account",
+      "name": "계정"
+    },
+    {
+      "id": "channel",
+      "name": "채널·지갑"
+    }
+  ],
   "title": "FLUTCH 디자인 시안"
 }

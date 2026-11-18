@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>공통 컴포넌트 · 피드백·상태</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@500;700&amp;family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0C0F}
+a{color:#B0F612}a:hover{color:#D4FF6A}
+.ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+@keyframes shimmer{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}
+.sk{animation:shimmer 1.4s ease-in-out infinite;background:#191D25}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+</style>
+</helmet>
+<div style="width:1440px;min-height:1060px;box-sizing:border-box;padding:40px 48px;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column;gap:28px">
+
+  <header style="display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;align-items:baseline;gap:16px">
+      <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:26px;letter-spacing:.04em">B · 피드백 · 상태</span>
+      <span style="font-size:13px;color:#7C8494">코드: components/ui/Toast · ToastProvider · Tooltip · Skeleton · EmptyState</span>
+    </div>
+    <span style="font-size:14px;color:#A3AAB6">결과를 알리고, 기다리게 하고, 비어 있을 때 다음 행동을 알려 주는 요소. 에러도 빨강을 쓰지 않는다.</span>
+  </header>
+
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px">
+
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><section class="ch12" style="background:#12151B;padding:24px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <b style="font-family:'Chakra Petch',sans-serif;color:#B0F612;letter-spacing:.06em;font-size:16px">B1 · 토스트</b>
+        <span style="font-size:12px;color:#7C8494">Toast.tsx · 저장됨 · 후원 완료 · 채팅 제한·도배 거절 · 요청 실패 · 네트워크</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div role="status" class="ch6" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#191D25;box-shadow:inset 3px 0 0 #B0F612"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg><span style="font-size:14px">방송 정보를 저장했어요</span></div>
+        <div role="status" class="ch6" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#191D25;box-shadow:inset 3px 0 0 #A3AAB6"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F3F5F7" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5v.5"></path></svg><span style="font-size:14px">같은 메시지를 반복할 수 없어요</span></div>
+        <div role="alert" class="ch6" style="display:flex;align-items:center;gap:12px;padding:12px 10px 12px 16px;background:#191D25;box-shadow:inset 3px 0 0 #F3F5F7"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F3F5F7" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3 2 20h20z"></path><path d="M12 10v4M12 17v.5"></path></svg><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:14px">요청을 처리하지 못했어요</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7C8494">request_id 7f3a9c21</span></span><button type="button" class="ch6" style="height:36px;padding:0 12px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:13px;font-family:'Noto Sans KR',sans-serif">다시 시도</button><button type="button" aria-label="닫기" style="border:0;background:transparent;color:#A3AAB6;width:36px;height:36px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;font-size:12px;color:#7C8494">
+        <span><b style="color:#B0F612">성공</b> 라임 띠 · 4초</span><span><b style="color:#A3AAB6">안내</b> 회색 띠 · 4초</span><span><b style="color:#F3F5F7">에러</b> 흰 띠 · 닫을 때까지</span>
+      </div>
+      <span style="font-size:12px;color:#7C8494">데스크톱 오른쪽 아래, 모바일 위. 에러는 두 줄: 문구 + request_id(문의할 때 쓰는 값).</span>
+    </section></div>
+
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><section class="ch12" style="background:#12151B;padding:24px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <b style="font-family:'Chakra Petch',sans-serif;color:#B0F612;letter-spacing:.06em;font-size:16px">B2 · 툴팁</b>
+        <span style="font-size:12px;color:#7C8494">Tooltip.tsx · 아이콘 버튼 · 다시보기 SUPER CLUTCH 지점 · 비활성 버튼 이유</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:28px;padding:8px 0 0 4px">
+        <div style="display:flex;align-items:flex-end;gap:20px">
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0">
+            <span role="tooltip" class="ch6" style="background:#F3F5F7;color:#0A0C0F;font-size:12px;font-weight:700;padding:6px 10px;white-space:nowrap">방송하기</span>
+            <span style="width:0;height:0;margin-left:16px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #F3F5F7"></span>
+            <span class="ch6" style="margin-top:4px;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;background:#191D25"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F3F5F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2"></rect><path d="m16 10 6-3v10l-6-3"></path></svg></span>
+          </div>
+          <span style="font-size:13px;color:#A3AAB6;padding-bottom:12px">아이콘만 있는 버튼은 툴팁 필수</span>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:20px">
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0">
+            <span role="tooltip" class="ch6" style="background:#F3F5F7;color:#0A0C0F;font-size:12px;font-weight:700;padding:6px 10px;white-space:nowrap">잔액이 부족해요 · 충전 후 후원할 수 있어요</span>
+            <span style="width:0;height:0;margin-left:22px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #F3F5F7"></span>
+            <button type="button" class="ch6" disabled="" style="margin-top:4px;height:44px;padding:0 22px;border:0;background:#262B35;color:#7C8494;font-weight:700;font-family:'Noto Sans KR',sans-serif">후원하기</button>
+          </div>
+          <span style="font-size:13px;color:#A3AAB6;padding-bottom:12px">비활성 버튼은 이유를 툴팁으로</span>
+        </div>
+      </div>
+      <span style="font-size:12px;color:#7C8494">흰 바탕 + 검정 굵은 글자 + 아래쪽 꼬리. 호버·키보드 포커스에 표시, 화면 끝에서는 안쪽으로 뒤집힘.</span>
+    </section></div>
+
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><section class="ch12" style="background:#12151B;padding:24px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <b style="font-family:'Chakra Petch',sans-serif;color:#B0F612;letter-spacing:.06em;font-size:16px">B3 · 로딩 스켈레톤</b>
+        <span style="font-size:12px;color:#7C8494">Skeleton.tsx · 홈·탐색·PULSE·다시보기 목록, 채팅 이전 기록, 지갑 내역</span>
+      </div>
+      <span style="font-size:12px;font-weight:700;color:#7C8494;letter-spacing:.04em">카드형</span>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+        <div style="display:flex;flex-direction:column;gap:10px"><div class="sk ch12" style="aspect-ratio:16/9"></div><div style="display:flex;gap:10px;align-items:center"><div class="sk" style="width:32px;height:32px;border-radius:50%"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px"><div class="sk" style="height:12px;width:85%"></div><div class="sk" style="height:10px;width:50%"></div></div></div></div>
+        <div style="display:flex;flex-direction:column;gap:10px"><div class="sk ch12" style="aspect-ratio:16/9"></div><div style="display:flex;gap:10px;align-items:center"><div class="sk" style="width:32px;height:32px;border-radius:50%"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px"><div class="sk" style="height:12px;width:70%"></div><div class="sk" style="height:10px;width:40%"></div></div></div></div>
+      </div>
+      <span style="font-size:12px;font-weight:700;color:#7C8494;letter-spacing:.04em">목록형</span>
+      <div class="ch6" style="background:#0F1217;padding:14px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:10px;align-items:center"><div class="sk" style="width:20px;height:20px;border-radius:50%"></div><div class="sk" style="height:12px;width:60%"></div></div>
+        <div style="display:flex;gap:10px;align-items:center"><div class="sk" style="width:20px;height:20px;border-radius:50%"></div><div class="sk" style="height:12px;width:78%"></div></div>
+        <div style="display:flex;gap:10px;align-items:center"><div class="sk" style="width:20px;height:20px;border-radius:50%"></div><div class="sk" style="height:12px;width:45%"></div></div>
+        <div style="display:flex;gap:10px;align-items:center"><div class="sk" style="width:20px;height:20px;border-radius:50%"></div><div class="sk" style="height:12px;width:66%"></div></div>
+      </div>
+      <span style="font-size:12px;color:#7C8494">실제 배치와 같은 크기·개수로. 0.3초 안에 끝나면 표시하지 않음.</span>
+    </section></div>
+
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><section class="ch12" style="background:#12151B;padding:24px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <b style="font-family:'Chakra Petch',sans-serif;color:#B0F612;letter-spacing:.06em;font-size:16px">B4 · 빈 상태</b>
+        <span style="font-size:12px;color:#7C8494">EmptyState.tsx · 라이브 없음 · 검색 결과 없음 · PULSE 0개 · 지갑 내역 없음 · 다시보기 없음 · 차단 목록 없음</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;flex:1">
+        <div class="ch12" style="background:#191D25;padding:24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center">
+          <img src="/_blob/7c90d19c3e1e59315f719a302ccdeb9b" alt="" style="height:96px;width:auto;object-fit:contain">
+          <b style="font-size:15px">지금은 조용하네요</b><span style="font-size:13px;color:#A3AAB6;text-wrap:balance">첫 번째 클러치를 만들어 보세요</span>
+          <button type="button" class="ch6" style="height:40px;padding:0 18px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:14px;font-family:'Noto Sans KR',sans-serif">방송하기</button>
+        </div>
+        <div class="ch12" style="background:#191D25;padding:24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center">
+          <img src="/_blob/ec28e7006ea21f7dc6c0e45b683602df" alt="" style="height:96px;width:auto;object-fit:contain">
+          <b style="font-size:15px">"발로란트" 결과가 없어요</b><span style="font-size:13px;color:#A3AAB6;text-wrap:balance">다른 검색어나 카테고리로 찾아보세요</span>
+          <span class="ch6" style="background:#B0F612;padding:1px;display:inline-flex"><button type="button" class="ch6" style="height:38px;padding:0 17px;border:0;background:#191D25;color:#B0F612;font-weight:700;font-size:14px;font-family:'Noto Sans KR',sans-serif">탐색으로</button></span>
+        </div>
+      </div>
+      <span style="font-size:12px;color:#7C8494">마스코트 이모티콘(졸림·갸웃) + 한 줄 제목 + 다음 할 일 + 행동 버튼(없으면 생략).</span>
+    </section></div>
+
+  </div>
+  <span style="font-size:12px;color:#7C8494">Stitch 시안 "FLUTCH 컴포넌트 시트 B"(2026-11-16)에서 에러 토스트 두 줄 구성, 툴팁 꼬리, 목록형 스켈레톤 분리, 빈 상태 카드 배경을 가져옴. 빨간 에러 띠·게임패드 아이콘은 규칙 위반이라 제외.</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

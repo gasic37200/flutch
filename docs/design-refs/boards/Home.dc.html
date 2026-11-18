@@ -12,215 +12,265 @@
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@500;700&amp;family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
 <style>
 body{margin:0;background:#0A0C0F}
-a{color:#F3F5F7;text-decoration:none}a:hover{color:#B0F612}
+a{color:#F3F5F7;text-decoration:none}a:hover{color:#D4FF6A}
 .ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
 .ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
 .dots{background-image:radial-gradient(rgba(176,246,18,.45) 1px,transparent 1.5px);background-size:6px 6px}
-.texture{background:#0A0C0F url(../brand/bg-speed.jpg) center/cover}
-.card:hover .cardframe{background:#B0F612}
+.texture{background:#0A0C0F url(/_blob/3d8747c0d27ead1c50b2d826552c3c41) center/cover}
+/* layout reacts to the page's own width (container queries), so the same board can be previewed at any width */
+.fl-app{container-type:inline-size;container-name:app}
+.fl-shell{display:grid;grid-template-columns:240px minmax(0,1fr);align-items:start;max-width:1840px;margin:0 auto}
+/* wide screens: sidebar + content stay together in one centered 1840px block, header content aligns to it */
+.fl-main{container-type:inline-size;container-name:main;min-width:0}
+.fl-inner{max-width:1600px;margin:0 auto;box-sizing:border-box;padding:24px 32px 56px;display:flex;flex-direction:column;gap:40px}
+.fl-hero{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px}
+.fl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:24px 16px}
+.fl-recs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.fl-chips{display:flex;flex-wrap:wrap;gap:8px}
+.fl-only-narrow{display:none!important}
+.card .thumbframe{background:transparent}
+.card:hover .thumbframe{background:#B0F612;filter:drop-shadow(0 0 12px rgba(176,246,18,.45))}
+.card:hover .cardtitle{color:#D4FF6A}
+@container app (max-width:1279px){
+  .fl-shell{grid-template-columns:76px minmax(0,1fr)}
+  .fl-side{padding:16px 10px!important;align-items:center}
+  .fl-side .fl-label,.fl-side .fl-banner,.fl-side .fl-more{display:none!important}
+  .fl-side .fl-row{justify-content:center;padding:6px!important}
+}
+@container app (max-width:1023px){
+  .fl-shell{grid-template-columns:minmax(0,1fr)}
+  .fl-side{display:none!important}
+  .fl-burger{display:inline-flex!important}
+}
+@container app (max-width:767px){
+  .fl-header{padding:0 8px 0 4px!important;gap:4px!important;height:56px!important}
+  .fl-search{display:none!important}
+  .fl-search-btn{display:inline-flex!important}
+  .fl-beats{display:none!important}
+  .fl-logo img{height:24px!important}
+}
+@container main (max-width:900px){
+  .fl-hero{grid-template-columns:minmax(0,1fr)}
+  .fl-clutch .fl-deco{display:none}
+  .fl-clutch-body{flex-direction:row!important;flex-wrap:wrap;justify-content:flex-start!important;align-items:center!important;padding:16px!important;gap:12px!important}
+  .fl-clutch-logo{max-width:120px!important}
+  .fl-clutch-wave,.fl-clutch-kicker{display:none}
+  .fl-clutch-meter{flex:1 1 200px}
+}
+@container main (max-width:600px){
+  .fl-inner{padding:0 0 40px;gap:28px}
+  .fl-pad{padding-left:16px;padding-right:16px}
+  .fl-hero{gap:12px}
+  .fl-hero-frame{filter:none!important}
+  .fl-hero-frame>div{padding:0!important;clip-path:none!important}
+  .fl-hero-frame>div>div{clip-path:none!important}
+  .fl-hero-meta{padding:12px 16px!important}
+  .fl-hero-tags,.fl-hero-time,.fl-sound{display:none!important}
+  .fl-clutch{margin:0 16px}
+  .fl-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 12px}
+  .fl-cards .fl-tags{display:none!important}
+  .fl-scroll{flex-wrap:nowrap!important;overflow-x:auto;margin:0 -16px;padding:0 16px}
+  .fl-scroll>*{flex:0 0 auto}
+  .fl-feed{grid-auto-flow:column;grid-template-columns:none!important;grid-auto-columns:200px;overflow-x:auto;margin:0 -16px;padding:0 16px}
+  .fl-recs{grid-template-columns:minmax(0,1fr)}
+  .fl-sec-head{flex-direction:column;align-items:flex-start!important}
+  .fl-sec-head .fl-chips{margin-left:0!important;width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </helmet>
-<div style="min-height:100vh;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
+<div class="fl-app" style="width:100%;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
 
-  <header style="display:flex;align-items:center;gap:16px;padding:0 24px;height:64px;border-bottom:1px solid #191D25;box-sizing:border-box">
-    <a href="#" aria-label="FLUTCH 홈" style="display:flex;align-items:center;flex:0 0 auto"><img src="../brand/logo-flutch.png" alt="FLUTCH" style="height:30px"></a>
+  <header class="fl-header" style="display:flex;align-items:center;gap:16px;padding:0 max(24px, calc((100% - 1840px) / 2 + 24px));height:64px;border-bottom:1px solid #191D25;box-sizing:border-box">
+    <button type="button" class="fl-burger" aria-label="메뉴 열기" style="display:none;width:44px;height:44px;border:0;background:transparent;align-items:center;justify-content:center;color:#F3F5F7"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+    <a href="#" class="fl-logo" aria-label="FLUTCH 홈" style="display:flex;align-items:center;flex:0 0 auto"><img src="/_blob/93d57471d9c5b41b1a3934e836414b56" alt="FLUTCH" style="height:30px"></a>
     <div style="flex:1 1 auto;display:flex;justify-content:center;min-width:0">
-      <label class="ch6" style="width:100%;max-width:520px;height:40px;background:#12151B;display:flex;align-items:center;gap:10px;padding:0 14px;box-sizing:border-box">
+      <label class="ch6 fl-search" style="width:100%;max-width:520px;height:40px;background:#12151B;box-shadow:inset 0 0 0 1px #262B35;display:flex;align-items:center;gap:10px;padding:0 14px;box-sizing:border-box">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A3AAB6" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-        <span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">검색</span>
-        <input type="search" placeholder="게임, 버추얼, 스트리머 검색…" style="flex:1;min-width:0;background:transparent;border:0;outline:0;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;font-size:14px">
+        <input type="search" aria-label="검색" placeholder="게임, 버추얼, 스트리머 검색" style="flex:1;min-width:0;background:transparent;border:0;outline:0;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;font-size:14px">
       </label>
     </div>
-    <div style="display:flex;align-items:center;gap:12px;flex:0 0 auto">
-      <a href="#" style="display:inline-flex;align-items:center;gap:8px;border:1px solid #B0F612;border-radius:999px;padding:6px 14px;background:rgba(176,246,18,.08)" aria-label="내 지갑, 3,500 비트">
+    <div style="display:flex;align-items:center;gap:8px;flex:0 0 auto">
+      <button type="button" class="fl-search-btn" aria-label="검색" style="display:none;width:44px;height:44px;border:0;background:transparent;align-items:center;justify-content:center;color:#F3F5F7"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button>
+      <a href="#" class="fl-beats" aria-label="내 지갑, 3,500 비트" style="display:inline-flex;align-items:center;gap:8px;border:1px solid #B0F612;border-radius:999px;padding:6px 14px;background:rgba(176,246,18,.08);margin-right:4px">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg>
-        <b style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#F3F5F7">3,500</b><span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:#B0F612;font-size:13px">Beats</span>
+        <b style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#F3F5F7">3,500</b><span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:#B0F612;font-size:13px">Beat</span>
       </a>
       <a href="#" class="ch6" aria-label="방송하기" title="방송하기" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;background:#191D25">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F3F5F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2"></rect><path d="m16 10 6-3v10l-6-3"></path></svg>
       </a>
       <button type="button" aria-label="내 메뉴" style="width:44px;height:44px;border:0;padding:0;background:transparent;display:inline-flex;align-items:center;justify-content:center">
-        <img src="../brand/face-happy.png" alt="" style="width:36px;height:36px;border-radius:50%;box-shadow:0 0 0 2px #B0F612">
+        <img src="/_blob/10d9837330741e565420a49e87ab07f0" alt="" style="width:34px;height:34px;border-radius:50%;box-shadow:0 0 0 2px #B0F612">
       </button>
     </div>
   </header>
 
-  <div style="display:flex;flex-wrap:wrap;align-items:flex-start">
+  <div class="fl-shell">
 
-    <aside style="flex:1 1 240px;max-width:100%;box-sizing:border-box;padding:20px 16px;display:flex;flex-direction:column;gap:20px;border-right:1px solid #191D25">
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <div style="display:flex;align-items:center;gap:8px;padding:0 8px 6px">
+    <aside class="fl-side" aria-label="사이드바" style="box-sizing:border-box;padding:20px 16px;display:flex;flex-direction:column;gap:18px;border-right:1px solid #191D25;align-self:stretch">
+      <div style="display:flex;flex-direction:column;gap:4px;width:100%">
+        <div class="fl-row" style="display:flex;align-items:center;gap:8px;padding:0 8px 6px">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg>
-          <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-style:italic;color:#B0F612;letter-spacing:.06em;font-size:15px">PULSE</span>
-          <span style="margin-left:auto;font-size:12px;color:#7C8494">팔로우</span>
+          <span class="fl-label" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-style:italic;color:#B0F612;letter-spacing:.06em;font-size:15px">PULSE</span>
+          <span class="fl-label" style="margin-left:auto;font-size:12px;color:#7C8494">팔로우</span>
         </div>
         <sc-for list="{{pulse}}" as="p" hint-placeholder-count="5">
-          <a href="#" class="ch6" style="display:flex;align-items:center;gap:10px;padding:8px;background:{{p.bg}}">
-            <img src="{{p.face}}" alt="" style="width:32px;height:32px;border-radius:50%;box-shadow:0 0 0 2px {{p.ring}};opacity:{{p.op}}">
-            <span style="display:flex;flex-direction:column;min-width:0;flex:1">
+          <a href="#" class="ch6 fl-row" title="{{p.name}}" style="display:flex;align-items:center;gap:10px;padding:8px;background:{{p.bg}}">
+            <img src="{{p.face}}" alt="{{p.name}}" style="width:32px;height:32px;border-radius:50%;box-shadow:0 0 0 2px {{p.ring}};opacity:{{p.op}};flex:none">
+            <span class="fl-label" style="display:flex;flex-direction:column;min-width:0;flex:1">
               <span style="font-size:14px;font-weight:700;color:{{p.color}};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{p.name}}</span>
               <span style="font-size:12px;color:#7C8494;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{p.cat}}</span>
             </span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:{{p.vcolor}}">{{p.viewers}}</span>
+            <span class="fl-label" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:{{p.vcolor}}">{{p.viewers}}</span>
           </a>
         </sc-for>
-        <a href="#" style="padding:6px 8px;font-size:13px;color:#B0F612">PULSE 전체 보기 →</a>
+        <a href="#" class="fl-more" style="padding:6px 8px;font-size:13px;color:#B0F612">PULSE 전체 보기</a>
       </div>
-      <div style="height:1px;background:#191D25"></div>
-      <nav aria-label="주 메뉴" style="display:flex;flex-direction:column;gap:4px">
-        <a href="#" class="ch6" aria-current="page" style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(176,246,18,.1);color:#B0F612;font-weight:700;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7v9H3z"></path><path d="M9 20v-6h6v6"></path></svg>홈</a>
-        <a href="#" class="ch6" style="display:flex;align-items:center;gap:12px;padding:10px 12px;font-size:15px;color:#A3AAB6"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>탐색</a>
-        <a href="#" class="ch6" style="display:flex;align-items:center;gap:12px;padding:10px 12px;font-size:15px;color:#A3AAB6"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg>PULSE</a>
-        <a href="#" class="ch6" style="display:flex;align-items:center;gap:12px;padding:10px 12px;font-size:15px;color:#A3AAB6"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path><path d="M12 8v4l3 2"></path></svg>다시보기</a>
+      <div style="height:1px;background:#191D25;width:100%"></div>
+      <nav aria-label="주 메뉴" style="display:flex;flex-direction:column;gap:4px;width:100%">
+        <a href="#" class="ch6 fl-row" aria-current="page" title="홈" style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(176,246,18,.1);color:#B0F612;font-weight:700;font-size:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7v9H3z"></path><path d="M9 20v-6h6v6"></path></svg><span class="fl-label">홈</span></a>
+        <a href="#" class="ch6 fl-row" title="탐색" style="display:flex;align-items:center;gap:12px;padding:10px 12px;font-size:15px;color:#A3AAB6"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg><span class="fl-label">탐색</span></a>
+        <a href="#" class="ch6 fl-row" title="PULSE" style="display:flex;align-items:center;gap:12px;padding:10px 12px;font-size:15px;color:#A3AAB6"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg><span class="fl-label">PULSE</span></a>
+        <a href="#" class="ch6 fl-row" title="다시보기" style="display:flex;align-items:center;gap:12px;padding:10px 12px;font-size:15px;color:#A3AAB6"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path><path d="M12 8v4l3 2"></path></svg><span class="fl-label">다시보기</span></a>
       </nav>
-      <a href="#" aria-label="PLAY ON FLUTCH, 방송 시작하기" class="ch12" style="display:block;margin-top:8px;overflow:hidden">
-        <img src="../brand/banner-play-on-flutch.png" alt="" style="width:100%;display:block">
+      <a href="#" class="fl-banner" aria-label="PLAY ON FLUTCH, 방송 시작하기" style="display:block;margin-top:4px">
+        <img src="/_blob/e1bda6ef54acf8fd5629923d924b308a" alt="" style="width:100%;display:block">
       </a>
     </aside>
 
-    <main style="flex:999 1 560px;min-width:0;box-sizing:border-box;padding:24px;display:flex;flex-direction:column;gap:40px">
+    <main class="fl-main">
+      <div class="fl-inner">
 
-      <section aria-label="메인 라이브" style="display:flex;flex-wrap:wrap;gap:16px">
-        <div style="flex:999 1 520px;min-width:0;filter:drop-shadow(0 0 12px rgba(176,246,18,.4))"><div class="ch12" style="background:#B0F612;padding:1px">
-          <div class="ch12" style="background:#12151B;display:flex;flex-direction:column">
-            <div class="texture" style="aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center">
-              <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,15,.15),rgba(10,12,15,.55))"></div>
-              <span style="position:absolute;top:16px;left:16px;display:inline-flex;align-items:center;gap:6px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;padding:4px 10px;letter-spacing:.06em"><span style="width:6px;height:6px;border-radius:50%;background:#fff"></span>LIVE</span>
-              <span style="position:relative;font-family:'Chakra Petch',sans-serif;font-size:15px;color:#A3AAB6;letter-spacing:.08em">라이브 영상 영역 · 음소거 자동재생</span>
-              <button type="button" style="position:absolute;right:16px;bottom:16px;height:36px;padding:0 14px;border:0;background:rgba(10,12,15,.75);color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;font-size:13px;display:inline-flex;align-items:center;gap:6px" class="ch6"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"></path><path d="m22 9-6 6M16 9l6 6"></path></svg>소리 켜기</button>
-            </div>
-            <div style="display:flex;align-items:center;gap:14px;padding:16px 18px;flex-wrap:wrap">
-              <img src="../brand/face-excited.png" alt="" style="width:48px;height:48px;border-radius:50%;box-shadow:0 0 0 2px #4DA3FF">
-              <div style="flex:1 1 280px;min-width:0;display:flex;flex-direction:column;gap:6px">
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                  <b style="font-size:17px">김플러</b>
-                  <span class="ch6" style="font-size:12px;padding:2px 8px;background:#191D25;color:#A3AAB6">FPS</span>
-                  <span style="font-size:12px;color:#7C8494">#랭크 #대회준비 #소통</span>
+        <section aria-label="메인 라이브" class="fl-hero">
+          <div class="fl-hero-frame" style="min-width:0;filter:drop-shadow(0 0 12px rgba(176,246,18,.4))"><div class="ch12" style="background:#B0F612;padding:1px">
+            <div class="ch12" style="background:#12151B;display:flex;flex-direction:column">
+              <div class="texture" style="aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center">
+                <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,15,.15),rgba(10,12,15,.55))"></div>
+                <span style="position:absolute;top:16px;left:16px;display:inline-flex;align-items:center;gap:6px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;padding:4px 10px;letter-spacing:.06em"><span style="width:6px;height:6px;border-radius:50%;background:#fff"></span>LIVE</span>
+                <span style="position:relative;font-family:'Chakra Petch',sans-serif;font-size:15px;color:#A3AAB6;letter-spacing:.08em">라이브 영상 · 음소거 자동재생</span>
+                <button type="button" class="ch6 fl-sound" style="position:absolute;right:16px;bottom:16px;height:36px;padding:0 14px;border:0;background:rgba(10,12,15,.75);color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;font-size:13px;display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"></path><path d="m22 9-6 6M16 9l6 6"></path></svg>소리 켜기</button>
+              </div>
+              <div class="fl-hero-meta" style="display:flex;align-items:center;gap:14px;padding:16px 18px">
+                <img src="/_blob/fb2b18c2689951d60837df6ed1dbd08c" alt="" style="width:48px;height:48px;border-radius:50%;box-shadow:0 0 0 2px #4DA3FF;flex:none">
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                    <b style="font-size:17px">김플러</b>
+                    <span class="ch6" style="font-size:12px;padding:2px 8px;background:#191D25;color:#A3AAB6">FPS</span>
+                    <span class="fl-hero-tags" style="font-size:12px;color:#7C8494">#랭크 #대회준비 #소통</span>
+                  </div>
+                  <span style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">[대회 준비중] 오늘도 클러치 가보자!</span>
                 </div>
-                <span style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">[대회 준비중] 오늘도 클러치 가보자!</span>
-              </div>
-              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-                <span style="display:inline-flex;align-items:center;gap:6px;color:#FF2E4D;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;white-space:nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>32,481명</span>
-                <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#A3AAB6">01:24:17</span>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none">
+                  <span style="display:inline-flex;align-items:center;gap:6px;color:#FF2E4D;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>32,481</span>
+                  <span class="fl-hero-time" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#A3AAB6">01:24:17</span>
+                </div>
               </div>
             </div>
+          </div></div>
+
+          <div class="fl-clutch" style="min-width:0;display:flex;filter:drop-shadow(0 0 12px rgba(176,246,18,.4))"><div class="ch12" style="flex:1;display:flex;background:#B0F612;padding:1px">
+            <div class="ch12 fl-clutch-body" style="background:#12151B;flex:1;box-sizing:border-box;padding:22px;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;position:relative;overflow:hidden">
+              <div class="dots fl-deco" style="position:absolute;right:0;top:0;width:140px;height:80px;opacity:.6"></div>
+              <div class="fl-deco" style="position:absolute;left:12px;bottom:12px;width:52px;height:26px;border-left:2px solid #B0F612;border-bottom:2px solid #B0F612"></div>
+              <span class="fl-clutch-kicker" style="align-self:flex-start;position:relative;font-size:12px;color:#A3AAB6">게이지 1위 라이브</span>
+              <img class="fl-clutch-logo" src="/_blob/4b634aa462a47d7f601d4279d657b424" alt="CLUTCH TIME" style="position:relative;width:100%;max-width:260px;object-fit:contain">
+              <svg class="fl-clutch-wave" width="100%" height="28" viewBox="0 0 240 28" fill="none" stroke="#B0F612" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:relative;max-width:260px"><path d="M0 14h80l8-10 10 20 8-14 6 4h128"></path></svg>
+              <div class="fl-clutch-meter" style="position:relative;width:100%;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:12px"><div class="ch6" role="meter" aria-label="클러치 게이지" aria-valuenow="72" aria-valuemin="0" aria-valuemax="100" style="flex:1;height:12px;background:#191D25"><div class="ch6" style="width:72%;height:100%;background:#B0F612"></div></div><b style="font-family:'JetBrains Mono',monospace;font-size:18px">72%</b></div>
+                <span style="font-size:16px;font-weight:700">지금, 클러치할 시간!</span>
+              </div>
+              <a href="#" class="ch6" style="position:relative;height:44px;padding:0 20px;display:inline-flex;align-items:center;gap:8px;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:15px">클러치하러 가기<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+            </div>
+          </div></div>
+        </section>
+
+        <section class="fl-pad" style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:10px;height:10px;border-radius:50%;background:#B0F612"></span>
+            <h2 style="margin:0;font-size:20px;font-weight:900">추천 라이브 채널</h2>
           </div>
-        </div></div>
-
-        <div style="flex:1 1 300px;min-width:0;display:flex;filter:drop-shadow(0 0 12px rgba(176,246,18,.4))"><div class="ch12" style="flex:1;display:flex;background:#B0F612;padding:1px">
-          <div class="ch12" style="background:#12151B;flex:1;box-sizing:border-box;padding:22px;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;position:relative;overflow:hidden">
-            <div class="dots" style="position:absolute;right:0;top:0;width:140px;height:80px;opacity:.6"></div>
-            <div style="position:absolute;left:12px;bottom:12px;width:52px;height:26px;border-left:2px solid #B0F612;border-bottom:2px solid #B0F612"></div>
-            <span style="align-self:flex-start;position:relative;font-size:12px;color:#A3AAB6">게이지 1위 라이브</span>
-            <img src="../brand/logo-clutch-time.png" alt="CLUTCH TIME" style="position:relative;width:100%;max-width:260px;object-fit:contain">
-            <svg width="100%" height="28" viewBox="0 0 240 28" fill="none" stroke="#B0F612" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:relative;max-width:260px"><path d="M0 14h80l8-10 10 20 8-14 6 4h128"></path></svg>
-            <div style="position:relative;width:100%;display:flex;align-items:center;gap:12px">
-              <div class="ch6" style="flex:1;height:12px;background:#191D25"><div class="ch6" style="width:72%;height:100%;background:#B0F612"></div></div>
-              <b style="font-family:'JetBrains Mono',monospace;font-size:18px">72%</b>
-            </div>
-            <span style="position:relative;font-size:16px;font-weight:700">지금, 클러치할 시간!</span>
-            <a href="#" class="ch6" style="position:relative;height:44px;padding:0 20px;display:inline-flex;align-items:center;gap:8px;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:15px">클러치하러 가기<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
-          </div>
-        </div></div>
-      </section>
-
-      <section style="display:flex;flex-direction:column;gap:16px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="width:10px;height:10px;border-radius:50%;background:#B0F612"></span>
-          <h2 style="margin:0;font-size:20px;font-weight:900">추천 라이브 채널</h2>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
-          <sc-for list="{{recommended}}" as="r" hint-placeholder-count="3">
-            <a href="#" class="card" style="display:block">
-              <div class="ch12 cardframe" style="background:rgba(176,246,18,.25);padding:1px">
-                <div class="ch12" style="background:#12151B;display:flex;gap:12px;padding:12px;align-items:center">
-                  <div class="texture ch6" style="width:120px;flex:0 0 120px;aspect-ratio:16/9;position:relative">
-                    <span style="position:absolute;top:6px;left:6px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;padding:2px 6px;letter-spacing:.06em">LIVE</span>
-                  </div>
-                  <div style="min-width:0;display:flex;flex-direction:column;gap:4px">
-                    <div style="display:flex;align-items:center;gap:6px"><img src="{{r.face}}" alt="" style="width:22px;height:22px;border-radius:50%;box-shadow:0 0 0 2px {{r.ring}}"><b style="font-size:14px">{{r.name}}</b></div>
-                    <span style="font-size:13px;color:#A3AAB6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{r.title}}</span>
-                    <div style="display:flex;gap:10px;font-size:12px"><span style="color:#7C8494">{{r.cat}}</span><b style="font-family:'JetBrains Mono',monospace;color:#FF2E4D">{{r.viewers}}</b></div>
-                  </div>
+          <div class="fl-recs">
+            <sc-for list="{{recommended}}" as="r" hint-placeholder-count="3">
+              <a href="#" class="card" style="display:flex;gap:12px;align-items:center;min-width:0">
+                <div class="ch12 thumbframe" style="padding:1px;flex:0 0 152px"><div class="texture ch12" style="aspect-ratio:16/9;position:relative">
+                  <span style="position:absolute;top:6px;left:6px;display:inline-flex;align-items:center;gap:5px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;padding:2px 6px;letter-spacing:.06em"><span style="width:5px;height:5px;border-radius:50%;background:#fff"></span>LIVE</span>
+                  <span style="position:absolute;left:6px;bottom:6px;background:rgba(10,12,15,.85);color:#FF2E4D;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px;padding:1px 5px">{{r.viewers}}</span>
+                </div></div>
+                <div style="min-width:0;display:flex;flex-direction:column;gap:4px">
+                  <div style="display:flex;align-items:center;gap:6px"><img src="{{r.face}}" alt="" style="width:22px;height:22px;border-radius:50%;box-shadow:0 0 0 2px {{r.ring}}"><b style="font-size:14px">{{r.name}}</b></div>
+                  <span class="cardtitle" style="font-size:13px;color:#F3F5F7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4">{{r.title}}</span>
+                  <span style="font-size:12px;color:#7C8494">{{r.cat}}</span>
                 </div>
-              </div>
-            </a>
-          </sc-for>
-        </div>
-      </section>
-
-      <section style="display:flex;flex-direction:column;gap:16px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="width:10px;height:10px;border-radius:50%;background:#B0F612"></span>
-          <h2 style="margin:0;font-family:'Chakra Petch',sans-serif;font-style:italic;font-size:22px;font-weight:700;letter-spacing:.04em">CLUTCH FEED</h2>
-          <svg width="72" height="20" viewBox="0 0 72 20" fill="none" stroke="#B0F612" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M0 10h24l5-7 6 14 5-9 4 2h28"></path></svg>
-          <a href="#" style="margin-left:auto;font-size:14px;color:#A3AAB6">더보기</a>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
-          <sc-for list="{{feed}}" as="f" hint-placeholder-count="4">
-            <a href="#" class="card" style="display:block">
-              <div class="ch12 cardframe" style="background:rgba(176,246,18,.25);padding:1px">
-                <div class="ch12" style="background:#12151B;display:flex;flex-direction:column">
-                  <div class="texture" style="aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center">
-                    <span style="position:absolute;top:8px;left:8px;background:rgba(10,12,15,.8);font-family:'JetBrains Mono',monospace;font-size:12px;padding:2px 6px">0:45</span>
-                    <span style="position:absolute;top:8px;right:8px;font-family:'Chakra Petch',sans-serif;font-style:italic;font-weight:700;font-size:11px;padding:2px 6px;background:linear-gradient(90deg,#FF2BD6,#FF7A1A,#FFE11A);color:#0A0C0F">SUPER CLUTCH</span>
-                    <span style="width:44px;height:44px;border-radius:50%;background:rgba(10,12,15,.75);display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="#F3F5F7" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></span>
-                  </div>
-                  <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
-                    <b style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{f.title}}</b>
-                    <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#A3AAB6"><img src="{{f.face}}" alt="" style="width:20px;height:20px;border-radius:50%"><span style="flex:1">{{f.name}}</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px">조회 {{f.views}}</span></div>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </sc-for>
-        </div>
-      </section>
-
-      <section style="display:flex;flex-direction:column;gap:16px">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span style="width:10px;height:10px;border-radius:50%;background:#B0F612"></span>
-          <h2 style="margin:0;font-size:20px;font-weight:900">지금 두근거리는 중!</h2>
-          <div role="group" aria-label="카테고리" style="margin-left:auto;display:flex;flex-wrap:wrap;gap:8px">
-            <sc-for list="{{cats}}" as="c" hint-placeholder-count="9">
-              <button type="button" class="ch6" aria-pressed="{{c.on}}" style="height:36px;padding:0 14px;border:0;background:{{c.bg}};color:{{c.fg}};font-weight:{{c.w}};font-size:14px;font-family:'Noto Sans KR',sans-serif">{{c.label}}</button>
+              </a>
             </sc-for>
           </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
-          <sc-for list="{{lives}}" as="l" hint-placeholder-count="8">
-            <a href="#" class="card" style="display:block">
-              <div class="ch12 cardframe" style="background:rgba(176,246,18,.25);padding:1px">
-                <div class="ch12" style="background:#12151B;display:flex;flex-direction:column">
-                  <div class="texture" style="aspect-ratio:16/9;position:relative">
-                    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,15,0) 40%,rgba(10,12,15,.8))"></div>
-                    <span style="position:absolute;top:8px;left:8px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;padding:2px 6px;letter-spacing:.06em">LIVE</span>
-                    <span style="position:absolute;top:8px;right:8px;background:rgba(10,12,15,.8);font-family:'JetBrains Mono',monospace;font-size:12px;padding:2px 6px">{{l.viewers}}</span>
-                    <img src="../brand/face-sleepy.png" alt="" style="position:absolute;right:8px;bottom:8px;width:26px;height:26px;border-radius:50%;opacity:.85">
-                    <span style="position:absolute;left:8px;bottom:8px;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px;letter-spacing:.06em;color:#F3F5F7">{{l.cat}}</span>
-                  </div>
-                  <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
-                    <b style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{l.title}}</b>
-                    <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#A3AAB6"><img src="{{l.face}}" alt="" style="width:20px;height:20px;border-radius:50%;box-shadow:0 0 0 2px {{l.ring}}"><span>{{l.name}}</span></div>
+        </section>
+
+        <section class="fl-pad" style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:10px;height:10px;border-radius:50%;background:#B0F612"></span>
+            <h2 style="margin:0;font-family:'Chakra Petch',sans-serif;font-style:italic;font-size:22px;font-weight:700;letter-spacing:.04em">CLUTCH FEED</h2>
+            <svg width="72" height="20" viewBox="0 0 72 20" fill="none" stroke="#B0F612" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M0 10h24l5-7 6 14 5-9 4 2h28"></path></svg>
+            <a href="#" style="margin-left:auto;font-size:14px;color:#A3AAB6">더보기</a>
+          </div>
+          <div class="fl-cards fl-feed">
+            <sc-for list="{{feed}}" as="f" hint-placeholder-count="4">
+              <a href="#" class="card" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+                <div class="ch12 thumbframe" style="padding:1px"><div class="texture ch12" style="aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center">
+                  <span style="position:absolute;left:8px;bottom:8px;background:rgba(10,12,15,.85);box-shadow:inset 0 0 0 1px #262B35;font-family:'JetBrains Mono',monospace;font-size:12px;padding:2px 6px">0:45</span>
+                  <span style="position:absolute;top:8px;right:8px;font-family:'Chakra Petch',sans-serif;font-style:italic;font-weight:700;font-size:11px;padding:2px 6px;background:linear-gradient(90deg,#FF2BD6,#FF7A1A,#FFE11A);color:#0A0C0F">SUPER CLUTCH</span>
+                  <span style="width:44px;height:44px;border-radius:50%;background:rgba(10,12,15,.75);display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="#F3F5F7" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></span>
+                </div></div>
+                <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                  <b class="cardtitle" style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{f.title}}</b>
+                  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#A3AAB6"><img src="{{f.face}}" alt="" style="width:20px;height:20px;border-radius:50%"><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{f.name}}</span><span style="font-family:'JetBrains Mono',monospace">조회 {{f.views}}</span></div>
+                </div>
+              </a>
+            </sc-for>
+          </div>
+        </section>
+
+        <section class="fl-pad" style="display:flex;flex-direction:column;gap:16px">
+          <div class="fl-sec-head" style="display:flex;align-items:center;gap:12px">
+            <div style="display:flex;align-items:center;gap:10px;flex:none"><span style="width:10px;height:10px;border-radius:50%;background:#B0F612"></span><h2 style="margin:0;font-size:20px;font-weight:900">지금 두근거리는 중!</h2></div>
+            <div role="group" aria-label="카테고리" class="fl-chips fl-scroll" style="margin-left:auto;justify-content:flex-end">
+              <sc-for list="{{cats}}" as="c" hint-placeholder-count="9">
+                <button type="button" class="ch6" aria-pressed="{{c.on}}" style="height:36px;padding:0 14px;border:0;background:{{c.bg}};color:{{c.fg}};font-weight:{{c.w}};font-size:14px;font-family:'Noto Sans KR',sans-serif">{{c.label}}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div class="fl-cards">
+            <sc-for list="{{lives}}" as="l" hint-placeholder-count="8">
+              <a href="#" class="card" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+                <div class="ch12 thumbframe" style="padding:1px"><div class="texture ch12" style="aspect-ratio:16/9;position:relative">
+                  <span style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:5px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;padding:2px 6px;letter-spacing:.06em"><span style="width:5px;height:5px;border-radius:50%;background:#fff"></span>LIVE</span>
+                  <span style="position:absolute;left:8px;bottom:8px;background:rgba(10,12,15,.85);color:#FF2E4D;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;padding:2px 6px">{{l.viewers}}</span>
+                </div></div>
+                <div style="display:flex;gap:10px;min-width:0">
+                  <img src="{{l.face}}" alt="" style="width:32px;height:32px;border-radius:50%;box-shadow:0 0 0 2px {{l.ring}};flex:none">
+                  <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                    <b class="cardtitle" style="font-size:14px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{l.title}}</b>
+                    <span style="font-size:12px;color:#A3AAB6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{l.name}}</span>
+                    <span class="fl-tags" style="display:flex;gap:6px;margin-top:2px"><span class="ch6" style="font-size:11px;padding:2px 7px;background:#191D25;color:#A3AAB6">{{l.cat}}</span></span>
                   </div>
                 </div>
-              </div>
-            </a>
-          </sc-for>
-        </div>
-      </section>
+              </a>
+            </sc-for>
+          </div>
+        </section>
 
+      </div>
     </main>
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1880}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1900}}'>
 class Component extends DCLogic {
   renderVals() {
     var F = {
-      happy: '../brand/face-happy.png', joy: '../brand/face-joy.png',
-      excited: '../brand/face-excited.png', calm: '../brand/face-calm.png',
-      sleepy: '../brand/face-sleepy.png', grumpy: '../brand/face-grumpy.png'
+      happy: '/_blob/10d9837330741e565420a49e87ab07f0', joy: '/_blob/bc352f43bbb2d1944886ee0adcae6a09',
+      excited: '/_blob/fb2b18c2689951d60837df6ed1dbd08c', calm: '/_blob/c5822a982fffc108955187fda03926f7',
+      sleepy: '/_blob/9bc30ab6a1e1f4e525cfabbefef846ea', grumpy: '/_blob/06f075fe80335094ff0f8e66611e60f8'
     };
     var live = function (name, cat, viewers, face, ring) {
       return { name: name, cat: cat, viewers: viewers, face: face, ring: ring, bg: 'transparent', color: '#F3F5F7', vcolor: '#FF2E4D', op: 1 };
@@ -234,9 +284,9 @@ class Component extends DCLogic {
     return {
       pulse: [first, live('버추얼_릴리', '버추얼', '1.8만', F.joy, '#9B7BFF'), live('박클러치', 'FPS', '9.7천', F.grumpy, '#5CF2A0'), off('네온비비드', F.calm), off('겜스터', F.sleepy)],
       recommended: [
-        { name: '버추얼_릴리', title: '[버추얼] 신규 3D 모델 첫 공개', cat: '버추얼', viewers: '1.8만명', face: F.joy, ring: '#9B7BFF' },
-        { name: '박클러치', title: '[프로팀 내전] 레전드 매치 보러 오세요', cat: 'FPS', viewers: '9.7천명', face: F.grumpy, ring: '#5CF2A0' },
-        { name: '밤샘냥', title: '새벽 공포게임 같이 할 사람?', cat: '공포게임', viewers: '4.1천명', face: F.calm, ring: '#2EE6D6' }
+        { name: '버추얼_릴리', title: '[버추얼] 신규 3D 모델 첫 공개', cat: '버추얼', viewers: '1.8만', face: F.joy, ring: '#9B7BFF' },
+        { name: '박클러치', title: '[프로팀 내전] 레전드 매치 보러 오세요', cat: 'FPS', viewers: '9.7천', face: F.grumpy, ring: '#5CF2A0' },
+        { name: '밤샘냥', title: '새벽 공포게임 같이 할 사람?', cat: '공포게임', viewers: '4.1천', face: F.calm, ring: '#2EE6D6' }
       ],
       feed: [
         { title: '이게 3대1을 이기네 ㄷㄷ', name: '김플러', views: '1.2만', face: F.excited },

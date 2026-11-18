@@ -15,15 +15,29 @@ body{margin:0;background:#0A0C0F}
 a{color:#F3F5F7;text-decoration:none}
 .ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
 .ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
-.texture{background:#0A0C0F url(../brand/bg-speed.jpg) center/cover}
+.texture{background:#0A0C0F url(/_blob/3d8747c0d27ead1c50b2d826552c3c41) center/cover}
+.sp-app{container-type:inline-size;container-name:sp}
+@container sp (max-width:600px){
+  .sp-cover{height:120px!important}
+  .sp-wrap{margin-top:-48px!important;padding:0 16px 40px!important;gap:18px!important}
+  .sp-avatar{width:80px!important;height:80px!important}
+  .sp-head h1{font-size:22px!important}
+  .sp-head>a{width:100%;justify-content:center}
+  .sp-tabs{overflow-x:auto}
+  .sp-stats{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+  .sp-stats .ch12>div{padding:12px!important}
+  .sp-stats b{font-size:16px!important}
+  .sp-actions{width:100%}
+  .sp-actions button{flex:1}
+}
 </style>
 </helmet>
-<div style="min-height:100vh;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
-  <div class="texture" style="height:180px;position:relative"><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,15,.2),#0A0C0F)"></div></div>
+<div class="sp-app" style="width:100%;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
+  <div class="texture sp-cover" style="height:180px;position:relative"><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,15,.2),#0A0C0F)"></div></div>
 
-  <div style="max-width:1200px;margin:-72px auto 0;padding:0 24px 48px;position:relative;display:flex;flex-direction:column;gap:24px">
-    <div style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap">
-      <img src="../brand/face-excited.png" alt="" style="width:112px;height:112px;border-radius:50%;box-shadow:0 0 0 4px #4DA3FF,0 0 0 8px #0A0C0F">
+  <div class="sp-wrap" style="max-width:1200px;margin:-72px auto 0;padding:0 24px 48px;position:relative;display:flex;flex-direction:column;gap:24px">
+    <div class="sp-head" style="display:flex;align-items:flex-end;gap:16px 20px;flex-wrap:wrap">
+      <img class="sp-avatar" src="/_blob/fb2b18c2689951d60837df6ed1dbd08c" alt="" style="width:112px;height:112px;border-radius:50%;box-shadow:0 0 0 4px #4DA3FF,0 0 0 8px #0A0C0F">
       <div style="flex:1 1 240px;display:flex;flex-direction:column;gap:6px">
         <h1 style="margin:0;font-size:28px;font-weight:900">김플러</h1>
         <span style="font-size:14px;color:#A3AAB6">팔로워 <b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">12,480</b> · 지금 방송 중</span>
@@ -31,13 +45,13 @@ a{color:#F3F5F7;text-decoration:none}
       <a href="#" class="ch6" style="height:44px;padding:0 20px;display:inline-flex;align-items:center;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:15px">새 방송 등록</a>
     </div>
 
-    <div role="tablist" aria-label="스트리머 페이지" style="display:flex;gap:4px;border-bottom:1px solid #191D25">
+    <div role="tablist" aria-label="스트리머 페이지" class="sp-tabs" style="display:flex;gap:4px;border-bottom:1px solid #191D25">
       <button type="button" role="tab" aria-selected="false" style="height:44px;padding:0 18px;border:0;background:transparent;color:#A3AAB6;font-size:15px;font-family:'Noto Sans KR',sans-serif">방송</button>
       <button type="button" role="tab" aria-selected="false" style="height:44px;padding:0 18px;border:0;background:transparent;color:#A3AAB6;font-size:15px;font-family:'Noto Sans KR',sans-serif">다시보기</button>
       <button type="button" role="tab" aria-selected="true" style="height:44px;padding:0 18px;border:0;border-bottom:2px solid #B0F612;background:transparent;color:#F3F5F7;font-weight:700;font-size:15px;font-family:'Noto Sans KR',sans-serif">관리 <span style="font-size:11px;color:#7C8494;font-weight:400">본인만</span></button>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+    <div class="sp-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
       <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:#A3AAB6">누적 받은 비트</span><b style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#B0F612">1,284,300</b></div></div>
       <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:#A3AAB6">최근 7일</span><b style="font-family:'JetBrains Mono',monospace;font-size:24px">212,000</b></div></div>
       <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:#A3AAB6">이번 방송</span><b style="font-family:'JetBrains Mono',monospace;font-size:24px">128,400</b></div></div>
@@ -50,7 +64,7 @@ a{color:#F3F5F7;text-decoration:none}
           <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:12px 14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
             <span class="ch6" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;padding:3px 8px;background:{{b.stBg}};color:{{b.stFg}}">{{b.status}}</span>
             <div style="flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:2px"><b style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{b.title}}</b><span style="font-size:12px;color:#7C8494">{{b.meta}}</span></div>
-            <div style="display:flex;gap:6px">
+            <div class="sp-actions" style="display:flex;gap:6px">
               <button type="button" class="ch6" style="height:36px;padding:0 12px;border:0;background:{{b.mainBg}};color:{{b.mainFg}};font-weight:700;font-size:13px;font-family:'Noto Sans KR',sans-serif">{{b.main}}</button>
               <button type="button" class="ch6" style="height:36px;padding:0 12px;border:0;background:#191D25;color:#F3F5F7;font-size:13px;font-family:'Noto Sans KR',sans-serif">수정</button>
               <button type="button" class="ch6" style="height:36px;padding:0 12px;border:0;background:#191D25;color:#A3AAB6;font-size:13px;font-family:'Noto Sans KR',sans-serif">삭제</button>

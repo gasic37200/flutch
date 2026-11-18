@@ -15,13 +15,25 @@ body{margin:0;background:#0A0C0F}
 a{color:#F3F5F7;text-decoration:none}
 .ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
 .ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
-.texture{background:#0A0C0F url(../brand/bg-speed.jpg) center/cover}
+.texture{background:#0A0C0F url(/_blob/3d8747c0d27ead1c50b2d826552c3c41) center/cover}
+.rp-app{container-type:inline-size;container-name:rp}
+.card .thumbframe{background:transparent}
+.card:hover .thumbframe{background:#B0F612;filter:drop-shadow(0 0 12px rgba(176,246,18,.45))}
+.card:hover .cardtitle{color:#D4FF6A}
+@container rp (max-width:600px){
+  .rp-app{padding:0 0 40px!important;gap:28px!important}
+  .rp-pad{padding:0 16px}
+  .rp-meta{padding:0 16px}
+  .rp-speed{display:none!important}
+  .rp-chat{margin:0 16px}
+  .rp-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:20px 12px!important}
+}
 </style>
 </helmet>
-<div style="min-height:100vh;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;padding:28px 24px 48px;box-sizing:border-box;display:flex;flex-direction:column;gap:36px">
+<div class="rp-app" style="width:100%;max-width:1600px;margin:0 auto;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;padding:28px 24px 48px;box-sizing:border-box;display:flex;flex-direction:column;gap:36px">
 
   <section style="display:flex;flex-direction:column;gap:12px">
-    <span style="font-size:13px;color:#A3AAB6">다시보기 상세</span>
+    <span class="rp-pad" style="font-size:13px;color:#A3AAB6">다시보기 상세</span>
     <div style="display:flex;flex-wrap:wrap;gap:20px">
       <div style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:12px">
         <div class="texture" style="aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center">
@@ -33,7 +45,7 @@ a{color:#F3F5F7;text-decoration:none}
               <button type="button" aria-label="재생" style="width:40px;height:40px;border:0;background:transparent;color:#F3F5F7"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></button>
               <span style="font-family:'JetBrains Mono',monospace;font-size:13px">1:01:24 / 2:41:08</span>
               <span style="flex:1"></span>
-              <div role="radiogroup" aria-label="배속" style="display:flex;gap:2px">
+              <div role="radiogroup" aria-label="배속" class="rp-speed" style="display:flex;gap:2px">
                 <button type="button" role="radio" aria-checked="false" class="ch6" style="height:30px;padding:0 8px;border:0;background:rgba(25,29,37,.9);color:#A3AAB6;font-family:'JetBrains Mono',monospace;font-size:12px">0.5x</button>
                 <button type="button" role="radio" aria-checked="true" class="ch6" style="height:30px;padding:0 8px;border:0;background:#B0F612;color:#0A0C0F;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700">1x</button>
                 <button type="button" role="radio" aria-checked="false" class="ch6" style="height:30px;padding:0 8px;border:0;background:rgba(25,29,37,.9);color:#A3AAB6;font-family:'JetBrains Mono',monospace;font-size:12px">1.5x</button>
@@ -43,46 +55,44 @@ a{color:#F3F5F7;text-decoration:none}
             </div>
           </div>
         </div>
-        <h1 style="margin:0;font-size:20px;font-weight:700">어제 대회 연습 3판</h1>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:#A3AAB6">
-          <img src="../brand/face-excited.png" alt="" style="width:28px;height:28px;border-radius:50%;box-shadow:0 0 0 2px #4DA3FF"><b style="color:#F3F5F7;font-size:14px">김플러</b>
+        <h1 class="rp-meta" style="margin:0;font-size:20px;font-weight:700">어제 대회 연습 3판</h1>
+        <div class="rp-meta" style="display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;font-size:13px;color:#A3AAB6">
+          <img src="/_blob/fb2b18c2689951d60837df6ed1dbd08c" alt="" style="width:28px;height:28px;border-radius:50%;box-shadow:0 0 0 2px #4DA3FF"><b style="color:#F3F5F7;font-size:14px">김플러</b>
           <span>FPS</span><span>11월 8일 방송</span><span>조회 <b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">8,204</b></span><span>최고 시청자 <b style="font-family:'JetBrains Mono',monospace;color:#FF2E4D">41,203</b></span><span>27일 뒤 삭제</span>
         </div>
       </div>
-      <aside class="ch12" style="flex:1 1 320px;max-width:100%;background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;height:100%;display:flex;flex-direction:column">
+      <aside class="ch12 rp-chat" style="flex:1 1 320px;max-width:100%;background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;height:100%;display:flex;flex-direction:column">
         <div style="padding:14px 16px;border-bottom:1px solid #191D25;display:flex"><b style="font-size:15px">채팅 기록</b><span style="margin-left:auto;font-size:12px;color:#7C8494">읽기 전용</span></div>
         <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.5">
           <div><span style="font-family:'JetBrains Mono',monospace;color:#7C8494">0:58</span> <b style="color:#2EE6D6">에임장인</b> 시작했다!</div>
           <div><span style="font-family:'JetBrains Mono',monospace;color:#7C8494">1:00</span> <b style="color:#9B7BFF">밤샘냥</b> 오늘 컨디션 좋아 보임</div>
           <div><span style="font-family:'JetBrains Mono',monospace;color:#7C8494">1:02</span> <b style="color:#5CF2A0">수다곰</b> 클러치각이다!</div>
-          <div style="background:rgba(255,194,26,.1);padding:6px 8px"><span style="font-family:'JetBrains Mono',monospace;color:#7C8494">1:03</span> <b style="color:#FFC21A">익명의 후원자</b> 10,000 Beats</div>
+          <div style="background:rgba(255,194,26,.1);padding:6px 8px"><span style="font-family:'JetBrains Mono',monospace;color:#7C8494">1:03</span> <b style="color:#FFC21A">익명의 후원자</b> 10,000 Beat</div>
           <div style="color:#7C8494;font-style:italic"><span style="font-family:'JetBrains Mono',monospace">1:05</span> 삭제된 메시지입니다</div>
         </div>
       </div></aside>
     </div>
   </section>
 
-  <section style="display:flex;flex-direction:column;gap:14px">
+  <section class="rp-pad" style="display:flex;flex-direction:column;gap:14px">
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span style="width:10px;height:10px;border-radius:50%;background:#B0F612"></span>
       <h2 style="margin:0;font-size:20px;font-weight:900;margin-right:auto">다시보기</h2>
       <button type="button" class="ch6" style="height:34px;padding:0 12px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:13px;font-family:'Noto Sans KR',sans-serif">최신순</button>
       <button type="button" class="ch6" style="height:34px;padding:0 12px;border:0;background:#191D25;color:#A3AAB6;font-size:13px;font-family:'Noto Sans KR',sans-serif">카테고리 ▾</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">
+    <div class="rp-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:24px 16px">
       <sc-for list="{{vods}}" as="v" hint-placeholder-count="4">
-        <a href="#" style="display:block">
-          <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;display:flex;flex-direction:column">
-            <div class="texture" style="aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center">
-              <div style="position:absolute;inset:0;background:rgba(10,12,15,{{v.dim}})"></div>
-              <span style="position:absolute;right:8px;bottom:8px;background:rgba(10,12,15,.85);font-family:'JetBrains Mono',monospace;font-size:12px;padding:2px 6px">{{v.len}}</span>
-              <span style="position:relative;font-size:13px;font-weight:700;color:#F3F5F7">{{v.overlay}}</span>
-            </div>
-            <div style="padding:12px 14px;display:flex;flex-direction:column;gap:6px">
-              <b style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{v.title}}</b>
-              <span style="font-size:12px;color:#A3AAB6">{{v.meta}}</span>
-            </div>
+        <a href="#" class="card" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+          <div class="ch12 thumbframe" style="padding:1px"><div class="texture ch12" style="aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center;text-align:center">
+            <div style="position:absolute;inset:0;background:rgba(10,12,15,{{v.dim}})"></div>
+            <span style="position:absolute;left:8px;bottom:8px;background:rgba(10,12,15,.85);box-shadow:inset 0 0 0 1px #262B35;font-family:'JetBrains Mono',monospace;font-size:12px;padding:2px 6px">{{v.len}}</span>
+            <span style="position:relative;font-size:13px;font-weight:700;color:#F3F5F7;padding:0 12px">{{v.overlay}}</span>
           </div></div>
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+            <b class="cardtitle" style="font-size:14px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{v.title}}</b>
+            <span style="font-size:12px;color:#A3AAB6">{{v.meta}}</span>
+          </div>
         </a>
       </sc-for>
     </div>

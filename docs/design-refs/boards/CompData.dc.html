@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>공통 컴포넌트 · 데이터 표시</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@500;700&amp;family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0C0F}
+a{color:#F3F5F7;text-decoration:none}a:hover{color:#D4FF6A}
+.ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.dots{background-image:radial-gradient(rgba(176,246,18,.45) 1px,transparent 1.5px);background-size:6px 6px}
+.thumb{background:#0A0C0F url(/_blob/3d8747c0d27ead1c50b2d826552c3c41) center/cover}
+@keyframes beat{0%,100%{opacity:1;filter:drop-shadow(0 0 6px rgba(176,246,18,.5))}50%{opacity:.8;filter:drop-shadow(0 0 16px rgba(176,246,18,.9))}}
+.beat{animation:beat 1.1s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.beat{animation:none}}
+</style>
+</helmet>
+<div style="width:1440px;min-height:1280px;box-sizing:border-box;padding:40px 48px;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column;gap:28px">
+
+  <header style="display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;align-items:baseline;gap:16px">
+      <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:26px;letter-spacing:.04em">D · 데이터 표시</span>
+      <span style="font-size:13px;color:#7C8494">코드: components/ui/Badge · BeatAmount · LiveCard · Panel · ClutchGauge · Avatar</span>
+    </div>
+    <span style="font-size:14px;color:#A3AAB6">상태·숫자·방송을 보여 주는 요소. 빨강은 LIVE·시청자 수·녹화 중에만, 그라데이션은 클러치 폭발에만.</span>
+  </header>
+
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px">
+
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><section class="ch12" style="background:#12151B;padding:24px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <b style="font-family:'Chakra Petch',sans-serif;color:#B0F612;letter-spacing:.06em;font-size:16px">D1 · 배지 · 숫자</b>
+        <span style="font-size:12px;color:#7C8494">Badge.tsx · BeatAmount.tsx · 카드 · 채팅 · 방송 관리 · 후원 내역 · 다시보기 · 헤더 잔액</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;font-weight:700;color:#7C8494;letter-spacing:.04em">방송 상태</span>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <span style="display:inline-flex;align-items:center;gap:6px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;padding:3px 8px;letter-spacing:.06em"><span style="width:6px;height:6px;border-radius:50%;background:#fff"></span>LIVE</span>
+          <span class="ch6" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;padding:3px 8px;background:rgba(176,246,18,.15);color:#B0F612">READY</span>
+          <span class="ch6" style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;padding:3px 8px;background:#191D25;color:#A3AAB6">ENDED</span>
+          <span style="font-family:'Chakra Petch',sans-serif;font-style:italic;font-weight:700;font-size:12px;padding:3px 8px;background:linear-gradient(90deg,#FF2BD6,#FF7A1A,#FFE11A);color:#0A0C0F">SUPER CLUTCH</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;font-weight:700;color:#7C8494;letter-spacing:.04em">채팅 역할</span>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <span style="font-size:11px;font-weight:700;padding:2px 6px;background:#B0F612;color:#0A0C0F">스트리머</span>
+          <span style="font-size:11px;font-weight:700;padding:2px 6px;background:#FFC21A;color:#0A0C0F">후원자</span>
+          <span style="font-size:11px;padding:2px 6px;background:#191D25;color:#A3AAB6">익명</span>
+          <span style="font-size:11px;color:#7C8494">(수정됨)</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;font-weight:700;color:#7C8494;letter-spacing:.04em">영상 · 녹화</span>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:2px 6px;background:rgba(10,12,15,.85);box-shadow:inset 0 0 0 1px #262B35">0:45</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 8px;background:#191D25;color:#F3F5F7"><span style="width:6px;height:6px;border-radius:50%;background:#FF2E4D"></span>녹화 중</span>
+          <span style="font-size:12px;padding:3px 8px;background:#191D25;color:#A3AAB6">처리 중 <b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">84%</b></span>
+          <span style="font-size:12px;padding:3px 8px;background:#191D25;color:#F3F5F7">녹화 실패</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:4px">
+        <div class="ch6" style="background:#191D25;padding:12px 14px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;color:#A3AAB6">시청자 수</span><span style="display:inline-flex;align-items:center;gap:6px;color:#FF2E4D;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>32,481</span></div>
+        <div class="ch6" style="background:#191D25;padding:12px 14px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;color:#A3AAB6">비트 잔액</span><span style="display:inline-flex;align-items:center;gap:8px;border:1px solid #B0F612;border-radius:999px;padding:4px 12px;background:rgba(176,246,18,.08)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg><b style="font-family:'JetBrains Mono',monospace;font-size:15px">3,500</b><span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:#B0F612;font-size:14px">Beat</span></span></div>
+      </div>
+    </section></div>
+
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><section class="ch12" style="background:#12151B;padding:24px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <b style="font-family:'Chakra Petch',sans-serif;color:#B0F612;letter-spacing:.06em;font-size:16px">D2 · 라이브 카드</b>
+        <span style="font-size:12px;color:#7C8494">LiveCard.tsx · 홈 · 탐색 · PULSE · 스트리머 페이지</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">
+        <a href="#" style="display:flex;flex-direction:column;gap:10px">
+          <div class="ch12 thumb" style="aspect-ratio:16/9;position:relative">
+            <span style="position:absolute;left:10px;top:10px;display:inline-flex;align-items:center;gap:6px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;padding:2px 7px"><span style="width:5px;height:5px;border-radius:50%;background:#fff"></span>LIVE</span>
+            <span style="position:absolute;left:10px;bottom:10px;background:rgba(10,12,15,.85);color:#FF2E4D;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;padding:2px 6px">1,284</span>
+          </div>
+          <div style="display:flex;gap:10px"><img src="/_blob/bc352f43bbb2d1944886ee0adcae6a09" alt="" style="width:32px;height:32px;border-radius:50%;box-shadow:0 0 0 2px #2EE6D6;flex:none"><div style="display:flex;flex-direction:column;gap:3px;min-width:0"><b style="font-size:14px;line-height:1.35">새벽 랭크 달리기, 다이아 가즈아</b><span style="font-size:12px;color:#A3AAB6">박클러치</span><span style="display:flex;gap:6px;margin-top:2px"><span class="ch6" style="font-size:11px;padding:2px 7px;background:#191D25;color:#A3AAB6">FPS</span><span class="ch6" style="font-size:11px;padding:2px 7px;background:#191D25;color:#A3AAB6">랭크</span></span></div></div>
+        </a>
+        <a href="#" style="display:flex;flex-direction:column;gap:10px">
+          <div style="filter:drop-shadow(0 0 12px rgba(176,246,18,.45))"><div class="ch12" style="background:#B0F612;padding:1px"><div class="ch12 thumb" style="aspect-ratio:16/9;position:relative">
+            <span style="position:absolute;left:10px;top:10px;display:inline-flex;align-items:center;gap:6px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;padding:2px 7px"><span style="width:5px;height:5px;border-radius:50%;background:#fff"></span>LIVE</span>
+            <span style="position:absolute;right:10px;top:10px;font-family:'Chakra Petch',sans-serif;font-style:italic;font-weight:700;font-size:11px;padding:2px 7px;background:linear-gradient(90deg,#FF2BD6,#FF7A1A,#FFE11A);color:#0A0C0F">SUPER CLUTCH</span>
+            <span style="position:absolute;left:10px;bottom:10px;background:rgba(10,12,15,.85);color:#FF2E4D;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;padding:2px 6px">8,920</span>
+          </div></div></div>
+          <div style="display:flex;gap:10px"><img src="/_blob/c5822a982fffc108955187fda03926f7" alt="" style="width:32px;height:32px;border-radius:50%;box-shadow:0 0 0 2px #9B7BFF;flex:none"><div style="display:flex;flex-direction:column;gap:3px;min-width:0"><b style="font-size:14px;line-height:1.35">버추얼 노래방 · 신청곡 받아요</b><span style="font-size:12px;color:#A3AAB6">버추얼_릴리</span><span style="display:flex;gap:6px;margin-top:2px"><span class="ch6" style="font-size:11px;padding:2px 7px;background:#191D25;color:#A3AAB6">버추얼</span><span class="ch6" style="font-size:11px;padding:2px 7px;background:#191D25;color:#A3AAB6">노래</span></span></div></div>
+        </a>
+      </div>
+      <dl style="margin:auto 0 0;padding-top:14px;border-top:1px solid #262B35;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px">
+        <dt style="color:#7C8494">기본</dt><dd style="margin:0;text-align:right">테두리 없는 썸네일 · 제목 2줄까지 · 카테고리 태그</dd>
+        <dt style="color:#7C8494">호버 · SUPER CLUTCH</dt><dd style="margin:0;text-align:right">라임 1px + 글로우 · 오른쪽 위 SUPER CLUTCH 배지</dd>
+      </dl>
+    </section></div>
+
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><section class="ch12" style="background:#12151B;padding:24px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <b style="font-family:'Chakra Petch',sans-serif;color:#B0F612;letter-spacing:.06em;font-size:16px">D3 · 패널 3단계</b>
+        <span style="font-size:12px;color:#7C8494">Panel.tsx · tone: default · strong · deco</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+        <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#191D25;padding:16px;height:150px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px"><b style="font-size:15px">기본</b><span style="font-size:13px;color:#A3AAB6;flex:1">대부분의 카드·패널</span><code style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7C8494">라임 25% 1px</code></div></div>
+        <div style="filter:drop-shadow(0 0 12px rgba(176,246,18,.45))"><div class="ch12" style="background:#B0F612;padding:1px"><div class="ch12" style="background:#191D25;padding:16px;height:150px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px"><b style="font-size:15px">강조</b><span style="font-size:13px;color:#A3AAB6;flex:1">메인 히어로 · 호버 · 선택</span><code style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7C8494">라임 1px + 글로우</code></div></div></div>
+        <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#191D25;padding:16px;height:150px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden"><div class="dots" style="position:absolute;right:0;bottom:0;width:100px;height:60px;opacity:.7"></div><div style="position:absolute;right:10px;bottom:10px;width:40px;height:22px;border-right:2px solid #B0F612;border-bottom:2px solid #B0F612"></div><b style="font-size:15px">장식</b><span style="font-size:13px;color:#A3AAB6;flex:1">히어로 · CLUTCH TIME · 배너에만</span><code style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7C8494">하프톤 + 꺾인 라인</code></div></div>
+      </div>
+      <b style="font-family:'Chakra Petch',sans-serif;color:#B0F612;letter-spacing:.06em;font-size:16px;margin-top:8px">D5 · 아바타</b>
+      <span style="font-size:12px;color:#7C8494;margin-top:-10px">Avatar.tsx · 표정 6 × 링 색 6, 사용자 id로 고정</span>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
+        <div class="ch6" style="background:#191D25;padding:14px 8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:10px;height:120px;box-sizing:border-box"><img src="/_blob/10d9837330741e565420a49e87ab07f0" alt="" style="width:64px;height:64px;border-radius:50%;box-shadow:0 0 0 3px #B0F612"><span style="font-size:12px;color:#A3AAB6"><b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">64</b> 채널 머리</span></div>
+        <div class="ch6" style="background:#191D25;padding:14px 8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:10px;height:120px;box-sizing:border-box"><img src="/_blob/bc352f43bbb2d1944886ee0adcae6a09" alt="" style="width:36px;height:36px;border-radius:50%;box-shadow:0 0 0 2px #2EE6D6"><span style="font-size:12px;color:#A3AAB6"><b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">36</b> 헤더</span></div>
+        <div class="ch6" style="background:#191D25;padding:14px 8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:10px;height:120px;box-sizing:border-box"><img src="/_blob/fb2b18c2689951d60837df6ed1dbd08c" alt="" style="width:32px;height:32px;border-radius:50%;box-shadow:0 0 0 2px #4DA3FF"><span style="font-size:12px;color:#A3AAB6"><b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">32</b> 카드</span></div>
+        <div class="ch6" style="background:#191D25;padding:14px 8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:10px;height:120px;box-sizing:border-box"><img src="/_blob/c5822a982fffc108955187fda03926f7" alt="" style="width:24px;height:24px;border-radius:50%;box-shadow:0 0 0 2px #9B7BFF"><span style="font-size:12px;color:#A3AAB6"><b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">24</b> 채팅·목록</span></div>
+      </div>
+    </section></div>
+
+    <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><section class="ch12" style="background:#12151B;padding:24px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <b style="font-family:'Chakra Petch',sans-serif;color:#B0F612;letter-spacing:.06em;font-size:16px">D4 · 클러치 게이지</b>
+        <span style="font-size:12px;color:#7C8494">ClutchGauge.tsx · 시청 화면 · 히어로 CLUTCH TIME 패널</span>
+      </div>
+      <div class="ch6" style="background:#191D25;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px">충전 중</span><b style="font-family:'JetBrains Mono',monospace;font-size:14px">52%</b></div>
+        <div class="ch6" role="meter" aria-label="클러치 게이지 충전 중" aria-valuenow="52" aria-valuemin="0" aria-valuemax="100" style="height:12px;background:#0F1217"><div class="ch6" style="width:52%;height:100%;background:#B0F612"></div></div>
+      </div>
+      <div class="ch6" style="background:#191D25;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;font-weight:700">임박 · 곧 터져요</span><b style="font-family:'JetBrains Mono',monospace;font-size:14px">88%</b></div>
+        <div class="ch6 beat" role="meter" aria-label="클러치 게이지 임박" aria-valuenow="88" aria-valuemin="0" aria-valuemax="100" style="height:12px;background:#0F1217"><div class="ch6" style="width:88%;height:100%;background:linear-gradient(90deg,#B0F612 60%,#FF7A1A)"></div></div>
+      </div>
+      <div style="filter:drop-shadow(0 0 10px rgba(255,122,26,.35))"><div class="ch6" style="background:linear-gradient(90deg,#FF2BD6,#FF7A1A,#FFE11A);padding:1px"><div class="ch6" style="background:#191D25;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-family:'Chakra Petch',sans-serif;font-style:italic;font-weight:700;font-size:14px;background:linear-gradient(90deg,#FF2BD6,#FF7A1A,#FFE11A);-webkit-background-clip:text;background-clip:text;color:transparent">SUPER CLUTCH</span><b style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#FFE11A">MAX</b></div>
+        <div class="ch6" role="meter" aria-label="클러치 게이지 최대" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="height:12px;background:#0F1217"><div class="ch6" style="width:100%;height:100%;background:linear-gradient(90deg,#FF2BD6,#FF7A1A,#FFE11A)"></div></div>
+      </div></div></div>
+      <div class="ch6" style="background:#191D25;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13px;color:#A3AAB6">쿨다운</span><span style="font-size:13px;color:#A3AAB6">다음 클러치까지 <b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">24분</b></span></div>
+        <div class="ch6" role="meter" aria-label="클러치 게이지 쿨다운" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100" style="height:12px;background:#0F1217"><div class="ch6" style="width:30%;height:100%;background:#7C8494"></div></div>
+      </div>
+      <dl style="margin:auto 0 0;padding-top:14px;border-top:1px solid #262B35;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px">
+        <dt style="color:#7C8494">0~79%</dt><dd style="margin:0;text-align:right">라임</dd>
+        <dt style="color:#7C8494">80~99%</dt><dd style="margin:0;text-align:right">라임→주황 + 맥박 (동작 줄이기 설정이면 멈춤)</dd>
+        <dt style="color:#7C8494">100%</dt><dd style="margin:0;text-align:right">클러치 그라데이션 · SUPER CLUTCH</dd>
+      </dl>
+    </section></div>
+
+  </div>
+  <span style="font-size:12px;color:#7C8494">Stitch 시안 "FLUTCH 컴포넌트 시트 D"(2026-11-16)에서 배지 묶음 라벨, 숫자 타일, 카드 태그, 게이지 이름·값 줄, 아바타 크기 표기를 가져옴. 시안은 밝은 배경·게이지 막대 없음 등 규칙과 달라 나머지는 제외.</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1280}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
