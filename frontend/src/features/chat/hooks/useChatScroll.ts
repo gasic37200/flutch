@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import type { ChatApi } from './useChat.ts'
 
 const NEAR_BOTTOM_PX = 48
 const NEAR_TOP_PX = 24
 
 /** 목록 스크롤: 맨 아래에 있을 때만 새 메시지를 따라가고, 위를 보는 중이면 "새 메시지 n개"로 알린다. 위로 불러온 기록은 보던 자리를 유지한다. */
-export function useChatScroll(chat: Pick<ChatApi, 'items' | 'hasMore' | 'loadMore'>) {
+export function useChatScroll(chat: { items: { id: number }[]; hasMore: boolean; loadMore: () => unknown }) {
   const { items, hasMore, loadMore } = chat
   const ref = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)

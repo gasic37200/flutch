@@ -343,7 +343,7 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 | GET `/recordings/{id}` | 누구나 | — | 200 `RecordingDetail` (`recording`·`failed`도 200, `videoUrl=null`) | 404 `NOT_FOUND`(없음·숨김), 404 `RECORDING_EXPIRED`(deleted) |
 | POST `/recordings/{id}/views` | 누구나 | `{guestId?}` (비로그인 필수) | 204 — 시청자(`u:<id>`/`g:<guestId>`)당 KST 하루 1회만 증가 | 404, 422 |
 
-- 다시보기 화면의 채팅·후원은 `GET /broadcasts/{broadcastId}/chats`·`/donations`(전체 목록, 리플레이 없음).
+- 다시보기 화면의 채팅·후원은 `GET /broadcasts/{broadcastId}/chats`·`/donations`(전체 목록을 받아 프론트가 recording.startedAt 기준으로 동기화).
 - 녹화 실패는 방송 상태와 무관(방송은 정상 ENDED). 소유자 관리 화면은 `Broadcast.recording.status=failed`로 "녹화에 실패했어요".
 - 영상은 방송당 `recordings/{broadcastId}.mp4`, `videoUrl`은 `RECORDING_PUBLIC_BASE_URL` + `/` + 객체 키. 저장소 설정이 없으면 녹화는 꺼지고 `Broadcast.recording`은 null.
 - 삭제(보관 기간·용량 초과·방송 숨김)는 상태를 `deleted`로 먼저 바꾼 뒤 파일을 지운다. 파일 삭제가 실패하면 표시가 남아 1시간 주기 작업이 다시 지운다(고아 파일·깨진 링크 둘 다 남지 않는 순서). 종료 후 4시간(방송 최대 길이+1시간) 안에 `egress_ended`가 없으면 `failed`.

@@ -1,58 +1,65 @@
 import { useState } from 'react'
-import Button from '../../../components/ui/Button.tsx'
 import Panel from '../../../components/ui/Panel.tsx'
-import { formatDuration } from '../../watch/hooks/useWatch.ts'
 import { ChoiceChip } from '../../../components/ui/Chip.tsx'
-import { useReplayChats } from '../hooks/useRecordings.ts'
-import ReplayDonations from './ReplayDonations.tsx'
+import { useChatScroll } from '../../chat/hooks/useChatScroll.ts'
+import DonationLine from '../../donation/components/DonationLine.tsx'
+import { formatDuration } from '../../watch/hooks/useWatch.ts'
+import type { useReplayTimeline } from '../hooks/useReplayTimeline.ts'
+import { visibleAt } from '../timeline.ts'
 
-// 읽기 전용 채팅·후원 목록(탭). 시각은 방송 시작 기준(동기화 리플레이는 범위 밖).
-export default function ChatHistory({ broadcastId, startedAt }: { broadcastId: number; startedAt: string }) {
-  const q = useReplayChats(broadcastId)
-  const [tab, setTab] = useState<'chat' | 'donation'>('chat')
-  const start = Date.parse(startedAt)
+type Props = { timeline: ReturnType<typeof useReplayTimeline>; time: number; synced: boolean }
+
+const NO_MORE = { hasMore: false, loadMore: () => {} }
+
+// 읽기 전용 채팅·후원 한 타임라인. 영상이 있으면 재생 시각까지만 보여 주고(라이브처럼 아래로 쌓임), "전체 기록 보기"로 전부 본다.
+export default function ChatHistory({ timeline, time, synced }: Props) {
+  const [all, setAll] = useState(false)
+  const sync = synced && !all
+  const items = sync ? visibleAt(timeline.items, time) : timeline.items
+  const { ref, contentRef, onScroll } = useChatScroll({ items, ...NO_MORE })
   return (
     <Panel aria-label='채팅 기록' className='h-full' innerClassName='flex h-full max-h-[70vh] min-h-64 flex-col xl:max-h-175'>
-      <div className='flex items-center gap-2 border-b border-surface-2 px-4 py-3' role='group' aria-label='기록 종류'>
-        <ChoiceChip selected={tab === 'chat'} onClick={() => setTab('chat')}>
-          채팅 기록
-        </ChoiceChip>
-        <ChoiceChip selected={tab === 'donation'} onClick={() => setTab('donation')}>
-          후원
-        </ChoiceChip>
-        <span className='ml-auto text-xs text-text-dim'>읽기 전용</span>
-      </div>
-      <div className='flex grow flex-col gap-2 overflow-y-auto px-4 py-3 text-[13px] leading-normal'>
-        {tab === 'donation' ? (
-          <ReplayDonations broadcastId={broadcastId} />
-        ) : q.isError ? (
-          <p className='m-auto text-text-dim'>채팅을 불러오지 못했어요</p>
-        ) : q.isPending ? (
-          <p className='m-auto text-text-dim'>불러오는 중…</p>
-        ) : q.items.length === 0 ? (
-          <p className='m-auto text-text-dim'>채팅이 없어요</p>
-        ) : (
-          <>
-            {q.hasNextPage && (
-              <Button variant='neutral' size='sm' onClick={() => void q.fetchNextPage()} loading={q.isFetchingNextPage}>
-                이전 채팅 더 보기
-              </Button>
-            )}
-            {q.items.map((c) => (
-              <p key={c.id} className={c.deleted ? 'text-text-dim italic' : ''}>
-                <span className='font-mono text-text-dim'>{formatDuration(Date.parse(c.createdAt) - start)}</span>{' '}
-                {c.deleted ? (
-                  '삭제된 메시지입니다'
-                ) : (
-                  <>
-                    <b className={c.badges.includes('streamer') ? 'text-brand' : 'text-text-muted'}>{c.author.nickname}</b> {c.body}
-                    {c.edited && <span className='text-text-dim'> (수정됨)</span>}
-                  </>
-                )}
-              </p>
-            ))}
-          </>
+      <div className='flex items-center gap-2 border-b border-surface-2 px-4 py-3'>
+        <b className='text-[15px]'>채팅·후원</b>
+        <span className='text-xs text-text-dim'>읽기 전용</span>
+        {synced && (
+          <span className='ml-auto'>
+            <ChoiceChip selected={all} onClick={() => setAll((v) => !v)}>
+              전체 기록 보기
+            </ChoiceChip>
+          </span>
         )}
+      </div>
+      <div ref={ref} onScroll={onScroll} role='log' aria-label='채팅·후원 기록' tabIndex={0} className='flex min-h-0 grow flex-col overflow-y-auto px-4 py-3 text-[13px] leading-normal'>
+        <div ref={contentRef} className='flex min-h-full flex-col'>
+          {timeline.error ? (
+            <p className='m-auto text-text-dim'>채팅·후원을 불러오지 못했어요</p>
+          ) : timeline.loading && items.length === 0 ? (
+            <p className='m-auto text-text-dim'>불러오는 중…</p>
+          ) : items.length === 0 ? (
+            <p className='m-auto text-text-dim'>{sync ? '아직 채팅이나 후원이 없어요' : '채팅이나 후원이 없어요'}</p>
+          ) : (
+            <ul className='flex flex-col gap-2'>
+              {items.map((i) =>
+                i.kind === 'donation' ? (
+                  <DonationLine key={`d${i.donation.id}`} donation={i.donation} />
+                ) : (
+                  <li key={`c${i.chat.id}`} className={i.chat.deleted ? 'text-text-dim italic' : ''}>
+                    <span className='font-mono text-text-dim'>{formatDuration(i.at * 1000)}</span>{' '}
+                    {i.chat.deleted ? (
+                      '삭제된 메시지입니다'
+                    ) : (
+                      <>
+                        <b className={i.chat.badges.includes('streamer') ? 'text-brand' : 'text-text-muted'}>{i.chat.author.nickname}</b> {i.chat.body}
+                        {i.chat.edited && <span className='text-text-dim'> (수정됨)</span>}
+                      </>
+                    )}
+                  </li>
+                ),
+              )}
+            </ul>
+          )}
+        </div>
       </div>
     </Panel>
   )
