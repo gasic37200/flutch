@@ -6,9 +6,9 @@ import LiveCard from '../../../components/ui/LiveCard.tsx'
 import Skeleton from '../../../components/ui/Skeleton.tsx'
 import { CATEGORIES, CATEGORY_LABEL } from '../categories.ts'
 
-// 목록형 카드 그리드의 단일 규칙: 열 수를 폭 단계마다 늘려 카드가 화면이 넓어질수록 작아지지 않게 한다(사이드바 240px 포함)
-export const cardGrid = 'grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[1920px]:grid-cols-6 min-[2400px]:grid-cols-8'
-const gridClass = `${cardGrid} grid-cols-2`
+// 목록형 카드 그리드의 단일 규칙(시안 11/18): 카드 최소 폭 250px 고정, 넓어지면 열 수만 늘고 600 이하는 2열
+export const cardGrid = 'grid grid-cols-2 gap-3 min-[601px]:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] min-[601px]:gap-x-4 min-[601px]:gap-y-6'
+const gridClass = cardGrid
 
 export function BroadcastCard({ broadcast: b }: { broadcast: Broadcast }) {
   return (
@@ -65,7 +65,7 @@ export default function BroadcastGrid({ items, empty, className = '' }: { items:
 /** "전체" + 8개 카테고리 칩. 선택을 다시 누르면 전체로 돌아간다. */
 export function CategoryChips({ value, onChange }: { value: Category | undefined; onChange: (c: Category | undefined) => void }) {
   return (
-    <div role='group' aria-label='카테고리' className='-mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0'>
+    <div role='group' aria-label='카테고리' className='-mx-4 flex gap-2 overflow-x-auto px-4 min-[601px]:mx-0 min-[601px]:flex-wrap min-[601px]:overflow-visible min-[601px]:px-0'>
       <ChoiceChip selected={value === undefined} onClick={() => onChange(undefined)}>
         전체
       </ChoiceChip>

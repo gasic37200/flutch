@@ -31,14 +31,14 @@ export default function HomePage() {
       {recommended.length > 0 && (
         <section aria-labelledby='home-recommended' className='flex flex-col gap-3 lg:gap-4'>
           <SectionTitle id='home-recommended'>추천 라이브 채널</SectionTitle>
-          <ul className='hidden gap-4 sm:grid sm:grid-cols-[repeat(auto-fit,minmax(260px,1fr))]'>
+          <ul className='hidden gap-4 min-[601px]:grid min-[601px]:grid-cols-[repeat(auto-fit,minmax(260px,1fr))]'>
             {recommended.map((b) => (
               <li key={b.id}>
                 <RecommendedCard broadcast={b} />
               </li>
             ))}
           </ul>
-          <ul className='-mx-4 flex gap-3 overflow-x-auto px-4 sm:hidden'>
+          <ul className='-mx-4 flex gap-3 overflow-x-auto px-4 min-[601px]:hidden'>
             {recommended.map((b) => (
               <li key={b.id} className='w-[220px] shrink-0'>
                 <BroadcastCard broadcast={b} />

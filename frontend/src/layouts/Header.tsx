@@ -9,13 +9,14 @@ import Tooltip from '../components/ui/Tooltip.tsx'
 
 export type ShellUser = { id: number; nickname: string; avatarUrl?: string | null; balance: number }
 
-type Props = { user: ShellUser | null; onMenu: () => void; onLogout?: () => void }
+type Props = { user: ShellUser | null; onMenu: () => void; onLogout?: () => void; /** 안쪽 콘텐츠 최대 폭(셸과 같은 축) */ maxClass?: string; /** 600 이하에서 숨김(시청 화면은 영상 위 뒤로가기를 쓴다) */ hideBelowSm?: boolean }
 
-export default function Header({ user, onMenu, onLogout }: Props) {
+export default function Header({ user, onMenu, onLogout, maxClass = 'max-w-[1840px]', hideBelowSm }: Props) {
   // 모바일에서만 의미 있는 검색창 펼침(md 이상은 항상 보임)
   const [searchOpen, setSearchOpen] = useState(false)
   return (
-    <header className='sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-surface-2 bg-bg px-2 sm:gap-4 sm:px-6 md:h-16'>
+    <header className={`sticky top-0 z-30 border-b border-surface-2 bg-bg ${hideBelowSm ? 'max-[601px]:hidden' : ''}`}>
+      <div className={`mx-auto flex h-14 items-center gap-2 px-2 sm:gap-4 sm:px-6 md:h-16 ${maxClass}`}>
       <button type='button' onClick={onMenu} aria-label='메뉴 열기' className='flex size-11 items-center justify-center text-text lg:hidden'>
         <Icon name='menu' className='size-[22px]' />
       </button>
@@ -27,7 +28,7 @@ export default function Header({ user, onMenu, onLogout }: Props) {
       <Form
         action='/explore'
         role='search'
-        className={searchOpen ? 'absolute inset-x-0 top-14 border-b border-surface-2 bg-bg p-3 md:static md:flex md:flex-1 md:justify-center md:border-0 md:p-0' : 'hidden md:flex md:flex-1 md:justify-center'}
+        className={searchOpen ? 'absolute inset-x-0 top-full border-b border-surface-2 bg-bg p-3 md:static md:flex md:min-w-0 md:flex-1 md:justify-center md:border-0 md:p-0' : 'hidden md:flex md:min-w-0 md:flex-1 md:justify-center'}
         // 제출하면 탐색 화면으로 이동하므로 펼침을 닫는다
         onSubmit={() => setSearchOpen(false)}
       >
@@ -46,7 +47,7 @@ export default function Header({ user, onMenu, onLogout }: Props) {
           <Link
             to='/wallet'
             aria-label={`내 지갑, ${user.balance.toLocaleString('ko-KR')} 비트`}
-            className='hidden h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-brand bg-brand/8 px-3.5 sm:inline-flex'
+            className='hidden h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-brand bg-brand/8 px-3.5 md:inline-flex'
           >
             <BeatAmount amount={user.balance} unit className='text-sm' />
           </Link>
@@ -79,6 +80,7 @@ export default function Header({ user, onMenu, onLogout }: Props) {
             로그인
           </Button>
         )}
+      </div>
       </div>
     </header>
   )

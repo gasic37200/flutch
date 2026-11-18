@@ -45,7 +45,7 @@ export default function PulsePage() {
           {offline.length > 0 && (
             <section aria-labelledby='pulse-offline' className='flex flex-col gap-3'>
               <SectionTitle id='pulse-offline'>오프라인</SectionTitle>
-              <ul className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
+              <ul className='grid grid-cols-1 gap-3 min-[601px]:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]'>
                 {offline.map((o) => (
                   <li key={o.user.id}>
                     <Link to={`/users/${o.user.id}`} className='flex items-center gap-3 bg-surface p-3 hover:bg-surface-2'>

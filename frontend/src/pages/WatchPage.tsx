@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import DonationAlert from '../features/donation/components/DonationAlert.tsx'
 import DonationPanel from '../features/donation/components/DonationPanel.tsx'
 import { useDonationAlerts } from '../features/donation/hooks/useDonationAlerts.ts'
@@ -9,6 +9,7 @@ import SuperClutchOverlay from '../features/watch/components/SuperClutchOverlay.
 import { useBurst } from '../features/watch/hooks/useBurst.ts'
 import { useClutch } from '../features/watch/hooks/useClutch.ts'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
+import Icon from '../components/ui/Icon.tsx'
 import Tabs from '../components/ui/Tabs.tsx'
 import ChatCard from '../features/chat/components/ChatCard.tsx'
 import { useChat } from '../features/chat/hooks/useChat.ts'
@@ -33,10 +34,11 @@ function WatchPageBody() {
   const player = usePlayer(viewer.tracks, viewer.muted)
   const clutch = useClutch(broadcast, events.onEvent)
   const burst = useBurst(broadcast, events.onEvent)
-  const desktop = useMediaQuery('(min-width: 1280px)')
+  const desktop = useMediaQuery('(min-width: 1024px)')
   const alerts = useDonationAlerts(events.onEvent)
   const donations = useDonationList(id, { onEvent: events.onEvent, live: broadcast?.status === 'LIVE' })
   const [tab, setTab] = useState('chat')
+  const navigate = useNavigate()
 
   if (id === undefined) return <ErrorScreen kind='notFound' />
   // 재생 중 백그라운드 재조회가 실패해도 화면을 갈아엎지 않는다(삭제된 방송 404만 예외).
@@ -57,16 +59,20 @@ function WatchPageBody() {
           <div className='relative mx-auto w-full max-w-[calc((100dvh-5rem)*16/9)]'>
             <Player view={view} source={source} broadcast={broadcast} player={player} onUnmute={() => void viewer.unmute()} />
             <DonationAlert alerts={alerts} owner={broadcast?.viewer?.isOwner} />
+            {/* 600 이하는 헤더를 숨기므로 영상 위에 뒤로가기를 둔다 */}
+            <button type='button' aria-label='뒤로 가기' onClick={() => void navigate(-1)} className='absolute top-2 left-2 z-10 flex size-11 items-center justify-center rounded-full bg-bg/70 text-text min-[601px]:hidden'>
+              <Icon name='back' />
+            </button>
           </div>
           {broadcast && (
-            <>
+            <div className='contents max-[601px]:flex max-[601px]:flex-col max-[601px]:gap-3.5 max-[601px]:px-3'>
               <ClutchPanel broadcast={broadcast} clutch={clutch} burst={burst} />
               <WatchInfo broadcast={broadcast} />
               {desktop && <DonationPanel list={donations} />}
-            </>
+            </div>
           )}
           {!desktop && (
-            <div>
+            <div className='max-[601px]:px-3'>
               <Tabs
                 label='채팅·후원'
                 tabs={[
