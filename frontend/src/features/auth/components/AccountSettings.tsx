@@ -26,9 +26,12 @@ function NicknameSection() {
         required
       />
       <FormAlert message={f.error?.message} />
-      <Button type='submit' size='lg' loading={f.pending} disabled={locked} className='w-full'>
-        닉네임 변경
-      </Button>
+      {/* 30일 제한 중에는 시안대로 버튼 없이 읽기 입력 + 안내만 */}
+      {!locked && (
+        <Button type='submit' size='lg' loading={f.pending} className='w-full'>
+          닉네임 변경
+        </Button>
+      )}
     </form>
   )
 }
@@ -107,9 +110,8 @@ function WithdrawSection({ me }: { me: Me }) {
   )
 }
 
-type Props = { me: Me; onLogout: () => void }
-
-export default function AccountSettings({ me, onLogout }: Props) {
+// 로그아웃은 헤더 프로필 메뉴에 있다(시안의 내 정보 화면에는 없음).
+export default function AccountSettings({ me }: { me: Me }) {
   return (
     <div className='space-y-4'>
       <Panel innerClassName='flex flex-col gap-3.5 p-5'>
@@ -129,9 +131,6 @@ export default function AccountSettings({ me, onLogout }: Props) {
         )}
         <WithdrawSection me={me} />
       </Panel>
-      <Button variant='outline' onClick={onLogout}>
-        로그아웃
-      </Button>
     </div>
   )
 }
