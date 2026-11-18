@@ -2,21 +2,25 @@ import Button from '../components/ui/Button.tsx'
 import EmptyState from '../components/ui/EmptyState.tsx'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import Icon from '../components/ui/Icon.tsx'
-import BroadcastGrid, { CategoryChips, GridSkeleton, SectionTitle } from '../features/broadcast/components/BroadcastGrid.tsx'
+import BroadcastGrid, { GridSkeleton } from '../features/broadcast/components/BroadcastGrid.tsx'
 import { CATEGORY_LABEL } from '../features/broadcast/categories.ts'
-import ReplayGrid from '../features/replay/components/ReplayGrid.tsx'
+import { CategoryCards, StreamerRow, VodRow } from '../features/broadcast/components/ExploreSections.tsx'
+import { useLiveBroadcasts } from '../features/broadcast/hooks/useBroadcasts.ts'
 import { MAX_QUERY, useExplore } from '../features/broadcast/hooks/useExplore.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
 
-// 카테고리 카드(라이브 수)·스트리머 섹션은 집계 API가 생기면 붙인다. 다시보기 결과는 LIVE 결과 뒤에 이어 붙인다.
+// 다시보기 결과는 LIVE 결과 뒤에 이어 붙인다.
 export default function ExplorePage() {
   const x = useExplore()
   const { results } = x
+  // 홈 그리드와 같은 params라 캐시를 공유한다. 카테고리 카드의 라이브 수에 쓴다.
+  const all = useLiveBroadcasts({ limit: 50 })
+  const vods = x.replays.data?.pages.flatMap((p) => p.items) ?? []
   const heading = x.q ? `"${x.q}" 라이브` : x.category ? `${CATEGORY_LABEL[x.category]} 라이브` : '라이브 방송'
   return (
-    <div className='flex flex-col gap-6 lg:gap-8'>
+    <div className='flex flex-col gap-7 min-[601px]:gap-9'>
       <div className='flex flex-col gap-3.5'>
-        <h1 className='text-2xl font-black sm:text-[26px]'>탐색</h1>
+        <h1 className='text-[22px] font-black min-[601px]:text-[26px]'>탐색</h1>
         <form onSubmit={x.search} role='search' className='max-w-[640px] focus-within:drop-shadow-field'>
           <label className='chamfer block bg-brand p-px [--c:6px]'>
             <span className='chamfer-inner flex h-12 items-center gap-2.5 bg-surface px-4'>
@@ -40,11 +44,18 @@ export default function ExplorePage() {
         </form>
         <p className='text-[13px] text-text-dim'>제목·스트리머 닉네임·태그에서 찾아요</p>
       </div>
-      <CategoryChips value={x.category} onChange={x.setCategory} />
+      <section aria-labelledby='explore-cats' className='flex flex-col gap-3.5'>
+        <h2 id='explore-cats' className='text-lg font-black'>
+          카테고리
+        </h2>
+        <CategoryCards value={x.category} onChange={x.setCategory} live={all.data?.items ?? []} />
+      </section>
 
       <section className='flex flex-col gap-3.5' aria-labelledby='explore-results'>
         <div className='flex items-baseline gap-2.5'>
-          <SectionTitle id='explore-results'>{heading}</SectionTitle>
+          <h2 id='explore-results' className='text-lg font-black'>
+            {heading}
+          </h2>
           {!results.isPending && !results.isError && (
             <span className='font-mono text-[13px] text-text-muted'>
               {x.items.length}
@@ -79,12 +90,33 @@ export default function ExplorePage() {
         )}
       </section>
 
-      {x.replays.isPending || (x.replays.data?.pages[0]?.items.length ?? 0) > 0 || x.replays.isError ? (
-        <section className='flex flex-col gap-3.5' aria-labelledby='explore-replays'>
-          <SectionTitle id='explore-replays'>{x.q ? `"${x.q}" 다시보기` : '다시보기'}</SectionTitle>
-          <ReplayGrid query={x.replays} empty={null} />
-        </section>
-      ) : null}
+      <div className='grid gap-8 min-[901px]:grid-cols-2'>
+        {x.items.length > 0 && (
+          <section className='flex min-w-0 flex-col gap-3.5' aria-labelledby='explore-streamers'>
+            <h2 id='explore-streamers' className='text-lg font-black'>
+              스트리머
+            </h2>
+            <StreamerRow items={x.items} />
+          </section>
+        )}
+        {vods.length > 0 && (
+          <section className='flex min-w-0 flex-col gap-3.5' aria-labelledby='explore-replays'>
+            <h2 id='explore-replays' className='text-lg font-black'>
+              {x.q ? `"${x.q}" 다시보기` : '다시보기'}
+            </h2>
+            {vods.map((r) => (
+              <VodRow key={r.id} recording={r} />
+            ))}
+            {x.replays.hasNextPage && (
+              <div className='flex justify-center'>
+                <Button variant='secondary' onClick={() => void x.replays.fetchNextPage()} loading={x.replays.isFetchingNextPage}>
+                  더 보기
+                </Button>
+              </div>
+            )}
+          </section>
+        )}
+      </div>
     </div>
   )
 }

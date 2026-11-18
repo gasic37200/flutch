@@ -1,7 +1,7 @@
 import Button from '../components/ui/Button.tsx'
 import EmptyState from '../components/ui/EmptyState.tsx'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
-import BroadcastGrid, { BroadcastCard, CategoryChips, GridSkeleton, SectionTitle } from '../features/broadcast/components/BroadcastGrid.tsx'
+import BroadcastGrid, { CategoryChips, GridSkeleton, SectionTitle } from '../features/broadcast/components/BroadcastGrid.tsx'
 import HomeIntro from '../features/broadcast/components/HomeIntro.tsx'
 import HomeHero from '../features/broadcast/components/HomeHero.tsx'
 import { RecommendedCard } from '../features/broadcast/components/HomeSections.tsx'
@@ -23,25 +23,18 @@ export default function HomePage() {
   )
 
   return (
-    <div className='flex flex-col gap-8 lg:gap-10'>
+    <div className='flex flex-col gap-7 lg:gap-10'>
       <h1 className='sr-only'>FLUTCH 홈</h1>
 
       {noLive ? <HomeIntro /> : hero && <HomeHero view={hero} />}
 
       {recommended.length > 0 && (
-        <section aria-labelledby='home-recommended' className='flex flex-col gap-3 lg:gap-4'>
+        <section aria-labelledby='home-recommended' className='flex flex-col gap-4'>
           <SectionTitle id='home-recommended'>추천 라이브 채널</SectionTitle>
-          <ul className='hidden gap-4 min-[601px]:grid min-[601px]:grid-cols-[repeat(auto-fit,minmax(260px,1fr))]'>
+          <ul className='grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4'>
             {recommended.map((b) => (
               <li key={b.id}>
                 <RecommendedCard broadcast={b} />
-              </li>
-            ))}
-          </ul>
-          <ul className='-mx-4 flex gap-3 overflow-x-auto px-4 min-[601px]:hidden'>
-            {recommended.map((b) => (
-              <li key={b.id} className='w-[220px] shrink-0'>
-                <BroadcastCard broadcast={b} />
               </li>
             ))}
           </ul>
@@ -49,7 +42,7 @@ export default function HomePage() {
       )}
 
       {!noLive && (
-        <section aria-labelledby='home-live' className='flex flex-col gap-3 lg:gap-4'>
+        <section aria-labelledby='home-live' className='flex flex-col gap-4'>
           <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
             <SectionTitle id='home-live'>지금 두근거리는 중!</SectionTitle>
             <CategoryChips value={category} onChange={setCategory} />
