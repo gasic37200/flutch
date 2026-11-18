@@ -18,7 +18,12 @@ import { useStreamer, type StreamerTab } from '../features/streamer/hooks/useStr
 import { errorKindOf } from '../hooks/errorKind.ts'
 
 // 팔로우 버튼(T27)은 이름 줄 오른쪽 버튼 자리, 관리 탭(후원 내역·통계·차단 목록)은 본인에게만 보인다(서버도 본인만 응답).
+// 주소의 id만 바뀌면 같은 인스턴스가 남아 이전 방송 상태가 섞이므로 id를 key로 다시 마운트한다.
 export default function StreamerPage() {
+  return <StreamerPageBody key={useParams().userId} />
+}
+
+function StreamerPageBody() {
   const id = Number(useParams().userId) || undefined
   const s = useStreamer(id)
   const { profile, past, replays } = s

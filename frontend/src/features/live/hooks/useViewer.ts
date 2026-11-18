@@ -5,7 +5,7 @@ import { api, ApiRequestError } from '../../../api/client.ts'
 import type { LiveKitToken } from '../../../api/generated/LiveKitToken.ts'
 import { useAuth } from '../../auth/hooks/useAuth.ts'
 import { useBroadcast } from '../../broadcast/hooks/useBroadcasts.ts'
-import { useGuestId, useTabId } from './useClientIds.ts'
+import { useGuestId } from './useClientIds.ts'
 
 export type ViewerStatus = 'idle' | 'waiting' | 'connecting' | 'connected' | 'reconnecting' | 'ended' | 'disconnected' | 'error'
 export type ViewerTracks = Partial<Record<'screenShare' | 'screenShareAudio' | 'camera' | 'microphone', RemoteTrack>>
@@ -26,7 +26,8 @@ export function useViewer(broadcastId: number | undefined, enabled = true) {
   const qc = useQueryClient()
   const { data: broadcast } = useBroadcast(broadcastId)
   const { me, isPending } = useAuth()
-  const viewerTabId = `${useTabId()}-v` // 8~64자 규칙 안(UUID 36 + 2)
+  // 시청 신원은 안정 id가 필요 없다: 마운트마다 새로 만들어 탭 복제가 원래 탭을 끊지 않게 한다(8~64자 규칙 안)
+  const [viewerTabId] = useState(() => `${crypto.randomUUID()}-v`)
   const guestId = useGuestId()
   const status0 = broadcast?.status
   const [conn, setStatus] = useState<ViewerStatus>('connecting')

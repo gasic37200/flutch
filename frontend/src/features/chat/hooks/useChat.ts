@@ -86,7 +86,9 @@ export function useChat(broadcastId: number | undefined, { onEvent, connected }:
 
   // 끊겼다가 다시 연결되면 그 사이 놓친 채팅을 보충한다(첫 연결은 처음 조회가 맡는다)
   const wasConnected = useRef(false)
+  const [dropped, setDropped] = useState(false) // 한 번 연결된 뒤 끊겨 있는 동안 true(안내 표시용)
   useEffect(() => {
+    setDropped(wasConnected.current && !connected)
     if (connected && wasConnected.current) void qc.invalidateQueries({ queryKey: key })
     if (connected) wasConnected.current = true
   }, [connected, qc, key])
@@ -108,6 +110,7 @@ export function useChat(broadcastId: number | undefined, { onEvent, connected }:
   }
 
   return {
+    reconnecting: dropped,
     items: data?.items ?? NONE,
     systems,
     hasMore: data?.hasMore ?? false,
