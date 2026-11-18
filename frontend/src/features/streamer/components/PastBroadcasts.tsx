@@ -19,6 +19,7 @@ function PastCard({ broadcast: b, isSelf }: { broadcast: Broadcast; isSelf: bool
       streamerId={b.owner.id}
       streamerName={b.owner.nickname}
       category={CATEGORY_LABEL[b.category]}
+      tags={b.tags}
       thumbnailUrl={b.thumbnailUrl}
       durationLabel={ready && ms !== undefined ? formatDuration(ms) : undefined}
       meta={`${kstDate(b.endedAt ?? b.createdAt)} · ${rec ? RECORDING_NOTE[rec.status] : '다시보기 없음'}`}

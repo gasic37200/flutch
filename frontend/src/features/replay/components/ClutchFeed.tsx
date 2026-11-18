@@ -26,6 +26,7 @@ export default function ClutchFeed() {
               streamerId={c.broadcast.owner.id}
               streamerName={c.broadcast.owner.nickname}
               category={CATEGORY_LABEL[c.broadcast.category]}
+              tags={c.broadcast.tags}
               thumbnailUrl={c.broadcast.thumbnailUrl}
               durationLabel={durationLabel(c.durationSec)}
               meta={`${kstDate(c.triggeredAt)} SUPER CLUTCH`}
