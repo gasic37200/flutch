@@ -42,7 +42,7 @@ function Success() {
     const e = query.error
     // 4xx는 서버가 토스 승인 전에 막았거나 토스가 승인을 거절한 경우라 돈이 나가지 않았다(주문은 pending으로 남음, api.md 결제 절).
     // 502·네트워크 끊김은 승인됐을 수도 있어 같은 주문으로 다시 확인한다(멱등).
-    if (e instanceof ApiRequestError && e.status < 500) return <NotCompleted reason={e.message}>결제가 승인되지 않아 비트는 빠져나가지 않았어요.</NotCompleted>
+    if (e instanceof ApiRequestError && e.status < 500) return <NotCompleted reason={e.message}>결제가 승인되지 않아 돈은 빠져나가지 않았어요.</NotCompleted>
     return (
       <Card
         emote='sweat'
@@ -76,7 +76,7 @@ function Success() {
       </Card>
     )
   return (
-    <Card ok={!r.notice} emote='excited' title={r.notice ?? '충전했어요!'} actions={wallet}>
+    <Card ok={!r.notice} emote={r.notice ? 'basic' : 'excited'} title={r.notice ?? '충전했어요!'} actions={wallet}>
       {n(r.charged)}이 잔액에 들어갔어요 · 잔액 {n(r.balance)}
     </Card>
   )
@@ -101,7 +101,7 @@ function NotCompleted({ reason, children }: { reason?: string | null; children: 
 /** /payments/fail: 토스가 실패·취소로 돌려보낸 화면. */
 function Fail() {
   const [sp] = useSearchParams()
-  return <NotCompleted reason={sp.get('message')}>결제를 취소했거나 시간이 지났어요. 비트는 빠져나가지 않았어요.</NotCompleted>
+  return <NotCompleted reason={sp.get('message')}>결제를 취소했거나 시간이 지났어요. 돈은 빠져나가지 않았어요.</NotCompleted>
 }
 
 export default function PaymentResultPage({ result }: { result: 'success' | 'fail' }) {
