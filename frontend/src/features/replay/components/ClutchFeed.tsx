@@ -1,6 +1,7 @@
 import type { Clip } from '../../../api/generated/Clip.ts'
 import LiveCard from '../../../components/ui/LiveCard.tsx'
-import { SectionTitle } from '../../broadcast/components/BroadcastGrid.tsx'
+import { Link } from 'react-router'
+import Icon from '../../../components/ui/Icon.tsx'
 import { CATEGORY_LABEL } from '../../broadcast/categories.ts'
 import { durationLabel, kstDate } from '../format.ts'
 import { useClips } from '../hooks/useRecordings.ts'
@@ -15,8 +16,17 @@ export default function ClutchFeed() {
   const items = useClips(4).data?.items ?? []
   if (items.length === 0) return <RecentReplays />
   return (
-    <section aria-labelledby='home-feed' className='flex flex-col gap-3 lg:gap-4'>
-      <SectionTitle id='home-feed'>CLUTCH FEED</SectionTitle>
+    <section aria-labelledby='home-feed' className='flex flex-col gap-4'>
+      <div className='flex items-center gap-2.5'>
+        <span className='size-2.5 rounded-full bg-brand' aria-hidden />
+        <h2 id='home-feed' className='font-display text-[22px] font-bold tracking-[.04em] italic'>
+          CLUTCH FEED
+        </h2>
+        <Icon name='pulse' className='h-5 w-3.5 text-brand' />
+        <Link to='/replay' className='ml-auto text-sm text-text-muted hover:text-text'>
+          더보기
+        </Link>
+      </div>
       <ul className={gridClass}>
         {items.map((c) => (
           <li key={c.id}>
