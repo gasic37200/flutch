@@ -5,7 +5,7 @@ import BeatAmount from '../../../components/ui/BeatAmount.tsx'
 import Field from '../../../components/ui/Field.tsx'
 import Modal from '../../../components/ui/Modal.tsx'
 import Panel from '../../../components/ui/Panel.tsx'
-import { faceSrc } from '../../../components/ui/mascot.ts'
+import { emoteSrc } from '../../../components/ui/mascot.ts'
 import { useNicknameForm, usePasswordForm, useWithdrawForm } from '../hooks/useAuthForms.ts'
 import { CheckRow, FormAlert } from './FormParts.tsx'
 
@@ -73,7 +73,7 @@ function WithdrawSection({ me }: { me: Me }) {
         }
       >
         <form id='withdraw-form' onSubmit={f.submit} className='flex flex-col gap-3.5'>
-          <img src={faceSrc('calm')} alt='' className='size-14 rounded-full' />
+          <img src={emoteSrc('crying')} alt='' className='h-16 w-auto self-start object-contain' />
           <div className='chamfer flex flex-col gap-1.5 bg-surface-2 px-3.5 py-3 text-[13px] leading-relaxed [--c:6px]'>
             {f.needsAgree && (
               <span>
