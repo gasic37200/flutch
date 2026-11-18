@@ -1,63 +1,57 @@
-import { Link } from 'react-router'
 import type { Broadcast } from '../../../api/generated/Broadcast.ts'
 import Badge from '../../../components/ui/Badge.tsx'
 import Button from '../../../components/ui/Button.tsx'
-import { Chip } from '../../../components/ui/Chip.tsx'
 import Panel from '../../../components/ui/Panel.tsx'
+import { formatDuration } from '../../watch/hooks/useWatch.ts'
+import { useElapsed } from '../../studio/hooks/useElapsed.ts'
 import { CATEGORY_LABEL } from '../categories.ts'
 import { studioPath } from '../hooks/useManageBroadcasts.ts'
-import ThumbnailImage from './ThumbnailImage.tsx'
 
 const badge = { READY: 'ready', LIVE: 'live', ENDED: 'ended' } as const
 
+function meta(b: Broadcast, elapsed: string) {
+  const parts: (string | false)[] = [CATEGORY_LABEL[b.category]]
+  if (b.status === 'LIVE') parts.push(elapsed, b.record && '녹화 중')
+  else if (b.status === 'READY') parts.push('대기 중', b.record && '녹화 켜짐')
+  else {
+    const ms = b.startedAt && b.endedAt ? Date.parse(b.endedAt) - Date.parse(b.startedAt) : undefined
+    parts.push(ms !== undefined && `${formatDuration(ms)}`, b.peakViewers > 0 && `최고 ${b.peakViewers.toLocaleString('ko-KR')}명`)
+  }
+  return parts.filter(Boolean).join(' · ')
+}
+
 type Props = { broadcast: Broadcast; onDelete: () => void }
 
-// 버튼 영역은 폭 고정(주 · 수정 · 삭제 3칸)이라 제목 길이와 상관없이 열이 맞는다. 상태에 주 버튼이 없으면 첫 칸이 빈다.
+// 스트리머 페이지 관리 탭의 방송 한 줄: 상태 · 제목/요약 · [주 버튼] 수정 삭제. 주 버튼은 상태마다 다르다(없을 수 있음).
 export default function ManageRow({ broadcast: b, onDelete }: Props) {
+  const elapsed = useElapsed(b.status === 'LIVE' ? b.startedAt : null)
   const primary =
-    b.status === 'READY' ? { label: '방송 시작', to: studioPath(b.id) } : b.status === 'LIVE' ? { label: '이어서 송출', to: studioPath(b.id) } : null
+    b.status === 'READY'
+      ? { label: '방송 시작', to: studioPath(b.id) }
+      : b.status === 'LIVE'
+        ? { label: '스튜디오 열기', to: studioPath(b.id) }
+        : b.recording?.status === 'ready'
+          ? { label: '다시보기', to: `/replay/${b.recording.id}` }
+          : null
   return (
-    <Panel innerClassName='flex flex-col gap-3 p-3 sm:flex-row sm:items-center'>
-      {/* 라이브 중에는 썸네일이 시청 화면 링크(별도 "보기" 버튼 대신) */}
-      <div className='aspect-video w-full shrink-0 sm:w-40'>
-        {b.status === 'LIVE' ? (
-          <Link to={`/live/${b.id}`} aria-label={`${b.title} 보기`} className='block size-full'>
-            <ThumbnailImage src={b.thumbnailUrl} category={CATEGORY_LABEL[b.category]} />
-          </Link>
-        ) : (
-          <ThumbnailImage src={b.thumbnailUrl} category={CATEGORY_LABEL[b.category]} />
-        )}
-      </div>
-      <div className='min-w-0 grow space-y-1'>
-        <div className='flex items-center gap-2'>
-          <Badge tone={badge[b.status]} />
-          <span className='text-xs text-text-muted'>{CATEGORY_LABEL[b.category]}</span>
-        </div>
-        <h2 className='truncate font-semibold' title={b.title}>
+    <Panel innerClassName='flex flex-wrap items-center gap-x-3.5 gap-y-3 px-3.5 py-3'>
+      <Badge tone={badge[b.status]} />
+      <div className='flex min-w-0 flex-[1_1_240px] flex-col gap-0.5'>
+        <b className='truncate text-[15px]' title={b.title}>
           {b.title}
-        </h2>
-        {b.tags.length > 0 && (
-          <ul className='flex flex-wrap gap-1' aria-label='태그'>
-            {b.tags.map((t) => (
-              <li key={t}>
-                <Chip>#{t}</Chip>
-              </li>
-            ))}
-          </ul>
-        )}
+        </b>
+        <span className='text-xs text-text-dim'>{meta(b, elapsed)}</span>
       </div>
-      <div className='grid shrink-0 grid-cols-3 gap-2 sm:w-[312px] [&>span]:min-w-0 [&_a]:whitespace-nowrap'>
-        {primary ? (
-          <Button to={primary.to} size='md'>
+      <div className='flex gap-1.5 max-sm:w-full max-sm:[&>span]:flex-1'>
+        {primary && (
+          <Button to={primary.to} size='md' variant={b.status === 'ENDED' ? 'neutral' : 'primary'}>
             {primary.label}
           </Button>
-        ) : (
-          <span aria-hidden className='hidden sm:block' />
         )}
-        <Button to={`/broadcasts/${b.id}/edit`} variant='secondary' size='md'>
+        <Button to={`/broadcasts/${b.id}/edit`} variant='neutral' size='md'>
           수정
         </Button>
-        <Button variant='outline' size='md' onClick={onDelete}>
+        <Button variant='neutral' size='md' onClick={onDelete} className='[&_span]:text-text-muted'>
           삭제
         </Button>
       </div>

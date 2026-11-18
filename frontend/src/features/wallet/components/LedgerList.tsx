@@ -10,7 +10,7 @@ export default function LedgerList({ items }: { items: LedgerEntry[] }) {
       <ul>
         {items.map((e) => (
           <li key={e.id} className='flex items-center gap-3.5 border-b border-surface-2 px-4 py-3.5 last:border-b-0 sm:px-[18px]'>
-            <span className='chamfer w-[84px] shrink-0 bg-surface-2 py-1 text-center text-xs text-text-muted [--c:6px]'>{typeLabel(e.type)}</span>
+            <span className='chamfer w-[84px] shrink-0 bg-surface-2 py-1 text-center text-xs max-sm:w-16 max-sm:text-[11px] text-text-muted [--c:6px]'>{typeLabel(e.type)}</span>
             <div className='flex min-w-0 grow flex-col gap-0.5'>
               <b className='truncate text-sm'>{describe(e)}</b>
               <time dateTime={e.createdAt} className='text-xs text-text-dim'>

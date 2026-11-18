@@ -3,7 +3,6 @@ import { Link, useParams, useSearchParams } from 'react-router'
 import { ApiRequestError } from '../api/client.ts'
 import Avatar from '../components/ui/Avatar.tsx'
 import Button from '../components/ui/Button.tsx'
-import { Chip } from '../components/ui/Chip.tsx'
 import EmptyState from '../components/ui/EmptyState.tsx'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import Skeleton from '../components/ui/Skeleton.tsx'
@@ -60,7 +59,7 @@ function ReplayPageBody() {
             <Avatar userId={r.owner.id} nickname={r.owner.nickname} size='xs' className='size-7' />
             {r.owner.nickname}
           </Link>
-          <Chip>{CATEGORY_LABEL[r.category]}</Chip>
+          <span>{CATEGORY_LABEL[r.category]}</span>
           <span>{kstDate(r.startedAt)} 방송</span>
           <span>
             조회 <b className='font-mono text-text'>{count(r.views)}</b>
@@ -70,7 +69,7 @@ function ReplayPageBody() {
           </span>
           {r.expiresAt && daysLeft !== null && (
             <span>
-              {kstDate(r.expiresAt)}까지 보관 ({daysLeft}일 남음)
+              {daysLeft}일 뒤 삭제
             </span>
           )}
         </div>

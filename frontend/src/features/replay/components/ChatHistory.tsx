@@ -20,15 +20,15 @@ export default function ChatHistory({ timeline, time, synced }: Props) {
   return (
     <Panel aria-label='채팅 기록' className='h-full' innerClassName='flex h-full max-h-[70vh] min-h-64 flex-col xl:max-h-175'>
       <div className='flex items-center gap-2 border-b border-surface-2 px-4 py-3'>
-        <b className='text-[15px]'>채팅·후원</b>
-        <span className='text-xs text-text-dim'>읽기 전용</span>
+        <b className='mr-auto text-[15px]'>채팅 기록</b>
         {synced && (
-          <span className='ml-auto'>
+          <span>
             <ChoiceChip selected={all} onClick={() => setAll((v) => !v)}>
               전체 기록 보기
             </ChoiceChip>
           </span>
         )}
+        <span className='text-xs text-text-dim'>읽기 전용</span>
       </div>
       <div ref={ref} onScroll={onScroll} role='log' aria-label='채팅·후원 기록' tabIndex={0} className='flex min-h-0 grow flex-col overflow-y-auto px-4 py-3 text-[13px] leading-normal'>
         <div ref={contentRef} className='flex min-h-full flex-col'>
