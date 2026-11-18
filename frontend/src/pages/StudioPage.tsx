@@ -17,20 +17,38 @@ import StudioDialogs from '../features/studio/components/StudioDialogs.tsx'
 import DonationAlert from '../features/donation/components/DonationAlert.tsx'
 import StudioGauge from '../features/studio/components/StudioGauge.tsx'
 import StudioPreview from '../features/studio/components/StudioPreview.tsx'
+import StudioTopBar from '../features/studio/components/StudioTopBar.tsx'
 import { useStudio } from '../features/studio/hooks/useStudio.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
 
 function Bar({ icon = 'info', children, role }: { icon?: 'info' | 'alert'; children: ReactNode; role?: 'alert' | 'status' }) {
   return (
-    <p role={role} className='chamfer flex items-start gap-2.5 bg-surface-2 px-3.5 py-2.5 text-sm [--c:6px]'>
-      <Icon name={icon} className='mt-0.5 size-[18px] text-brand' />
+    <p role={role} className='chamfer flex items-center gap-2.5 bg-surface-2 px-3.5 py-2.5 text-sm [--c:6px]'>
+      <Icon name={icon} className='size-[18px] shrink-0 text-brand' />
       <span>{children}</span>
     </p>
   )
 }
 
-// 송출 화면: 송출 전 확인(미리보기·소리·환경 안내) → 방송 중 컨트롤. 로직은 useStudio.
-// 채팅·후원 알림·방송 정보 수정은 T17·T22·T09 이후 자리(오른쪽 aside는 읽기 전용).
+// 시안의 카드 제목 줄 + 안쪽 여백
+function Card({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Panel innerClassName='flex flex-col gap-3.5 p-4'>
+      <h2 className='text-[15px] font-bold'>{title}</h2>
+      {children}
+    </Panel>
+  )
+}
+
+const MAX_LIVE_SEC = 3 * 3600
+// 경과 시간(H:MM:SS)으로 자동 종료까지 남은 시간을 구한다
+function remaining(elapsed: string) {
+  const [h, m, sec] = elapsed.split(':').map(Number)
+  const left = Math.max(0, MAX_LIVE_SEC - (h * 3600 + m * 60 + sec))
+  return `${Math.floor(left / 3600)}:${String(Math.floor(left / 60) % 60).padStart(2, '0')}:${String(left % 60).padStart(2, '0')}`
+}
+
+// 송출 화면: 송출 전 확인(미리보기·소리·환경 안내) → 방송 중 컨트롤. 로직은 useStudio. 상단바는 스튜디오 전용(시안).
 export default function StudioPage() {
   const id = Number(useSearchParams()[0].get('broadcast')) || undefined
   const s = useStudio(id)
@@ -38,14 +56,21 @@ export default function StudioPage() {
 
   if (!s.me) return null
   const manage = <Button to='/manage'>내 방송 관리</Button>
-  if (!id) return <EmptyState title='방송을 선택해 주세요' description='내 방송 관리에서 방송을 골라 스튜디오로 들어올 수 있어요.' action={manage} />
+  // 상태 화면(안내·오류·종료)도 같은 상단바 아래에 둔다
+  const frame = (body: ReactNode) => (
+    <>
+      <StudioTopBar />
+      <div className='mx-auto max-w-[1920px] p-4 md:px-6 md:py-5'>{body}</div>
+    </>
+  )
+  if (!id) return frame(<EmptyState title='방송을 선택해 주세요' description='내 방송 관리에서 방송을 골라 스튜디오로 들어올 수 있어요.' action={manage} />)
   const e = s.broadcast.isError ? errorKindOf(s.broadcast.error) : undefined
   // 송출 중 백그라운드 재조회가 실패해도 화면을 갈아엎지 않는다(삭제된 방송 404만 예외).
-  if (e && (!data || e.kind === 'notFound')) return <ErrorScreen {...e} onRetry={() => void s.broadcast.refetch()} />
-  if (!data) return <Skeleton className='aspect-video w-full max-w-4xl' />
-  if (!s.isOwner) return <EmptyState emote='hiding' title='내 방송이 아니에요' description='내가 등록한 방송만 송출할 수 있어요.' action={manage} />
+  if (e && (!data || e.kind === 'notFound')) return frame(<ErrorScreen {...e} onRetry={() => void s.broadcast.refetch()} />)
+  if (!data) return frame(<Skeleton className='aspect-video w-full max-w-4xl' />)
+  if (!s.isOwner) return frame(<EmptyState emote='hiding' title='내 방송이 아니에요' description='내가 등록한 방송만 송출할 수 있어요.' action={manage} />)
   if (phase === 'ended')
-    return (
+    return frame(
       <div className='max-w-xl'>
         <EmptyState
           emote='bye'
@@ -63,7 +88,7 @@ export default function StudioPage() {
             </div>
           }
         />
-      </div>
+      </div>,
     )
 
   const live = phase === 'live'
@@ -95,16 +120,35 @@ export default function StudioPage() {
     )
 
   const startButton = (
-    <Button size='lg' className={mobile ? 'w-full' : ''} onClick={() => void s.goLive()} loading={pub.status === 'starting'} disabled={!media.videoReady}>
+    <Button size='lg' className={mobile ? 'w-full' : ''} onClick={() => void s.goLive()} loading={pub.status === 'starting'} disabled={!media.videoReady} aria-describedby='studio-start-hint'>
       <span className='size-2.5 rounded-full bg-live' aria-hidden />
       {data.status === 'LIVE' ? '이어서 송출' : '방송 시작'}
     </Button>
   )
 
+  // 화면 공유 ↔ 웹캠만 전환(데스크톱). 방송 중엔 영상 카드, 송출 전엔 미리보기 위에 둔다.
+  const modeChips = (
+    <div className='flex gap-2' role='group' aria-label='송출 모드'>
+      <ChoiceChip selected={screen} onClick={() => void s.chooseMode('screen')}>
+        화면 공유
+      </ChoiceChip>
+      <ChoiceChip selected={!screen} onClick={() => void s.chooseMode('camera')}>
+        웹캠만
+      </ChoiceChip>
+    </div>
+  )
+  const pip = screen && <PipControl on={s.pipOn} corner={data.pipCorner} onToggle={(on) => void s.togglePip(on)} onCorner={s.setPipCorner} />
+  const micHeader = (
+    <span className='flex grow items-center gap-2'>
+      <b className='text-[15px]'>마이크</b>
+      {media.micReady && <span className='ml-auto text-xs text-brand'>● 소리가 들어오고 있어요</span>}
+    </span>
+  )
+  const sysEmpty = media.videoReady ? '공유한 화면에 소리가 없어요. 화면 선택 창에서 소리 공유를 체크했는지 확인해 주세요.' : '화면을 공유하면 소리를 조절할 수 있어요.'
+
   return (
-    <div className='space-y-4'>
-      <header className='flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-surface-2 pb-4'>
-        <span className='font-display font-bold tracking-widest text-text-muted'>STUDIO</span>
+    <>
+      <StudioTopBar>
         {live ? (
           <>
             <Badge tone='live' />
@@ -113,15 +157,14 @@ export default function StudioPage() {
             </span>
             <span className='flex items-center gap-1.5 font-mono font-bold text-live' aria-label='시청자 수'>
               <Icon name='user' className='size-4' />
-              {data.viewerCount}
+              {data.viewerCount.toLocaleString('ko-KR')}
             </span>
             {data.record && (
-              <Badge tone='recording'>
+              <span className='flex items-center gap-1.5 text-[13px] text-text-muted'>
                 <span className='size-2 rounded-full bg-live' aria-hidden />
                 녹화 중
-              </Badge>
+              </span>
             )}
-            <StudioGauge s={s} className='w-full sm:w-56' />
             <h1 className='sr-only'>{data.title}</h1>
           </>
         ) : (
@@ -133,7 +176,9 @@ export default function StudioPage() {
         <span className='grow' />
         {!live && !mobile && (
           <>
-            {startHint && <span className='hidden text-xs text-text-dim lg:inline'>{startHint}</span>}
+            <span id='studio-start-hint' className='sr-only'>
+              {startHint}
+            </span>
             {startButton}
           </>
         )}
@@ -142,20 +187,34 @@ export default function StudioPage() {
             방송 종료
           </Button>
         )}
-      </header>
+      </StudioTopBar>
 
-      <div className='flex flex-col gap-5 lg:flex-row'>
-        <div className='min-w-0 grow space-y-3.5'>
-          {live && <Bar role='alert'>방송 시작 3시간이 되면 자동으로 종료돼요.</Bar>}
+      <div className='mx-auto grid max-w-[1920px] items-start gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-5 xl:px-6 xl:py-5'>
+        <div className='flex min-w-0 flex-col gap-3.5'>
+          {live && (
+            <div role='alert' className='chamfer flex flex-wrap items-center gap-x-2.5 gap-y-2 bg-surface-2 px-3.5 py-2.5 text-sm [--c:6px]'>
+              <Icon name='info' className='size-[18px] shrink-0 text-brand' />
+              <span>방송 시작 3시간이 되면 자동으로 종료돼요. 남은 시간 {remaining(s.elapsed)}</span>
+              {/* 시안엔 없지만 스트리머가 송출 중 클러치 게이지를 봐야 한다(U1): 안내 줄 오른쪽 끝 */}
+              <StudioGauge s={s} className='ml-auto w-full sm:w-56' />
+            </div>
+          )}
           {resumable && <Bar role='status'>방송이 아직 진행 중이에요. 소스를 다시 켜고 이어서 송출하거나, 지금 방송을 종료할 수 있어요.</Bar>}
-          {!live && s.env.notices.map((n) => (
-            <Bar key={n} role='status'>
-              {n}
-            </Bar>
-          ))}
+          {!live &&
+            s.env.notices.map((n) => (
+              <Bar key={n} role='status'>
+                {n}
+              </Bar>
+            ))}
 
           <div className='relative'>
-            <StudioPreview stream={media.stream} ended={media.videoEnded} tall={mobile} pip={!mobile && s.pipOn && media.pipStream ? { stream: media.pipStream, corner: data.pipCorner } : undefined} placeholder={live ? '송출 미리보기' : '미리보기 · 아직 송출되지 않아요'}>
+            <StudioPreview
+              stream={media.stream}
+              ended={media.videoEnded}
+              tall={mobile}
+              pip={!mobile && s.pipOn && media.pipStream ? { stream: media.pipStream, corner: data.pipCorner } : undefined}
+              placeholder={live ? `송출 미리보기 · ${screen ? '화면 공유' : '웹캠'}` : '미리보기 · 아직 송출되지 않아요'}
+            >
               {media.videoEnded ? (
                 <Button onClick={() => void s.reshare()}>{screen ? '다시 공유하기' : '카메라 다시 켜기'}</Button>
               ) : (
@@ -164,13 +223,18 @@ export default function StudioPage() {
                     {screen ? '공유할 화면 선택' : '카메라 켜고 미리보기'}
                   </Button>
                   {screen && <span className='text-xs text-text-dim'>창을 고를 때 &quot;탭 오디오 공유&quot; 또는 &quot;시스템 오디오 공유&quot;를 켜 주세요</span>}
+                  {!live && !mobile && s.env.canScreen && modeChips}
                 </>
               )}
             </StudioPreview>
             <DonationAlert alerts={s.alerts} owner />
           </div>
 
-          {(pub.error || media.error) && <Bar role='alert' icon='alert'>{pub.error ?? media.error}</Bar>}
+          {(pub.error || media.error) && (
+            <Bar role='alert' icon='alert'>
+              {pub.error ?? media.error}
+            </Bar>
+          )}
           {live && !s.connected && (
             <p role='status' className='text-xs text-text-dim'>
               실시간 시청자 정보를 다시 연결하는 중이에요.
@@ -179,29 +243,19 @@ export default function StudioPage() {
 
           {mobile ? (
             <MobileControls s={s} />
-          ) : (
-            <div className='grid gap-3.5 md:grid-cols-2'>
-              <Panel innerClassName='flex flex-col gap-3.5 p-4'>
-                <h2 className='text-[15px] font-bold'>영상</h2>
-                <div className='flex gap-2' role='group' aria-label='송출 모드'>
-                  <ChoiceChip selected={screen} onClick={() => void s.chooseMode('screen')}>
-                    화면 공유
-                  </ChoiceChip>
-                  <ChoiceChip selected={!screen} onClick={() => void s.chooseMode('camera')}>
-                    웹캠만
-                  </ChoiceChip>
-                </div>
+          ) : live ? (
+            <div className='grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3.5'>
+              <Card title='영상'>
+                {modeChips}
                 {!s.env.canScreen && <p className='text-xs text-text-dim'>이 환경에서는 화면 공유를 쓸 수 없어 카메라 모드만 쓸 수 있어요.</p>}
                 {media.videoReady && screen && (
                   <Button variant='neutral' onClick={() => void s.reshare()}>
                     공유할 화면 바꾸기
                   </Button>
                 )}
-                {screen && <PipControl on={s.pipOn} corner={data.pipCorner} onToggle={(on) => void s.togglePip(on)} onCorner={s.setPipCorner} />}
-              </Panel>
-
-              <Panel innerClassName='flex flex-col gap-3.5 p-4'>
-                <h2 className='text-[15px] font-bold'>소리</h2>
+                {pip}
+              </Card>
+              <Card title='소리'>
                 <AudioControl channel='mic' label='마이크' media={media} available={media.micReady} emptyHint='마이크가 꺼져 있어요. 시청자에게 목소리가 가지 않아요.' />
                 {!media.micReady && media.videoReady && (
                   <Button variant='secondary' size='sm' onClick={() => void media.captureMic()}>
@@ -215,27 +269,69 @@ export default function StudioPage() {
                     sub={s.env.systemAudio ? '(시스템 소리)' : s.env.tabAudio ? '(탭 소리)' : undefined}
                     media={media}
                     available={media.hasScreenAudio}
-                    emptyHint={media.videoReady ? '공유한 화면에 소리가 없어요. 화면 선택 창에서 소리 공유를 체크했는지 확인해 주세요.' : '화면을 공유하면 소리를 조절할 수 있어요.'}
+                    emptyHint={sysEmpty}
                   />
                 )}
                 {screen && <span className='text-xs text-text-dim'>같은 PC에서 내 방송을 소리 켠 채로 보면 소리가 되돌아와요.</span>}
+              </Card>
+            </div>
+          ) : (
+            // 송출 전(시안): 마이크 · 화면 소리(+PIP) 두 카드. 모드 전환은 미리보기 위 칩, 화면 바꾸기는 화면 소리 카드.
+            <div className='grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-3.5'>
+              <Panel innerClassName='flex flex-col gap-2.5 p-4'>
+                <AudioControl channel='mic' label='마이크' header={micHeader} media={media} available={media.micReady} emptyHint='마이크가 꺼져 있어요. 시청자에게 목소리가 가지 않아요.' />
+                {!media.micReady && media.videoReady && (
+                  <Button variant='secondary' size='sm' onClick={() => void media.captureMic()}>
+                    마이크 켜기
+                  </Button>
+                )}
               </Panel>
+              {screen ? (
+                <Panel innerClassName='flex flex-col gap-2.5 p-4'>
+                  <AudioControl
+                    channel='sys'
+                    label='화면 소리'
+                    header={
+                      <span className='flex grow items-center gap-2'>
+                        <b className='text-[15px]'>화면 소리</b>
+                        {!media.hasScreenAudio && <span className='ml-auto text-xs text-text-dim'>화면을 선택하면 표시돼요</span>}
+                      </span>
+                    }
+                    media={media}
+                    available={media.hasScreenAudio}
+                    emptyHint={media.videoReady ? sysEmpty : undefined}
+                  />
+                  {media.videoReady && (
+                    <Button variant='neutral' onClick={() => void s.reshare()}>
+                      공유할 화면 바꾸기
+                    </Button>
+                  )}
+                  {pip}
+                  <span className='text-xs text-text-dim'>같은 PC에서 내 방송을 소리 켠 채로 보면 소리가 되돌아와요.</span>
+                </Panel>
+              ) : (
+                !s.env.canScreen && <p className='text-xs text-text-dim'>이 환경에서는 화면 공유를 쓸 수 없어 카메라 모드만 쓸 수 있어요.</p>
+              )}
             </div>
           )}
 
           {mobile && !live && (
             <div className='space-y-2'>
-              {startHint && <p className='text-center text-xs text-text-muted'>{startHint}</p>}
+              {startHint && (
+                <p id='studio-start-hint' className='text-center text-xs text-text-muted'>
+                  {startHint}
+                </p>
+              )}
               {startButton}
             </div>
           )}
         </div>
 
-        <aside className='w-full shrink-0 space-y-3.5 lg:w-80 xl:w-[360px]'>
+        <aside className='grid w-full min-w-0 grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-3.5 lg:flex lg:flex-col'>
           <StudioAside s={s} live={live} />
         </aside>
       </div>
       {dialogs}
-    </div>
+    </>
   )
 }

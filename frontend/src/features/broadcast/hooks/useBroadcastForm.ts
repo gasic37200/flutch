@@ -12,7 +12,8 @@ export const MAX_TAG_LENGTH = 10
 const FIELDS = ['title', 'category', 'tags', 'record']
 
 /** 등록(existing 없음) / 수정(existing 있음) 공용 폼. 상태별로 잠기는 필드는 api.md §3 표를 따른다. */
-export function useBroadcastForm(existing?: Broadcast) {
+/** onSaved를 주면 수정 성공 후 이동 대신 그것을 부른다(스튜디오 안 방송 정보 폼). */
+export function useBroadcastForm(existing?: Broadcast, onSaved?: () => void) {
   const [title, setTitle] = useState(existing?.title ?? '')
   const [category, setCategory] = useState<Category>(existing?.category ?? 'just_chatting')
   const [tags, setTags] = useState<string[]>(existing?.tags ?? [])
@@ -98,7 +99,7 @@ export function useBroadcastForm(existing?: Broadcast) {
         record: locked.record ? null : record,
         pipCorner: null,
       },
-      { onSuccess: () => done('/manage') },
+      { onSuccess: () => (onSaved ? (toast({ tone: 'success', message: '방송 정보를 저장했어요.' }), onSaved()) : done('/manage')) },
     )
   }
 
