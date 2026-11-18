@@ -175,6 +175,7 @@ feat(broadcast): 송출 시작·종료 API 추가
 - 건드릴 범위: <폴더/파일>
 - 건드리지 말 것: docs/roadmap.md·worklog.md, 공용 파일의 다른 도메인 부분(골격 밖 수정은 보고서에 요청), 다른 task 영역
 - 완료 기준: <features 문서의 시나리오 테스트 이름 / 화면 확인 항목>
+- **화면 task 완료 기준(11/18~)**: `docs/design-refs/boards/README.md` "시안 diff"대로 해당 화면의 **모든 폭 보드**(예 Home·HomeW768·HomeW1024·HomeW1920·HomeW2560·HomeMobile)에 `design-ref.mjs diff`를 돌려 빨강이 데이터 차이(이름·숫자·썸네일·아바타)뿐일 때까지 고친다. 위치·크기·간격·색·글꼴·모서리·아이콘·문구 차이는 버그. 보드 소스만 읽고 구현하지 말고 렌더 결과(`out/<보드>.png`)를 보고 맞춘다. PR 본문에 보드별 diff 비율과 "남은 차이 = 데이터뿐" 확인, 일부러 다르게 한 곳은 이유
 - 브랜치: <type>/<이름> (push는 이 브랜치만, main 직접 push 금지)
 - 포트·DB: BACKEND_PORT=<…>, VITE_PORT=<…>, DATABASE_URL=…/flutch_<task>
 - 임시 파일: `/tmp/<task>/` 아래에만 (WSL `/tmp`는 병렬 서브에이전트끼리 공유 — 같은 이름 스크립트가 덮어써져 다른 worktree를 건드린 사고, T04)
