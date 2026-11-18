@@ -25,7 +25,7 @@ export default function SignupForm() {
                 f.set.agreePrivacy(e.target.checked)
                 f.set.over14(e.target.checked)
               }}
-              className='size-[18px] accent-brand'
+              className='ml-1 mr-[3px] size-[18px] accent-brand'
             />
             전체 동의
           </label>
@@ -58,13 +58,13 @@ export default function SignupForm() {
         <Button type='submit' size='xl' loading={f.pending} disabled={!f.canSubmit} className='w-full'>
           가입하기
         </Button>
-        <p className='text-center text-[13px] text-text-muted'>
+        <p className='text-center text-[13px] leading-[19px] text-text-muted'>
           이미 계정이 있나요?{' '}
           <Link to='/login' className='text-brand underline hover:text-brand-hover'>
             로그인
           </Link>
         </p>
-        <p className='-mt-2.5 text-center text-xs text-text-dim'>본인 확인 없이 바로 가입돼요. 비밀번호를 잊으면 복구할 수 없어요.</p>
+        <p className='text-center text-xs leading-[17px] text-text-dim'>본인 확인 없이 바로 가입돼요. 비밀번호를 잊으면 복구할 수 없어요.</p>
       </form>
     </AuthCard>
   )

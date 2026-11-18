@@ -33,10 +33,10 @@ export default function LegalPage({ doc }: { doc: keyof typeof DOCS }) {
   return (
     <div className='max-w-2xl'>
       <Panel innerClassName='flex flex-col gap-3 p-5 text-[13px] leading-[1.7] text-text-muted'>
-        <h1 className='text-lg font-bold text-text'>{title}</h1>
+        <h1 className='text-lg leading-[31px] font-bold text-text'>{title}</h1>
         <p className='chamfer bg-surface-2 px-3 py-2 text-text [--c:6px]'>공모전 시연용 서비스예요. 실제 결제는 일어나지 않아요.</p>
         {sections.map((s) => (
-          <section key={s.title}>
+          <section key={s.title} className='flex flex-col gap-3'>
             <h2 className='font-bold text-text'>{s.title}</h2>
             {s.body.map((p) => (
               <p key={p}>
@@ -45,6 +45,7 @@ export default function LegalPage({ doc }: { doc: keyof typeof DOCS }) {
             ))}
           </section>
         ))}
+        <span className='text-text-dim'>시행일 2026-11-19</span>
       </Panel>
     </div>
   )
