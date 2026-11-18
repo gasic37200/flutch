@@ -11,14 +11,14 @@ import type { ClutchMode } from '../hooks/useClutch.ts'
 const num = (n: number) => n.toLocaleString('ko-KR')
 
 // 게이지 Panel 오른쪽, 클러치 버튼 옆. 로그인한 시청자에게만(LIVE·소유자 아님). 클러치 버튼과 같은 폭.
-export default function BurstButton({ burst, mode }: { burst: ReturnType<typeof useBurst>; mode: ClutchMode }) {
+export default function BurstButton({ burst, mode, compact }: { burst: ReturnType<typeof useBurst>; mode: ClutchMode; compact?: boolean }) {
   if (mode !== 'open') return null
   const b = burst
   return (
     <>
-      <Button variant='burst' size='md' className='w-full md:w-40' onClick={b.show}>
+      <Button variant='burst' size={compact ? 'icon' : 'lg'} className='w-full' onClick={b.show} aria-label='SUPER BURST'>
         <Icon name='bolt' className='size-4' />
-        SUPER BURST
+        <span className={compact ? 'sr-only' : ''}>SUPER BURST</span>
       </Button>
       <Modal
         open={b.open}

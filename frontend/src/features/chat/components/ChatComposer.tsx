@@ -27,11 +27,11 @@ export default function ChatComposer({ c }: { c: ReturnType<typeof useChatCompos
   return (
     <div className='flex flex-col gap-1.5 border-t border-surface-2 px-4 py-3'>
       <div className='focus-within:drop-shadow-field'>
-        <div className='chamfer bg-brand-line p-px [--c:6px] focus-within:bg-brand'>
+        <div className='chamfer bg-surface-2 p-px [--c:6px] focus-within:bg-brand'>
           <div className='chamfer-inner flex h-11 items-center gap-1 bg-surface-2 pr-1 pl-3'>
             <input
               aria-label='채팅 입력'
-              placeholder='채팅을 입력하세요 (200자)'
+              placeholder='채팅을 입력하세요'
               maxLength={MAX_CHAT}
               value={c.text}
               onChange={(e) => c.setText(e.target.value)}
@@ -43,6 +43,9 @@ export default function ChatComposer({ c }: { c: ReturnType<typeof useChatCompos
               }}
               className='min-w-0 grow bg-transparent text-sm text-text outline-none placeholder:text-text-dim'
             />
+            <span className='shrink-0 font-mono text-xs text-text-dim' aria-hidden>
+              {c.text.length}/{MAX_CHAT}
+            </span>
             <button
               type='button'
               aria-label='보내기'
@@ -55,18 +58,15 @@ export default function ChatComposer({ c }: { c: ReturnType<typeof useChatCompos
           </div>
         </div>
       </div>
-      <div className='flex items-start justify-between gap-2 text-xs'>
+      <div className='flex items-start gap-2 text-xs'>
         {c.error ? (
           <p role='alert' className='flex items-center gap-1 text-text'>
             <Icon name='alert' className='size-3.5' />
             {c.error}
           </p>
         ) : (
-          <span className='text-text-dim'>링크는 클릭되지 않아요 · 같은 메시지는 30초에 3번까지</span>
+          <span className='text-text-dim max-[600px]:hidden'>링크는 클릭되지 않아요 · 같은 메시지는 30초에 3번까지</span>
         )}
-        <span className='shrink-0 font-mono text-text-dim' aria-hidden>
-          {c.text.length}/{MAX_CHAT}
-        </span>
       </div>
     </div>
   )

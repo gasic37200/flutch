@@ -10,10 +10,10 @@ import { useBurst } from '../features/watch/hooks/useBurst.ts'
 import { useClutch } from '../features/watch/hooks/useClutch.ts'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import Icon from '../components/ui/Icon.tsx'
-import Tabs from '../components/ui/Tabs.tsx'
 import ChatCard from '../features/chat/components/ChatCard.tsx'
 import { useChat } from '../features/chat/hooks/useChat.ts'
 import Player from '../features/watch/components/Player.tsx'
+import WatchTabs from '../features/watch/components/WatchTabs.tsx'
 import WatchInfo from '../features/watch/components/WatchInfo.tsx'
 import { usePlayer } from '../features/watch/hooks/usePlayer.ts'
 import { useWatch } from '../features/watch/hooks/useWatch.ts'
@@ -35,6 +35,7 @@ function WatchPageBody() {
   const clutch = useClutch(broadcast, events.onEvent)
   const burst = useBurst(broadcast, events.onEvent)
   const desktop = useMediaQuery('(min-width: 1024px)')
+  const mobile = useMediaQuery('(max-width: 600px)')
   const alerts = useDonationAlerts(events.onEvent)
   const donations = useDonationList(id, { onEvent: events.onEvent, live: broadcast?.status === 'LIVE' })
   const [tab, setTab] = useState('chat')
@@ -47,14 +48,14 @@ function WatchPageBody() {
     return <ErrorScreen {...e} onRetry={e.kind === 'notFound' ? undefined : () => void refetch()} />
   }
 
-  // 채팅은 데스크톱 aside 또는 모바일 탭 한 곳에만 렌더한다(상태는 위의 useChat이 들고 있어 전환해도 유지)
-  const chatCard = <ChatCard chat={chat} broadcast={broadcast} className={desktop ? 'sticky top-22 h-[calc(100dvh-7rem)] max-h-full min-h-96' : 'h-[30rem]'} headerClassName={desktop ? '' : 'hidden'} />
+  // 채팅은 데스크톱 aside, 601~1023은 후원 패널 아래, 모바일은 탭 중 한 곳에만 렌더한다(상태는 위의 useChat이 들고 있어 전환해도 유지)
+  const chatCard = <ChatCard chat={chat} broadcast={broadcast} className={desktop ? 'sticky top-22 h-[calc(100dvh-7rem)] max-h-full min-h-96' : mobile ? 'h-[30rem] max-[600px]:[&>div]:bg-transparent max-[600px]:[&>div]:p-0 max-[600px]:[&>div]:[clip-path:none] max-[600px]:[&>div>div]:[clip-path:none] max-[600px]:[&>div>div]:bg-bg' : 'h-[32.5rem]'} headerClassName={mobile ? 'hidden' : ''} recent />
 
   return (
     <>
       <SuperClutchOverlay superClutch={clutch.superClutch} />
       <ShellBody aside={desktop ? chatCard : undefined}>
-        <div className='flex flex-col gap-3.5'>
+        <div className='flex flex-col gap-3.5 max-[600px]:gap-0'>
           {/* 가로 화면(낮은 뷰포트)에서는 영상이 화면 높이 안에 들어오도록 폭을 줄인다 */}
           <div className='relative mx-auto w-full max-w-[calc((100dvh-5rem)*16/9)]'>
             <Player view={view} source={source} broadcast={broadcast} player={player} onUnmute={() => void viewer.unmute()} />
@@ -65,24 +66,24 @@ function WatchPageBody() {
             </button>
           </div>
           {broadcast && (
-            <div className='contents max-[601px]:flex max-[601px]:flex-col max-[601px]:gap-3.5 max-[601px]:px-3'>
+            <div className='contents'>
               <ClutchPanel broadcast={broadcast} clutch={clutch} burst={burst} />
               <WatchInfo broadcast={broadcast} />
-              {desktop && <DonationPanel list={donations} />}
+              {!mobile && <DonationPanel list={donations} />}
             </div>
           )}
-          {!desktop && (
-            <div className='max-[601px]:px-3'>
-              <Tabs
-                label='채팅·후원'
+          {!desktop && !mobile && chatCard}
+          {mobile && (
+            <div>
+              <WatchTabs
                 tabs={[
                   { id: 'chat', label: '채팅' },
-                  { id: 'donations', label: '후원' },
+                  { id: 'donations', label: <>후원 <span className='font-mono'>{donations.total.toLocaleString('ko-KR')}</span></> },
                 ]}
                 value={tab}
                 onChange={setTab}
               />
-              <div role='tabpanel' className='pt-3'>
+              <div role='tabpanel' className={tab === 'donations' ? 'p-3' : ''}>
                 {tab === 'donations' ? <DonationPanel list={donations} /> : chatCard}
               </div>
             </div>

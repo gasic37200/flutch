@@ -105,6 +105,7 @@ export function useClutch(broadcast: BroadcastDetail | undefined, onEvent: OnEve
     superClutch,
     cooldownText,
     next,
+    freeLeft,
     combo: fresh && !fresh.paid ? fresh.combo : 0,
   }
 }

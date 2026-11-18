@@ -14,7 +14,7 @@ export default function DonateButton({ broadcast }: { broadcast: BroadcastDetail
   if (broadcast.status !== 'LIVE' || broadcast.viewer?.isOwner || isPending) return null
   if (!me)
     return (
-      <Button to={`/login?next=${encodeURIComponent(pathname)}`} size='md'>
+      <Button to={`/login?next=${encodeURIComponent(pathname)}`}>
         <Icon name='pulse' className='size-4' />
         로그인하고 후원
       </Button>
@@ -22,9 +22,9 @@ export default function DonateButton({ broadcast }: { broadcast: BroadcastDetail
   if (broadcast.viewer?.ban?.permanent) return <span className='text-xs text-text-dim'>이 채널에서는 후원할 수 없어요</span>
   return (
     <>
-      <Button onClick={() => setOpen(true)} size='md'>
+      <Button onClick={() => setOpen(true)}>
         <Icon name='pulse' className='size-4' />
-        후원하기
+        후원
       </Button>
       {open && <DonateDialog broadcast={broadcast} nickname={me.nickname} balance={me.balance} onClose={() => setOpen(false)} />}
     </>
