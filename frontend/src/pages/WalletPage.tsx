@@ -4,7 +4,6 @@ import Button from "../components/ui/Button.tsx";
 import { ChoiceChip } from "../components/ui/Chip.tsx";
 import EmptyState from "../components/ui/EmptyState.tsx";
 import ErrorScreen from "../components/ui/ErrorScreen.tsx";
-import Icon from "../components/ui/Icon.tsx";
 import Panel from "../components/ui/Panel.tsx";
 import Skeleton from "../components/ui/Skeleton.tsx";
 import ChargeDialog from "../features/wallet/components/ChargeDialog.tsx";
@@ -35,7 +34,6 @@ export default function WalletPage() {
           tone="hero"
           innerClassName="flex flex-wrap items-center gap-4 p-5 sm:gap-5 sm:p-6"
         >
-          <Icon name="pulse" className="size-10 text-brand sm:size-12" />
           <div className="flex min-w-0 grow flex-col gap-1">
             <span className="text-sm text-text-muted">보유 비트</span>
             <BeatAmount
