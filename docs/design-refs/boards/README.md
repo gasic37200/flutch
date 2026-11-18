@@ -14,7 +14,7 @@
 > | fb2b18c2… bc352f43… 10d98373… 등 원형 얼굴 | 기존 `/brand/face-*.png`(프로필 사진 전용) |
 
 - 파일 하나 = 보드 하나. `<x-dc>` 안의 HTML·인라인 스타일이 시안 그대로다(색·간격·글꼴 크기·사선 모서리 `ch12`/`ch6`·배지·문구). `{{…}}`·`<sc-for>`는 예시 데이터 반복이다.
-- 이미지는 `/_blob/<id>` 그대로이고 원본 파일은 `assets/<id>.*`에 있다. 프론트 파일 대응은 위 표(파동 아이콘 `f6543586…`는 아직 프론트에 없다 → `frontend/public/brand/wave.png`로 복사해 보드의 `.wave` 처럼 CSS mask + `currentColor`로 쓴다. 모든 파동 아이콘이 이 이미지다).
+- 이미지는 `/_blob/<id>` 그대로이고 원본 파일은 `assets/<id>.*`에 있다. 프론트 파일 대응은 위 표(파동 아이콘 `f6543586…`는 → `frontend/public/brand/wave.png`로 복사해 보드의 `.wave` 처럼 CSS mask + `currentColor`로 쓴다. 모든 파동 아이콘이 이 이미지다).
 - 시안의 hex는 참고값이다. 코드에서는 `frontend/src/styles/tokens.css` 토큰만 쓴다(AGENTS §6). 시안 색이 토큰에 없으면 토큰을 추가한다.
 - 보드는 `../tools/design-ref.mjs`로 **정적 페이지·기준 PNG로 렌더**된다. 소스만 읽고 구현하지 말고, 화면 task는 아래 diff로 맞춘다.
 

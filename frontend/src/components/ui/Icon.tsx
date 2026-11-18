@@ -8,7 +8,6 @@ const paths = {
   back: 'M15 5l-7 7 7 7',
   camera: 'M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
   bolt: 'M13 2L4 14h7l-1 8 9-12h-7z',
-  pulse: 'M2 12h4l2.5-6 4 12 3-9 2 3H22',
   video: 'M4 6h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zM16 10l6-3v10l-6-3',
   copy: 'M10 8h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3',
   wifiOff: 'M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19h.01M3 3l18 18',
@@ -37,11 +36,13 @@ const paths = {
   arrowDown: 'M12 5v14M6 13l6 6 6-6',
 }
 
-export type IconName = keyof typeof paths
+export type IconName = keyof typeof paths | 'pulse'
 
 type Props = { name: IconName; className?: string; title?: string }
 
 export default function Icon({ name, className = 'size-5', title }: Props) {
+  // 파동(비트)은 선 아이콘이 아니라 시안 이미지(public/brand/wave.png) 마스크
+  if (name === 'pulse') return <span className={`wave ${className}`} role={title ? 'img' : undefined} aria-label={title} aria-hidden={title ? undefined : true} />
   return (
     <svg
       viewBox='0 0 24 24'
