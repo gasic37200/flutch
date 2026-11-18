@@ -1,31 +1,37 @@
 import { useSearchParams } from 'react-router'
 import { ApiRequestError } from '../api/client.ts'
 import Button from '../components/ui/Button.tsx'
+import { Link } from 'react-router'
 import Panel from '../components/ui/Panel.tsx'
 import Skeleton from '../components/ui/Skeleton.tsx'
 import { emoteSrc, type Emote } from '../components/ui/mascot.ts'
 import { paymentRetryPath, usePaymentConfirm } from '../features/wallet/hooks/usePaymentConfirm.ts'
 import type { ReactNode } from 'react'
 
+// 시안: 결과 카드의 이동은 버튼이 아니라 라임색 글자 링크 + 화살표
+const ActionLink = ({ to, children }: { to: string; children: ReactNode }) => (
+  <Link to={to} className='text-brand hover:text-brand-hover'>
+    {children} →
+  </Link>
+)
+
 const n = (v: number) => `${v.toLocaleString('ko-KR')} Beat`
 
 function Card({ ok, emote, title, children, actions }: { ok?: boolean; emote: Emote; title: string; children?: ReactNode; actions: ReactNode }) {
   return (
-    <Panel tone={ok ? 'hero' : 'line'} className='max-w-lg' innerClassName='flex items-center gap-3.5 p-[18px]'>
-      <img src={emoteSrc(emote)} alt='' className='h-16 w-auto shrink-0 object-contain' />
-      <div role={ok ? 'status' : 'alert'} className='flex min-w-0 flex-col items-start gap-1.5'>
+    <Panel tone={ok ? 'hero' : 'line'} className='max-w-[427px]' innerClassName='flex items-center gap-3.5 p-[18px]'>
+      <img src={emoteSrc(emote)} alt='' className='h-14 w-auto shrink-0 object-contain' />
+      <div role={ok ? 'status' : 'alert'} className='flex min-w-0 flex-col items-start gap-1'>
         <h1 className='text-base font-bold'>{title}</h1>
         {children && <div className='text-[13px] break-keep text-text-muted'>{children}</div>}
-        <div className='flex flex-wrap gap-2'>{actions}</div>
+        <div className='flex flex-wrap gap-3 text-[13px]'>{actions}</div>
       </div>
     </Panel>
   )
 }
 
 const wallet = (
-  <Button to='/wallet' variant='secondary' size='sm'>
-    내 지갑 보기
-  </Button>
+  <ActionLink to='/wallet'>내 지갑 보기</ActionLink>
 )
 
 /** /payments/success: 토스가 돌려준 쿼리를 서버에서 승인하고 결과를 보여 준다. */
@@ -63,16 +69,14 @@ function Success() {
         emote='excited'
         title='후원했어요!'
         actions={
-          <Button to={`/live/${r.donation.broadcastId}`} variant='secondary' size='sm'>
-            방송으로 돌아가기
-          </Button>
+          <ActionLink to={`/live/${r.donation.broadcastId}`}>방송으로 돌아가기</ActionLink>
         }
       >
         {n(r.charged)} 충전 + {n(r.donation.amount)} 후원 · 잔액 {n(r.balance)}
       </Card>
     )
   return (
-    <Card ok emote='excited' title={r.notice ?? '충전했어요!'} actions={wallet}>
+    <Card ok={!r.notice} emote={r.notice ? 'basic' : 'excited'} title={r.notice ?? '충전했어요!'} actions={wallet}>
       {n(r.charged)}이 잔액에 들어갔어요 · 잔액 {n(r.balance)}
     </Card>
   )
@@ -85,9 +89,7 @@ function NotCompleted({ reason, children }: { reason?: string | null; children: 
       emote='sweat'
       title='결제가 완료되지 않았어요'
       actions={
-        <Button to={paymentRetryPath()} variant='secondary' size='sm'>
-          다시 시도 →
-        </Button>
+        <ActionLink to={paymentRetryPath()}>다시 시도</ActionLink>
       }
     >
       {children}

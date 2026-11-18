@@ -15,6 +15,7 @@ const emoteFiles = {
   hiding: '15-hiding', // 404·권한 없음
   sweat: '14-sweat', // 500·에러
   crying: '09-crying', // 연결 끊김·탈퇴
+  basic: '01-basic', // 일반 알림
   excited: '02-excited', // 결제·후원 완료
   bye: '13-bye', // 가입 완료·방송 종료
   humming: '16-humming', // 곧 시작

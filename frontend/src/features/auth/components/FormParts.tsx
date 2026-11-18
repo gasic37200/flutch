@@ -16,7 +16,7 @@ export function FormAlert({ message }: { message?: string }) {
 export function CheckRow({ checked, onChange, children, compact }: { checked: boolean; onChange: (v: boolean) => void; children: ReactNode; compact?: boolean }) {
   return (
     <label className={`flex items-center gap-2 ${compact ? 'min-h-6' : 'min-h-11'} text-sm text-text-muted`}>
-      <input type='checkbox' checked={checked} onChange={(e) => onChange(e.target.checked)} className='size-[18px] accent-brand' />
+      <input type='checkbox' checked={checked} onChange={(e) => onChange(e.target.checked)} className='ml-1 mr-[3px] size-[18px] accent-brand' />
       <span>{children}</span>
     </label>
   )

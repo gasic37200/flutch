@@ -14,7 +14,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <Link to='/' aria-label='FLUTCH 홈'>
             <img src='/brand/logo-flutch.png' alt='FLUTCH' className='h-11 @max-[600px]:h-8' />
           </Link>
-          <span className='font-display text-[15px] font-bold tracking-[.04em] text-brand italic @max-[600px]:text-[13px]'>Feel the Moment. Live on FLUTCH.</span>
+          <span className='font-display text-[15px] font-bold leading-5 tracking-[.04em] text-brand italic @max-[600px]:text-[13px] @max-[600px]:leading-[17px]'>Feel the Moment. Live on FLUTCH.</span>
         </div>
         {children}
       </main>
@@ -23,12 +23,21 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
 }
 
 /** 폼 카드(로그인 440 · 가입 480). */
-export function AuthCard({ title, description, wide, children }: { title: string; description?: string; wide?: boolean; children: ReactNode }) {
+export function AuthCard({ title, description, wide, compact, children }: { title: string; description?: string; wide?: boolean; compact?: boolean; children: ReactNode }) {
+  // compact = 시안 SmallScreens의 카카오 닉네임 카드(폭 428 · 패딩 20 · 제목 18)
+  if (compact)
+    return (
+      <Panel className='w-full max-w-[427px]' innerClassName='flex flex-col gap-3.5 bg-surface/95 p-5'>
+        <h1 className='text-lg leading-[26px] font-bold'>{title}</h1>
+        {description && <span className='text-[13px] leading-[19px] text-text-muted'>{description}</span>}
+        {children}
+      </Panel>
+    )
   return (
-    <Panel className={`w-full ${wide ? 'max-w-[480px]' : 'max-w-[440px]'}`} innerClassName='flex flex-col gap-[18px] bg-surface/95 p-8 @max-[600px]:p-5'>
+    <Panel className={`w-full ${wide ? 'max-w-[482px]' : 'max-w-[442px]'}`} innerClassName='flex flex-col gap-[18px] bg-surface/95 p-8 @max-[600px]:p-5'>
       <div className='flex flex-col gap-1'>
-        <h1 className='text-[26px] font-black @max-[600px]:text-[22px]'>{title}</h1>
-        {description && <span className='text-[13px] text-text-muted'>{description}</span>}
+        <h1 className='text-[26px] leading-[37px] font-black @max-[600px]:text-[22px] @max-[600px]:leading-8'>{title}</h1>
+        {description && <span className='text-[13px] leading-[19px] text-text-muted'>{description}</span>}
       </div>
       {children}
     </Panel>
@@ -36,4 +45,4 @@ export function AuthCard({ title, description, wide, children }: { title: string
 }
 
 /** 입력칸을 시안 높이(48)로 키운다. */
-export const tall = '[&_input]:h-[46px] [&_input]:text-[15px]'
+export const tall = '[&_input]:h-[46px] [&_input]:text-[15px] [&_label]:leading-[19px] [&_.mt-1]:mt-1.5 [&_.mt-1]:leading-[17px]'
