@@ -842,3 +842,17 @@ async fn live_subscriber_same_identity_keeps_grace(db: PgPool) {
     assert_eq!(detail(&app, id).await["status"], "ENDED");
     assert!(lk.removed_participants.lock().unwrap().is_empty());
 }
+
+/// 시청 토큰은 IP당 1분 30회(T45 감사). 제한은 방송 확인보다 먼저라 없는 방송 요청도 센다.
+#[sqlx::test]
+async fn live_viewer_token_rate_limited(db: PgPool) {
+    let (app, _lk) = setup(db);
+    let body = json!({ "tabId": TAB_A, "guestId": "guest-12345678" });
+    for _ in 0..30 {
+        let res = viewer_token(&app, None, 999_999, body.clone()).await;
+        assert_eq!(res.status, StatusCode::NOT_FOUND, "{}", res.json);
+    }
+    let res = viewer_token(&app, None, 999_999, body).await;
+    assert_eq!(res.status, StatusCode::TOO_MANY_REQUESTS, "{}", res.json);
+    assert_eq!(code(&res), "RATE_LIMITED");
+}

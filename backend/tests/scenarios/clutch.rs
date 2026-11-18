@@ -1027,3 +1027,64 @@ async fn rotation_survives_restart(db: PgPool) {
     travel(&db, 30).await;
     assert_eq!(hero(&restarted).await["broadcast"]["id"], b);
 }
+
+/// 트랜잭션 중에 풀에서 연결을 하나 더 잡으면(차단 확인) 동시 요청이 풀을 다 써 교착된다(T45 감사).
+/// 연결 2개짜리 풀에서 방송 행 잠금으로 두 요청이 트랜잭션 연결을 쥔 채 겹치게 한 뒤 풀어도 셋 다 끝나야 한다.
+#[sqlx::test]
+async fn burst_concurrent_small_pool_no_deadlock(db: PgPool) {
+    let small = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(2)
+        .acquire_timeout(Duration::from_secs(3))
+        .connect_with((*db.connect_options()).clone())
+        .await
+        .unwrap();
+    let app = flutch::app(test_state(small, Arc::new(FakeLiveKit::default())));
+    let (owner, _) = login_as(&app, "streamer1").await;
+    let (viewer, viewer_id) = login_as(&app, "viewer").await;
+    let id = live_broadcast(&app, &owner).await;
+    charge(&db, viewer_id, 3000).await;
+
+    let mut locker = PgConnection::connect_with(&db.connect_options())
+        .await
+        .unwrap();
+    sqlx::query("BEGIN").execute(&mut locker).await.unwrap();
+    sqlx::query("SELECT 1 FROM broadcasts WHERE id = $1 FOR UPDATE")
+        .bind(id)
+        .execute(&mut locker)
+        .await
+        .unwrap();
+    let release = async {
+        let mut waited = 0;
+        loop {
+            sqlx::query("SELECT pg_stat_clear_snapshot()")
+                .execute(&mut locker)
+                .await
+                .unwrap();
+            let n: i64 = sqlx::query_scalar(
+                "SELECT count(*) FROM pg_stat_activity
+                 WHERE datname = current_database() AND wait_event_type = 'Lock'",
+            )
+            .fetch_one(&mut locker)
+            .await
+            .unwrap();
+            if n == 2 {
+                break;
+            }
+            waited += 1;
+            assert!(waited < 1200, "두 요청이 잠금에서 겹치지 않음");
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        sqlx::query("COMMIT").execute(&mut locker).await.unwrap();
+    };
+    let (r1, r2, r3, ()) = tokio::join!(
+        burst(&app, Some(&viewer), id, 1000, false),
+        burst(&app, Some(&viewer), id, 1000, false),
+        burst(&app, Some(&viewer), id, 1000, false),
+        release
+    );
+    for r in [&r1, &r2, &r3] {
+        assert_eq!(r.status, StatusCode::OK, "{}", r.json);
+    }
+    assert_eq!(balance(&db, viewer_id).await, 0);
+    assert_consistent(&db).await;
+}

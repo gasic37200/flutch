@@ -504,26 +504,41 @@ async fn chat_badges_streamer_and_donor(db: PgPool) {
         json!([])
     );
 
-    // 익명 후원 1건 → donor 배지(원장·후원 행을 직접 넣는다)
-    let ledger: i64 = sqlx::query_scalar(
-        "INSERT INTO ledger_entries (user_id, type, amount, balance_after, broadcast_id)
-         VALUES ($1, 'donation', -1000, 0, $2) RETURNING id",
-    )
-    .bind(viewer_id)
-    .bind(id)
-    .fetch_one(&db)
-    .await
-    .unwrap();
-    sqlx::query(
-        "INSERT INTO donations (broadcast_id, donor_id, kind, amount, anonymous, ledger_entry_id)
-         VALUES ($1, $2, 'donation', 1000, true, $3)",
-    )
-    .bind(id)
-    .bind(viewer_id)
-    .bind(ledger)
-    .execute(&db)
-    .await
-    .unwrap();
+    // 익명 후원만 → 배지 없음(신원 노출 방지, 사용자 승인 11/18). 공개 후원 → donor 배지. 원장·후원 행은 직접 넣는다
+    let donate = |anonymous: bool| {
+        let db = db.clone();
+        async move {
+            let ledger: i64 = sqlx::query_scalar(
+                "INSERT INTO ledger_entries (user_id, type, amount, balance_after, broadcast_id)
+                 VALUES ($1, 'donation', -1000, 0, $2) RETURNING id",
+            )
+            .bind(viewer_id)
+            .bind(id)
+            .fetch_one(&db)
+            .await
+            .unwrap();
+            sqlx::query(
+                "INSERT INTO donations (broadcast_id, donor_id, kind, amount, anonymous, ledger_entry_id)
+                 VALUES ($1, $2, 'donation', 1000, $3, $4)",
+            )
+            .bind(id)
+            .bind(viewer_id)
+            .bind(anonymous)
+            .bind(ledger)
+            .execute(&db)
+            .await
+            .unwrap();
+        }
+    };
+    donate(true).await;
+    let items = list(&app, id, "").await.json["items"].clone();
+    assert_eq!(items[1]["badges"], json!([]));
+    tokio::time::sleep(Duration::from_millis(1100)).await;
+    assert_eq!(
+        chat_id_badges(&post(&app, Some(&viewer), id, "익명 후원 후").await),
+        json!([])
+    );
+    donate(false).await;
     let items = list(&app, id, "").await.json["items"].clone();
     assert_eq!(items[1]["badges"], json!(["donor"]));
     tokio::time::sleep(Duration::from_millis(1100)).await;

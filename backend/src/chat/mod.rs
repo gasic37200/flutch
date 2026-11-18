@@ -73,7 +73,7 @@ pub struct Chat {
     pub edited: bool,
     /// "삭제된 메시지입니다"
     pub deleted: bool,
-    /// donor = 이 방송에 donation·burst 후원 이력(익명 포함)
+    /// donor = 이 방송에 donation·burst 후원 이력(익명 후원 제외 — 신원 노출 방지, 사용자 승인 11/18)
     pub badges: Vec<Badge>,
     pub created_at: DateTime<Utc>,
 }
@@ -96,8 +96,9 @@ pub struct ChatBodyRequest {
 
 /// 그 스트리머가 이 사용자에게 건 지금 유효한 차단. 없으면 `None`(풀린 임시차단 포함).
 /// 채팅이 쓰고, 후원·클러치(영구 밴만 막는다)도 이 함수로 확인한다.
+/// 트랜잭션 안에서는 그 연결(`&mut *tx`)을 넘긴다 — 풀에서 두 번째 연결을 잡으면 동시 요청이 풀을 다 써 교착된다.
 pub async fn ban_state(
-    db: &PgPool,
+    db: impl sqlx::PgExecutor<'_>,
     streamer_id: i64,
     user_id: i64,
 ) -> Result<Option<BanState>, sqlx::Error> {

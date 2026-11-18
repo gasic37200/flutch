@@ -16,6 +16,6 @@ edited: boolean,
  */
 deleted: boolean, 
 /**
- * donor = 이 방송에 donation·burst 후원 이력(익명 포함)
+ * donor = 이 방송에 donation·burst 후원 이력(익명 후원 제외 — 신원 노출 방지, 사용자 승인 11/18)
  */
 badges: Array<Badge>, createdAt: string, };

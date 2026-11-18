@@ -10,11 +10,11 @@ use axum::http::{Request, StatusCode};
 use flutch::toss::TossPayment;
 use flutch::wallet;
 use serde_json::{Value, json};
-use sqlx::PgPool;
+use sqlx::{Connection, PgPool};
 
 use crate::common::{
-    FakeConfirm, FakeLiveKit, FakeToss, TestResponse, empty_req, json_req, login_as, send, signup,
-    test_state_with_toss,
+    FakeConfirm, FakeLiveKit, FakeToss, PASSWORD, TestResponse, empty_req, json_req, login_as,
+    send, signup, test_state_with_toss,
 };
 
 const B: &str = "/api/v1/broadcasts";
@@ -667,5 +667,104 @@ async fn payment_webhook_withdrawn_user_not_credited(db: PgPool) {
     assert_eq!(res.status, StatusCode::OK);
     assert_eq!(ledger_count(&db, viewer).await, 0);
     assert_eq!(order_status(&db, &order_id).await, "pending");
+    assert_consistent(&db).await;
+}
+
+/// 확정이 탈퇴 여부를 확인한 뒤 적립하기 전에 탈퇴가 끝나면 탈퇴 계정 지갑에 충전이 남는다(T45 감사).
+/// 지갑 행이 없는 사용자의 지갑 생성을 별도 커넥션이 막아 확정을 그 사이에 세우고, 그동안 탈퇴를 보낸다.
+/// 탈퇴는 확정이 끝날 때까지 기다렸다가 적립된 잔액까지 소멸시켜야 한다.
+#[sqlx::test]
+async fn payment_finalize_races_withdraw(db: PgPool) {
+    let (app, toss) = setup(&db);
+    let cookie = signup(&app, "racer01", "경쟁자").await;
+    let uid: i64 = sqlx::query_scalar("SELECT id FROM users WHERE login_id = 'racer01'")
+        .fetch_one(&db)
+        .await
+        .unwrap();
+    let (order_id, n) = created(
+        &order(
+            &app,
+            &cookie,
+            json!({ "purpose": "charge", "amount": 3000 }),
+        )
+        .await,
+    );
+    toss.payments.lock().unwrap().insert(
+        "pk_race".into(),
+        TossPayment {
+            payment_key: "pk_race".into(),
+            order_id,
+            status: "DONE".into(),
+            total_amount: n,
+            secret: Some(FakeToss::secret("pk_race")),
+        },
+    );
+    sqlx::query("DELETE FROM wallets WHERE user_id = $1")
+        .bind(uid)
+        .execute(&db)
+        .await
+        .unwrap();
+
+    // 잠금·확인은 테스트 풀 밖의 별도 커넥션으로(T22 트러블슈팅)
+    let mut locker = sqlx::PgConnection::connect_with(&db.connect_options())
+        .await
+        .unwrap();
+    sqlx::query("BEGIN").execute(&mut locker).await.unwrap();
+    sqlx::query("INSERT INTO wallets (user_id, balance) VALUES ($1, 0)")
+        .bind(uid)
+        .execute(&mut locker)
+        .await
+        .unwrap();
+    async fn waiters(c: &mut sqlx::PgConnection) -> i64 {
+        sqlx::query("SELECT pg_stat_clear_snapshot()")
+            .execute(&mut *c)
+            .await
+            .unwrap();
+        sqlx::query_scalar(
+            "SELECT count(*) FROM pg_stat_activity
+             WHERE datname = current_database() AND wait_event_type = 'Lock'",
+        )
+        .fetch_one(&mut *c)
+        .await
+        .unwrap()
+    }
+
+    let secret = FakeToss::secret("pk_race");
+    let a = app.clone();
+    let fin = tokio::spawn(async move { webhook(&a, "pk_race", &secret).await.status });
+    let mut waited = 0;
+    while waiters(&mut locker).await < 1 {
+        waited += 1;
+        assert!(waited < 1200, "확정이 지갑 생성에서 기다리지 않음");
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    }
+    let a = app.clone();
+    let wd = tokio::spawn(async move {
+        let body = json!({ "password": PASSWORD, "confirmForfeit": true });
+        send(&a, json_req("DELETE", "/api/v1/me", Some(&cookie), body))
+            .await
+            .status
+    });
+    // 고친 코드: 탈퇴가 확정의 사용자 잠금에서 기다린다(대기 2). 고치기 전: 탈퇴가 먼저 끝난다.
+    while !wd.is_finished() && waiters(&mut locker).await < 2 {
+        waited += 1;
+        assert!(waited < 1200, "탈퇴가 끝나지도 기다리지도 않음");
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    }
+    sqlx::query("ROLLBACK").execute(&mut locker).await.unwrap();
+
+    assert_eq!(fin.await.unwrap(), StatusCode::OK);
+    assert_eq!(wd.await.unwrap(), StatusCode::NO_CONTENT);
+    let (balance, withdrawn): (i64, bool) = sqlx::query_as(
+        "SELECT COALESCE((SELECT balance FROM wallets WHERE user_id = u.id), 0), u.withdrawn_at IS NOT NULL
+         FROM users u WHERE u.id = $1",
+    )
+    .bind(uid)
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    assert_eq!((balance, withdrawn), (0, true));
+    // 충전 + 소멸(탈퇴가 확정 뒤로 줄 섰다)
+    assert_eq!(ledger_count(&db, uid).await, 2);
     assert_consistent(&db).await;
 }

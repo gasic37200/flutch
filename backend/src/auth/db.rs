@@ -317,6 +317,14 @@ pub async fn update_nickname(db: &PgPool, user_id: i64, nickname: &str) -> Resul
 /// LIVE 방송이 있거나 잔액이 있는데 확인이 없으면 에러(롤백).
 pub async fn withdraw(db: &PgPool, user_id: i64, confirm_forfeit: bool) -> Result<i64, AppError> {
     let mut tx = db.begin().await?;
+    // 결제 확정(사용자 FOR SHARE)과 직렬화: 확정 중이면 끝난 뒤 그 적립까지 소멸, 탈퇴 중이면 확정이 적립하지 않는다.
+    // NO KEY UPDATE: 같은 사용자의 후원·충전이 원장 FK 확인(KEY SHARE)에서 이 잠금을 기다리며 지갑 잠금과 엇갈리지 않게.
+    sqlx::query!(
+        "SELECT 1 AS one FROM users WHERE id = $1 FOR NO KEY UPDATE",
+        user_id
+    )
+    .fetch_one(&mut *tx)
+    .await?;
     // 지갑을 잠가 같은 사용자의 동시 차감·충전이 이 트랜잭션 뒤로 줄 서게 한다.
     let balance = sqlx::query_scalar!(
         "SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE",

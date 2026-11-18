@@ -1,12 +1,14 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use axum::Json;
 use axum::extract::{Path, State};
+use axum::http::HeaderMap;
+use axum::{Extension, Json};
 
 use super::db::{self, Claim};
 use super::{LiveError, LiveKitToken, StartLiveRequest, StartLiveResponse, ViewerTokenRequest};
 use crate::AppState;
+use crate::auth::rate_limit::{RateLimiter, client_ip};
 use crate::broadcast::{self, BroadcastDetail, BroadcastError, EndReason, room_name};
 use crate::error::AppError;
 use crate::extract::{CurrentUser, JsonBody, OptionalUser};
@@ -130,10 +132,13 @@ pub async fn end(
 /// 시청(구독 전용) 토큰. 신원 `u:<userId>:<tabId>` / `g:<guestId>:<tabId>`.
 pub async fn viewer_token(
     State(state): State<Arc<AppState>>,
+    Extension(limit): Extension<Arc<RateLimiter>>,
+    headers: HeaderMap,
     OptionalUser(user): OptionalUser,
     Path(id): Path<i64>,
     JsonBody(req): JsonBody<ViewerTokenRequest>,
 ) -> Result<Json<LiveKitToken>, AppError> {
+    limit.hit(&client_ip(&headers))?;
     let t = db::target(&state.db, id).await?.ok_or(AppError::NotFound)?;
     if !valid_id(&req.tab_id) {
         return Err(invalid("tabId"));

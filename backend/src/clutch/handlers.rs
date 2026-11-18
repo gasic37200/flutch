@@ -40,7 +40,7 @@ pub async fn create(
     let mut balance = None;
     if !free {
         // 영구 밴은 유료만 막는다(무료는 허용). 임시차단은 둘 다 허용.
-        if crate::chat::ban_state(&state.db, owner_id, user.id)
+        if crate::chat::ban_state(&mut *tx, owner_id, user.id)
             .await?
             .is_some_and(|b| b.permanent)
         {
@@ -94,7 +94,7 @@ pub async fn burst(
     if owner_id == user.id {
         return Err(ClutchError::SelfClutch.into());
     }
-    if crate::chat::ban_state(&state.db, owner_id, user.id)
+    if crate::chat::ban_state(&mut *tx, owner_id, user.id)
         .await?
         .is_some_and(|b| b.permanent)
     {

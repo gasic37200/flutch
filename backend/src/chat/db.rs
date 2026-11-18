@@ -72,7 +72,7 @@ pub async fn list(
                   b.status AS broadcast_status,
                   EXISTS (SELECT 1 FROM donations d
                            WHERE d.broadcast_id = c.broadcast_id AND d.donor_id = c.user_id
-                             AND d.kind IN ('donation', 'burst')) AS "donor!"
+                             AND d.kind IN ('donation', 'burst') AND NOT d.anonymous) AS "donor!"
              FROM chats c
              JOIN users u ON u.id = c.user_id
              JOIN broadcasts b ON b.id = c.broadcast_id AND b.hidden_at IS NULL
@@ -96,7 +96,7 @@ pub async fn find(db: &PgPool, id: i64) -> Result<Option<Row>, sqlx::Error> {
                   b.status AS broadcast_status,
                   EXISTS (SELECT 1 FROM donations d
                            WHERE d.broadcast_id = c.broadcast_id AND d.donor_id = c.user_id
-                             AND d.kind IN ('donation', 'burst')) AS "donor!"
+                             AND d.kind IN ('donation', 'burst') AND NOT d.anonymous) AS "donor!"
              FROM chats c
              JOIN users u ON u.id = c.user_id
              JOIN broadcasts b ON b.id = c.broadcast_id AND b.hidden_at IS NULL
@@ -174,7 +174,7 @@ pub async fn mark_deleted(db: &PgPool, id: i64) -> Result<bool, sqlx::Error> {
 
 /// 지금 유효한 차단(영구는 `until` None). 풀린 임시차단은 없는 것으로 본다.
 pub async fn active_ban(
-    db: &PgPool,
+    db: impl sqlx::PgExecutor<'_>,
     streamer_id: i64,
     user_id: i64,
 ) -> Result<Option<Option<DateTime<Utc>>>, sqlx::Error> {

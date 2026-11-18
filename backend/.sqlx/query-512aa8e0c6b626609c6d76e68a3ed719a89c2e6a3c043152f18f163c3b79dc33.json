@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE recordings SET status = 'ready', size_bytes = $2, duration_sec = $3,\n                expires_at = now() + make_interval(days => $4::int)\n         WHERE egress_id = $1 AND status = 'recording' RETURNING id, broadcast_id",
+  "query": "UPDATE recordings SET status = 'ready', size_bytes = $2, duration_sec = $3,\n                expires_at = now() + make_interval(days => $4::int), video_started_at = $5\n         WHERE egress_id = $1 AND status = 'recording' RETURNING id, broadcast_id",
   "describe": {
     "columns": [
       {
@@ -31,7 +31,8 @@
         "Text",
         "Int8",
         "Int4",
-        "Int4"
+        "Int4",
+        "Timestamptz"
       ]
     },
     "nullable": [
@@ -39,5 +40,5 @@
       false
     ]
   },
-  "hash": "f9d5e886632a85c6d241d534d33c8d6bcf10b790fda172b6b2b777589c6ebb01"
+  "hash": "512aa8e0c6b626609c6d76e68a3ed719a89c2e6a3c043152f18f163c3b79dc33"
 }

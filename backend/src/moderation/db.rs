@@ -140,7 +140,7 @@ pub async fn viewer_chats(
                   b.status AS broadcast_status,
                   EXISTS (SELECT 1 FROM donations d
                            WHERE d.broadcast_id = c.broadcast_id AND d.donor_id = c.user_id
-                             AND d.kind IN ('donation', 'burst')) AS "donor!"
+                             AND d.kind IN ('donation', 'burst') AND NOT d.anonymous) AS "donor!"
              FROM chats c
              JOIN users u ON u.id = c.user_id
              JOIN broadcasts b ON b.id = c.broadcast_id AND b.hidden_at IS NULL
