@@ -13,7 +13,7 @@ import ReplayVideo from '../features/replay/components/ReplayVideo.tsx'
 import { count, kstDate } from '../features/replay/format.ts'
 import { useCountView, useRecording } from '../features/replay/hooks/useRecordings.ts'
 import { useReplayTimeline } from '../features/replay/hooks/useReplayTimeline.ts'
-import { alertAt } from '../features/replay/timeline.ts'
+import { alertAt, recentChatsAt } from '../features/replay/timeline.ts'
 import { useNow } from '../features/watch/hooks/useWatch.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
 import ShellBody from '../layouts/ShellBody.tsx'
@@ -53,7 +53,7 @@ function ReplayPageBody() {
   return (
     <ShellBody aside={<ChatHistory timeline={timeline} time={time} synced={synced} />}>
       <div className='flex flex-col gap-3.5'>
-        <ReplayVideo recording={r} onPlay={countView} clip={clip} onTime={setTime} alert={synced ? alertAt(timeline.items, time) : undefined} />
+        <ReplayVideo recording={r} onPlay={countView} clip={clip} onTime={setTime} alert={synced ? alertAt(timeline.items, time) : undefined} chats={synced ? recentChatsAt(timeline.items, time) : undefined} />
         <h1 className='text-base font-bold break-words sm:text-xl'>{r.title}</h1>
         <div className='flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-text-muted'>
           <Link to={`/users/${r.owner.id}`} className='inline-flex items-center gap-2 text-sm font-bold text-text hover:text-brand'>
