@@ -3,7 +3,7 @@ import type { BroadcastDetail } from '../../../api/generated/BroadcastDetail.ts'
 import Badge from '../../../components/ui/Badge.tsx'
 import Button from '../../../components/ui/Button.tsx'
 import Icon from '../../../components/ui/Icon.tsx'
-import { faceSrc, type Face } from '../../../components/ui/mascot.ts'
+import { emoteSrc, type Emote } from '../../../components/ui/mascot.ts'
 import Skeleton from '../../../components/ui/Skeleton.tsx'
 import { pipPosition } from '../../live/pip.ts'
 import { formatDuration, type WatchView } from '../hooks/useWatch.ts'
@@ -29,7 +29,7 @@ function Notice({ icon, title, big, children }: { icon?: ReactNode; title: strin
   )
 }
 
-const Mascot = ({ face, className }: { face: Face; className: string }) => <img src={faceSrc(face)} alt='' className={`rounded-full ${className}`} />
+const Mascot = ({ emote, className }: { emote: Emote; className: string }) => <img src={emoteSrc(emote)} alt='' className={`w-auto object-contain ${className}`} />
 const sub = (text: ReactNode) => <p className='text-sm text-text-muted'>{text}</p>
 const dim = (text: ReactNode) => <p className='text-xs text-text-dim'>{text}</p>
 const spinner = (cls: string) => <Icon name='spinner' className={`${cls} animate-spin text-brand motion-reduce:animate-none`} />
@@ -38,7 +38,7 @@ function Overlay({ view, broadcast, source }: Pick<Props, 'view' | 'broadcast' |
   switch (view) {
     case 'waiting':
       return (
-        <Notice title='곧 방송이 시작돼요' big icon={<Mascot face='calm' className='size-16 sm:size-24' />}>
+        <Notice title='곧 방송이 시작돼요' big icon={<Mascot emote='humming' className='h-16 sm:h-24' />}>
           {broadcast && sub(`${broadcast.title} · ${broadcast.owner.nickname}`)}
           {dim('시작되면 새로고침 없이 바로 재생돼요')}
         </Notice>
@@ -78,7 +78,7 @@ function Overlay({ view, broadcast, source }: Pick<Props, 'view' | 'broadcast' |
       const ready = rec?.status === 'ready'
       const preparing = broadcast?.record && !ready && rec?.status !== 'failed'
       return (
-        <Notice title='방송이 종료되었어요' big icon={<Mascot face='sleepy' className='size-12 sm:size-22' />}>
+        <Notice title='방송이 종료되었어요' big icon={<Mascot emote='bye' className='h-14 sm:h-22' />}>
           <p className='flex gap-6 text-sm text-text-muted'>
             {ms !== undefined && (
               <span>

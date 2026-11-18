@@ -17,8 +17,17 @@ import StudioPage from './pages/StudioPage.tsx'
 import WalletPage from './pages/WalletPage.tsx'
 import WatchPage from './pages/WatchPage.tsx'
 
-// 모든 페이지는 AppShell 안에서 그려지고, 에러 화면(errorElement)도 같은 셸 안에 뜬다.
+// 로그인·가입은 셸 없는 전체 화면(시안), 나머지 페이지는 AppShell 안에서 그려지고 에러 화면(errorElement)도 같은 셸 안에 뜬다.
 export const router = createBrowserRouter([
+  {
+    element: <AuthShell bare />,
+    errorElement: <ErrorPage />,
+    children: [
+      { path: 'login', element: <AuthPage mode="login" /> },
+      { path: 'signup', element: <AuthPage mode="signup" /> },
+      { path: 'signup/kakao', element: <AuthPage mode="kakao" /> },
+    ],
+  },
   {
     element: <AuthShell />,
     children: [
@@ -39,9 +48,6 @@ export const router = createBrowserRouter([
           { path: 'wallet', element: <WalletPage /> },
           { path: 'payments/success', element: <PaymentResultPage result='success' /> },
           { path: 'payments/fail', element: <PaymentResultPage result='fail' /> },
-          { path: 'login', element: <AuthPage mode="login" /> },
-          { path: 'signup', element: <AuthPage mode="signup" /> },
-          { path: 'signup/kakao', element: <AuthPage mode="kakao" /> },
           { path: 'me', element: <MePage /> },
           { path: 'terms', element: <LegalPage doc="terms" /> },
           { path: 'privacy', element: <LegalPage doc="privacy" /> },

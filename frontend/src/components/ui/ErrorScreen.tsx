@@ -1,14 +1,14 @@
 import Button from './Button.tsx'
 import Icon from './Icon.tsx'
 import Panel from './Panel.tsx'
-import { faceSrc } from './mascot.ts'
+import { emoteSrc, type Emote } from './mascot.ts'
 
 export type ErrorKind = 'notFound' | 'server' | 'network'
 
-const copy: Record<ErrorKind, { code?: string; title: string; description: string[]; face: 'grumpy' | 'sleepy' }> = {
-  notFound: { code: '404', title: '찾는 페이지가 없어요', description: ['주소가 바뀌었거나', '삭제된 방송일 수 있어요.'], face: 'grumpy' },
-  server: { code: '500', title: '잠시 문제가 생겼어요', description: ['잠시 후 다시 시도해 주세요.', '문제가 계속되면 아래 번호를 알려주세요.'], face: 'grumpy' },
-  network: { title: '인터넷 연결이 끊겼어요', description: ['연결되면 자동으로 다시 불러올게요.'], face: 'sleepy' },
+const copy: Record<ErrorKind, { code?: string; title: string; description: string[]; emote: Emote }> = {
+  notFound: { code: '404', title: '찾는 페이지가 없어요', description: ['주소가 바뀌었거나', '삭제된 방송일 수 있어요.'], emote: 'hiding' },
+  server: { code: '500', title: '잠시 문제가 생겼어요', description: ['잠시 후 다시 시도해 주세요.', '문제가 계속되면 아래 번호를 알려주세요.'], emote: 'sweat' },
+  network: { title: '인터넷 연결이 끊겼어요', description: ['연결되면 자동으로 다시 불러올게요.'], emote: 'crying' },
 }
 
 type Props = {
@@ -28,7 +28,7 @@ export default function ErrorScreen({ kind, requestId, onRetry }: Props) {
       <div className='relative flex flex-col items-center gap-4 p-8 text-center'>
         {c.code && <span className='font-display text-6xl leading-none font-bold text-brand italic'>{c.code}</span>}
         {kind === 'network' && <Icon name='wifiOff' className='size-16 text-brand' />}
-        <img src={faceSrc(c.face)} alt='' className='size-30 rounded-full' />
+        <img src={emoteSrc(c.emote)} alt='' className='h-30 w-auto object-contain' />
         <h2 className='text-[22px] font-bold'>{c.title}</h2>
         <p className='text-sm leading-relaxed text-text-muted'>
           {c.description.map((line, i) => (

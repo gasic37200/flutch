@@ -62,6 +62,7 @@ export default function ExplorePage() {
               items={x.items}
               empty={
                 <EmptyState
+                  emote={x.q ? 'tilt' : undefined}
                   title={x.q ? '검색 결과가 없어요' : '지금은 조용하네요'}
                   description={x.q ? `"${x.q}"에 맞는 방송을 찾지 못했어요. 다른 검색어나 카테고리로 찾아보세요.` : '라이브 중인 방송이 없어요.'}
                 />

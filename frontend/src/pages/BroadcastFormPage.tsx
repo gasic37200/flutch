@@ -30,7 +30,7 @@ export default function BroadcastFormPage() {
   // 서버도 PATCH를 403으로 막는다. 여기서는 빈 폼 대신 안내를 보여 준다(스튜디오와 같은 문구).
   if (broadcast.data.owner.id !== me.id)
     return wrap(
-      <EmptyState face='grumpy' title='내 방송이 아니에요' description='내가 등록한 방송만 수정할 수 있어요.' action={<Button to='/manage'>내 방송 관리</Button>} />,
+      <EmptyState emote='hiding' title='내 방송이 아니에요' description='내가 등록한 방송만 수정할 수 있어요.' action={<Button to='/manage'>내 방송 관리</Button>} />,
     )
   return <BroadcastForm key={broadcast.data.id} heading={heading} owner={me} existing={broadcast.data} />
 }

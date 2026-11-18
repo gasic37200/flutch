@@ -3,16 +3,16 @@ import { ApiRequestError } from '../api/client.ts'
 import Button from '../components/ui/Button.tsx'
 import Panel from '../components/ui/Panel.tsx'
 import Skeleton from '../components/ui/Skeleton.tsx'
-import { faceSrc, type Face } from '../components/ui/mascot.ts'
+import { emoteSrc, type Emote } from '../components/ui/mascot.ts'
 import { paymentRetryPath, usePaymentConfirm } from '../features/wallet/hooks/usePaymentConfirm.ts'
 import type { ReactNode } from 'react'
 
 const n = (v: number) => `${v.toLocaleString('ko-KR')} 비트`
 
-function Card({ ok, face, title, children, actions }: { ok?: boolean; face: Face; title: string; children?: ReactNode; actions: ReactNode }) {
+function Card({ ok, emote, title, children, actions }: { ok?: boolean; emote: Emote; title: string; children?: ReactNode; actions: ReactNode }) {
   return (
     <Panel tone={ok ? 'hero' : 'line'} className='max-w-lg' innerClassName='flex items-center gap-3.5 p-[18px]'>
-      <img src={faceSrc(face)} alt='' className='size-14 shrink-0 rounded-full' />
+      <img src={emoteSrc(emote)} alt='' className='h-16 w-auto shrink-0 object-contain' />
       <div role={ok ? 'status' : 'alert'} className='flex min-w-0 flex-col items-start gap-1.5'>
         <h1 className='text-base font-bold'>{title}</h1>
         {children && <div className='text-[13px] break-keep text-text-muted'>{children}</div>}
@@ -31,7 +31,7 @@ const wallet = (
 /** /payments/success: 토스가 돌려준 쿼리를 서버에서 승인하고 결과를 보여 준다. */
 function Success() {
   const { valid, query } = usePaymentConfirm()
-  if (!valid) return <Card face='grumpy' title='결제 정보가 올바르지 않아요' actions={wallet} />
+  if (!valid) return <Card emote='sweat' title='결제 정보가 올바르지 않아요' actions={wallet} />
   if (query.isError) {
     const e = query.error
     // 4xx는 서버가 토스 승인 전에 막았거나 토스가 승인을 거절한 경우라 돈이 나가지 않았다(주문은 pending으로 남음, api.md 결제 절).
@@ -39,7 +39,7 @@ function Success() {
     if (e instanceof ApiRequestError && e.status < 500) return <NotCompleted reason={e.message}>결제가 승인되지 않아 돈은 빠져나가지 않았어요.</NotCompleted>
     return (
       <Card
-        face='grumpy'
+        emote='sweat'
         title='결제 확인이 늦어지고 있어요'
         actions={
           <>
@@ -60,7 +60,7 @@ function Success() {
     return (
       <Card
         ok
-        face='joy'
+        emote='excited'
         title='후원했어요!'
         actions={
           <Button to={`/live/${r.donation.broadcastId}`} variant='secondary' size='sm'>
@@ -72,7 +72,7 @@ function Success() {
       </Card>
     )
   return (
-    <Card ok face='happy' title={r.notice ?? '충전했어요!'} actions={wallet}>
+    <Card ok emote='excited' title={r.notice ?? '충전했어요!'} actions={wallet}>
       {n(r.charged)}이 잔액에 들어갔어요 · 잔액 {n(r.balance)}
     </Card>
   )
@@ -82,7 +82,7 @@ function Success() {
 function NotCompleted({ reason, children }: { reason?: string | null; children: ReactNode }) {
   return (
     <Card
-      face='grumpy'
+      emote='sweat'
       title='결제가 완료되지 않았어요'
       actions={
         <Button to={paymentRetryPath()} variant='secondary' size='sm'>

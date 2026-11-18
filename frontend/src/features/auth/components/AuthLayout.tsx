@@ -1,28 +1,39 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router'
+import Panel from '../../../components/ui/Panel.tsx'
 
-// 로그인·가입 공통: lg 이상 2열(브랜드 패널 + 폼, 최대 폭·세로 가운데), 그 아래는 작은 브랜드 띠 + 1열 폼. 보드는 셸 없는 전체 화면이지만 셸(헤더·사이드바) 안에서 그린다.
-export default function AuthLayout({ hero, children }: { hero: ReactNode; children: ReactNode }) {
+const shade = 'radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--color-bg) 72%, transparent) 0%, color-mix(in srgb, var(--color-bg) 90%, transparent) 55%, color-mix(in srgb, var(--color-bg) 97%, transparent) 100%)'
+
+// 시안(Auth·Signup): 셸 없는 전체 화면. 배경 텍스처 + 가장자리 어두운 막, 가운데에 로고·슬로건·카드 한 줄. 600px 이하(컨테이너 기준)는 위쪽 정렬·여백 축소.
+export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className='mx-auto grid w-full max-w-[1120px] gap-6 lg:min-h-[calc(100dvh-10rem)] lg:grid-cols-[minmax(0,1fr)_minmax(380px,440px)] lg:items-center lg:gap-12'>
-      <section
-        className='chamfer relative flex items-center justify-between gap-4 overflow-hidden bg-surface bg-cover bg-center px-5 py-4 [--c:8px] lg:hidden'
-        style={{ backgroundImage: 'url(/brand/bg-speed.jpg)' }}
-      >
-        <div className='absolute inset-0 bg-linear-to-r from-bg/20 to-bg/75' />
-        <div className='relative flex flex-col gap-2'>
-          <img src='/brand/logo-flutch.png' alt='FLUTCH' className='h-8 self-start' />
-          <span className='font-display text-sm font-bold tracking-wide text-brand italic'>Feel the Moment. Live on FLUTCH.</span>
+    <div className='@container relative min-h-dvh bg-bg bg-cover bg-center' style={{ backgroundImage: 'url(/brand/bg-speed.jpg)' }}>
+      <div className='absolute inset-0' style={{ background: shade }} aria-hidden />
+      <main className='relative mx-auto flex min-h-dvh flex-col items-center justify-center gap-6 px-6 pt-14 pb-16 @max-[600px]:justify-start @max-[600px]:gap-[18px] @max-[600px]:px-4 @max-[600px]:pt-7 @max-[600px]:pb-10'>
+        <div className='flex flex-col items-center gap-2.5 text-center'>
+          <Link to='/' aria-label='FLUTCH 홈'>
+            <img src='/brand/logo-flutch.png' alt='FLUTCH' className='h-11 @max-[600px]:h-8' />
+          </Link>
+          <span className='font-display text-[15px] font-bold tracking-[.04em] text-brand italic @max-[600px]:text-[13px]'>Feel the Moment. Live on FLUTCH.</span>
         </div>
-        <img src='/brand/mascot-controller.png' alt='' className='relative h-24 w-auto shrink-0 object-contain' />
-      </section>
-      <section
-        className='chamfer relative hidden min-h-[520px] flex-col overflow-hidden bg-surface bg-cover bg-center p-10 [--c:12px] lg:flex'
-        style={{ backgroundImage: 'url(/brand/bg-speed.jpg)' }}
-      >
-        <div className='absolute inset-0 bg-linear-to-r from-bg/20 to-bg/75' />
-        <div className='relative flex grow flex-col justify-between gap-6'>{hero}</div>
-      </section>
-      <section className='w-full max-w-[440px] py-2 lg:py-6'>{children}</section>
+        {children}
+      </main>
     </div>
   )
 }
+
+/** 폼 카드(로그인 440 · 가입 480). */
+export function AuthCard({ title, description, wide, children }: { title: string; description?: string; wide?: boolean; children: ReactNode }) {
+  return (
+    <Panel className={`w-full ${wide ? 'max-w-[480px]' : 'max-w-[440px]'}`} innerClassName='flex flex-col gap-[18px] bg-surface/95 p-8 @max-[600px]:p-5'>
+      <div className='flex flex-col gap-1'>
+        <h1 className='text-[26px] font-black @max-[600px]:text-[22px]'>{title}</h1>
+        {description && <span className='text-[13px] text-text-muted'>{description}</span>}
+      </div>
+      {children}
+    </Panel>
+  )
+}
+
+/** 입력칸을 시안 높이(48)로 키운다. */
+export const tall = '[&_input]:h-12 [&_input]:text-[15px]'
