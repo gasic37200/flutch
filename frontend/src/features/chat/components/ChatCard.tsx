@@ -40,6 +40,11 @@ export default function ChatCard({ chat, broadcast, className, headerClassName =
       <div className={`border-b border-surface-2 px-4 py-3.5 ${headerClassName}`}>
         <b className='text-[15px]'>채팅</b>
       </div>
+      {chat.reconnecting && (
+        <p role='status' className='border-b border-surface-2 px-4 py-1.5 text-xs text-text-dim'>
+          실시간 연결이 끊겼어요. 다시 연결하는 중…
+        </p>
+      )}
       <div className='relative flex min-h-0 grow flex-col'>
         <div
           ref={ref}

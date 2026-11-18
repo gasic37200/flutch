@@ -107,7 +107,7 @@ export const useChangePassword = () =>
 
 /** `?next=` 값이 같은 사이트 안의 경로일 때만 쓴다(오픈 리다이렉트 방지). */
 export function safeNext(next: string | null): string {
-  return next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\') ? next : '/'
+  return next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\') && !/\p{Cc}/u.test(next) ? next : '/'
 }
 
 /** 로그인이 필요한 화면에서 호출. 비로그인이면 `/login?next=<현재 경로>`로 보내고, 로그인 후 돌아온다. */

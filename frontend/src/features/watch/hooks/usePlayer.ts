@@ -43,8 +43,10 @@ export function usePlayer(tracks: ViewerTracks, muted: boolean) {
 
   const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement) void document.exitFullscreen()
-    else void boxRef.current?.requestFullscreen()
-  }, [])
+    else if (boxRef.current?.requestFullscreen) void boxRef.current.requestFullscreen()
+    // iOS Safari는 요소 전체화면이 없어 video 자체의 전용 전체화면을 쓴다
+    else (videoRef.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null)?.webkitEnterFullscreen?.()
+  }, [videoRef])
 
   return { videoRef, pipRef, pipHidden, togglePip: () => setPipHidden((h) => !h), hasPip: !!(tracks.screenShare && tracks.camera), micRef, shareAudioRef, boxRef, volume, setVolume, fullscreen, toggleFullscreen, muted }
 }

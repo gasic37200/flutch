@@ -21,7 +21,12 @@ import { useMediaQuery } from '../hooks/useMediaQuery.ts'
 import ShellBody from '../layouts/ShellBody.tsx'
 
 // 슬롯: 클러치 버튼·SUPER BURST(T19·T24)는 게이지 Panel 오른쪽, 후원하기(T23)·팔로우(T27)는 WatchInfo 오른쪽 끝, 후원 목록(T23)은 모바일 탭 추가 + 데스크톱 영상 아래 패널.
+// 주소의 id만 바뀌면 같은 인스턴스가 남아 이전 방송 상태가 섞이므로 id를 key로 다시 마운트한다.
 export default function WatchPage() {
+  return <WatchPageBody key={useParams().broadcastId} />
+}
+
+function WatchPageBody() {
   const id = Number(useParams().broadcastId) || undefined
   const { broadcast, error, refetch, view, source, viewer, events } = useWatch(id)
   const chat = useChat(id, events)

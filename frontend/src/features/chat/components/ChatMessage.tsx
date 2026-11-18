@@ -9,7 +9,7 @@ import type { ChatApi } from '../hooks/useChat.ts'
 import { MAX_CHAT } from '../hooks/useChatComposer.ts'
 import { useChatItem } from '../hooks/useChatItem.ts'
 
-const clock = (iso: string) => new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+const clock = (iso: string) => new Date(iso).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
 
 const link = 'px-2 py-1 text-xs text-text-muted hover:text-text'
 

@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, ApiRequestError } from '../../../api/client.ts'
 import type { BroadcastDetail } from '../../../api/generated/BroadcastDetail.ts'
 import type { BurstRequest } from '../../../api/generated/BurstRequest.ts'
@@ -27,6 +27,7 @@ export function useBurst(broadcast: BroadcastDetail | undefined, onEvent: OnEven
   const [custom, setCustom] = useState('')
   const [anonymous, setAnonymous] = useState(false)
   const [sending, setSending] = useState(false)
+  const sendLock = useRef(false) // 같은 틱 더블클릭 방지(state는 다음 렌더에야 반영)
   const [message, setMessage] = useState<string>()
   // 연출 시작 시각(0이면 꺼짐). 누가 보냈든 버스트 후원 이벤트로 모든 시청자에게 켠다.
   const [boost, setBoost] = useState(0)
@@ -52,7 +53,8 @@ export function useBurst(broadcast: BroadcastDetail | undefined, onEvent: OnEven
   }
 
   const send = async () => {
-    if (id === undefined || sending || !valid) return
+    if (id === undefined || sendLock.current || !valid) return
+    sendLock.current = true
     setSending(true)
     setMessage(undefined)
     try {
@@ -67,6 +69,7 @@ export function useBurst(broadcast: BroadcastDetail | undefined, onEvent: OnEven
         else setMessage(e.fields?.amount ?? e.message)
       } else setMessage('네트워크 연결을 확인해 주세요.')
     } finally {
+      sendLock.current = false
       setSending(false)
     }
   }

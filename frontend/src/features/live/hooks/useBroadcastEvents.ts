@@ -11,7 +11,7 @@ type EventData<T extends EventType> = Extract<AnyEvent, { type: T }>['data']
 /** 이벤트 구독. 반환한 함수를 호출하면 해제한다(effect 정리 함수로 그대로 쓴다). */
 export type OnEvent = <T extends EventType>(type: T, handler: (data: EventData<T>) => void) => () => void
 
-const MAX_OPEN_FAILS = 5 // 한 번도 열리지 못하고 연속 실패하면 포기(Origin 불일치 403 등)
+const MAX_OPEN_FAILS = 5 // 서버는 응답하는데 소켓만 연속 거절되면 포기(Origin 불일치 403 등). 네트워크·5xx 실패는 세지 않는다
 const backoff = (n: number) => Math.min(1000 * 2 ** n, 15_000)
 
 /**
@@ -111,11 +111,15 @@ export function useBroadcastEvents(broadcastId: number | undefined) {
         setConnected(false)
         if (closed) return
         if (opened) return schedule()
-        // 브라우저는 업그레이드 실패 상태 코드를 알려 주지 않는다 → 상세 조회로 404를 확인, 연속 실패는 상한.
-        // shortcut: 403(Origin)은 구별하지 못하고 상한으로만 멈춘다.
-        if (++failures >= MAX_OPEN_FAILS) return
+        // 브라우저는 업그레이드 실패 상태 코드를 알려 주지 않는다 → 상세 조회로 구별한다.
+        // 조회는 성공했는데 소켓만 거절됐을 때(403 등)만 횟수를 센다. 404는 멈추고, 네트워크·5xx는 백오프로 계속 재시도.
+        // shortcut: 서버가 죽어 있는 동안은 15초 간격으로 무한 재시도한다(탭이 열려 있는 한).
         api<BroadcastDetail>(`/broadcasts/${broadcastId}`).then(
-          () => !closed && schedule(),
+          () => {
+            if (closed) return
+            failures += 1
+            if (failures < MAX_OPEN_FAILS) schedule()
+          },
           (err: unknown) => {
             if (!closed && !(err instanceof ApiRequestError && err.status === 404)) schedule()
           },

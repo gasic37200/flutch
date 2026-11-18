@@ -20,7 +20,12 @@ import ShellBody from '../layouts/ShellBody.tsx'
 
 const DAY_MS = 86_400_000
 
+// 주소의 id만 바뀌면 같은 인스턴스가 남아 이전 방송 상태가 섞이므로 id를 key로 다시 마운트한다.
 export default function ReplayPage() {
+  return <ReplayPageBody key={useParams().recordingId} />
+}
+
+function ReplayPageBody() {
   const id = Number(useParams().recordingId) || undefined
   // CLUTCH FEED 클립: ?t=시작초&d=길이초
   const sp = useSearchParams()[0]
