@@ -1,6 +1,6 @@
 # 디자인 시안 보드 원본
 
-> 원본: [FLUTCH 디자인 시안 (아티팩트, 비공개)](https://claude.ai/artifact/X4mcgYsXY9tngprQf1qh6N) — 2026-11-10 메인 세션이 내보냄. 서브에이전트는 아티팩트를 열 수 없으므로 **이 폴더가 시안의 기준**이다.
+> 원본: [FLUTCH 디자인 시안 (아티팩트, 비공개)](https://claude.ai/artifact/X4mcgYsXY9tngprQf1qh6N) — 2026-11-10 메인 세션이 내보냄, 2026-11-18 디자인 세션이 최신본(파동 이미지·Beat 단위 반영)과 `assets/`·렌더 도구로 갱신. 서브에이전트는 아티팩트를 열 수 없으므로 **이 폴더가 시안의 기준**이다.
 > 시안을 고치면 메인 세션이 다시 내보낸다.
 
 > **2026-11-18 재내보내기(사용자 시안 갱신)**: 보드를 최신 아티팩트로 교체하고 폭별 미리보기 보드(`*W768/W1024/W1920/W2560`, `*Mobile`), `BrandAssets`(E 보드: 이모티콘·배너), `Comp*`(컴포넌트 시트)를 추가했다. 새 보드의 이미지는 `/_blob/<id>` 그대로다 — 아래 표로 프론트 파일에 대응한다.
@@ -14,14 +14,27 @@
 > | fb2b18c2… bc352f43… 10d98373… 등 원형 얼굴 | 기존 `/brand/face-*.png`(프로필 사진 전용) |
 
 - 파일 하나 = 보드 하나. `<x-dc>` 안의 HTML·인라인 스타일이 시안 그대로다(색·간격·글꼴 크기·사선 모서리 `ch12`/`ch6`·배지·문구). `{{…}}`·`<sc-for>`는 예시 데이터 반복이다.
-- 이미지는 `../brand/` 파일을 가리킨다(아티팩트의 `/_blob/…`를 해시로 대조해 바꿈). 프론트에서는 `/brand/<파일>`.
+- 이미지는 `/_blob/<id>` 그대로이고 원본 파일은 `assets/<id>.*`에 있다. 프론트 파일 대응은 위 표(파동 아이콘 `f6543586…`는 아직 프론트에 없다 → `frontend/public/brand/wave.png`로 복사해 보드의 `.wave` 처럼 CSS mask + `currentColor`로 쓴다. 모든 파동 아이콘이 이 이미지다).
 - 시안의 hex는 참고값이다. 코드에서는 `frontend/src/styles/tokens.css` 토큰만 쓴다(AGENTS §6). 시안 색이 토큰에 없으면 토큰을 추가한다.
-- 보드는 자체 런타임(`support.js`)이 있어야 렌더된다. 브라우저로 열지 말고 **소스를 읽는다**.
+- 보드는 `../tools/design-ref.mjs`로 **정적 페이지·기준 PNG로 렌더**된다. 소스만 읽고 구현하지 말고, 화면 task는 아래 diff로 맞춘다.
+
+## 시안 diff (화면 task 필수, 2026-11-18)
+WSL에서 (Playwright는 `~/qa-tools`에 설치돼 있음):
+```bash
+export PLAYWRIGHT=/home/dbsrh/qa-tools/node_modules/playwright/index.mjs
+node docs/design-refs/tools/design-ref.mjs render                 # 모든 보드 → docs/design-refs/out/<보드>.png (기준 이미지)
+node docs/design-refs/tools/design-ref.mjs diff Home http://<task>.localhost:<VITE_PORT>/
+node docs/design-refs/tools/design-ref.mjs diff Wallet http://…/wallet --storage /tmp/<task>/state.json   # 로그인 화면은 Playwright storageState
+```
+- `diff`는 보드의 미리보기 폭·높이(예: `Home` 1440, `HomeW768` 768, `HomeMobile` 390)로 앱을 찍어 `out/<보드>.diff.png`(시안 | 앱 | 빨강=다른 픽셀)와 다른 픽셀 비율을 낸다. `out/`은 git에 안 올라간다.
+- **완료 기준**: diff 이미지에서 빨강이 **데이터 차이(이름·숫자·썸네일·아바타)뿐**이어야 한다. 위치·크기·간격·색·글꼴·모서리·아이콘·문구가 다르면 고친다. 비율 숫자는 참고용(데이터가 달라 0%는 안 나옴).
+- 폭별 보드가 있는 화면은 **그 폭 전부** diff한다(`Home`·`HomeW768`·`HomeW1024`·`HomeW1920`·`HomeW2560`·`HomeMobile`).
+- PR 본문에 보드별 diff 결과(비율 + 남은 차이가 데이터뿐인지)를 적는다. 시안이 기능과 맞지 않아 일부러 다르게 한 곳은 이유를 적는다.
 
 | 보드 | 화면 | 프론트 경로 | 담당 task |
 |---|---|---|---|
 | Main.dc.html | 디자인 시스템(토큰·타이포·컬러) | — | T05d |
-| Components.dc.html | 공통 컴포넌트·모달·토스트·드롭다운·입력·버튼·탭·스켈레톤·빈 상태·배지·툴팁 | — | T05d |
+| CompActions · CompFeedback · CompOverlay · CompData · BrandAssets | 공통 컴포넌트 A~D 시트, E 브랜드 에셋(이모티콘·배너) | — | T05d |
 | Guest.dc.html | 비로그인 헤더·채팅 | 전역 | T05d (채팅 부분은 T17) |
 | Errors.dc.html | 에러 3종 | `*` | T05d |
 | Home.dc.html · HomeMobile.dc.html | 홈 데스크톱·모바일 | `/` | T06c (히어로·CLUTCH 패널은 T29, FEED는 T30) |

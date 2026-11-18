@@ -15,6 +15,7 @@ body{margin:0;background:#0A0C0F}
 a{color:#B0F612}
 .ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
 .ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.wave{display:inline-block;vertical-align:middle;flex:none;background:currentColor;-webkit-mask:url(/_blob/f6543586bb296ec76dbbcbbf0df43ee9) center/contain no-repeat;mask:url(/_blob/f6543586bb296ec76dbbcbbf0df43ee9) center/contain no-repeat}
 .dots{background-image:radial-gradient(rgba(176,246,18,.45) 1px,transparent 1.5px);background-size:6px 6px}
 .wl-app{container-type:inline-size;container-name:wl}
 @container wl (max-width:600px){
@@ -39,7 +40,7 @@ a{color:#B0F612}
       <h1 style="margin:0;font-size:26px;font-weight:900">내 지갑</h1>
 
       <div style="filter:drop-shadow(0 0 12px rgba(176,246,18,.35))"><div class="ch12" style="background:#B0F612;padding:1px"><div class="ch12 wl-balance" style="background:#12151B;padding:24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;position:relative;overflow:hidden">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:relative"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg>
+                <span class="wave" aria-hidden="true" style="width:48px;height:48px;color:#B0F612;position:relative"></span>
         <div style="position:relative;display:flex;flex-direction:column;gap:4px;flex:1">
           <span style="font-size:14px;color:#A3AAB6">보유 비트</span>
           <span><b style="font-family:'JetBrains Mono',monospace;font-size:40px">3,500</b> <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:#B0F612;font-size:20px">Beat</span></span>

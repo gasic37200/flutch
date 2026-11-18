@@ -15,6 +15,7 @@ body{margin:0;background:#0A0C0F}
 a{color:#F3F5F7;text-decoration:none}a:hover{color:#D4FF6A}
 .ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
 .ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.wave{display:inline-block;vertical-align:middle;flex:none;background:currentColor;-webkit-mask:url(/_blob/f6543586bb296ec76dbbcbbf0df43ee9) center/contain no-repeat;mask:url(/_blob/f6543586bb296ec76dbbcbbf0df43ee9) center/contain no-repeat}
 .texture{background:#0A0C0F url(/_blob/3d8747c0d27ead1c50b2d826552c3c41) center/cover}
 .pu-app{container-type:inline-size;container-name:pu}
 .pu-inner{max-width:1600px;margin:0 auto;box-sizing:border-box;padding:28px 32px 56px;display:flex;flex-direction:column;gap:32px}
@@ -34,7 +35,7 @@ a{color:#F3F5F7;text-decoration:none}a:hover{color:#D4FF6A}
 </helmet>
 <div class="pu-app" style="width:100%;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
 <div class="pu-inner">
-  <div class="pu-head" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg><h1 style="margin:0;font-family:'Chakra Petch',sans-serif;font-style:italic;font-size:30px;font-weight:700;letter-spacing:.04em">PULSE</h1><span style="font-size:14px;color:#A3AAB6">내가 팔로우한 채널 <b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">7</b></span></div>
+  <div class="pu-head" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="wave" aria-hidden="true" style="width:28px;height:28px;color:#B0F612;"></span><h1 style="margin:0;font-family:'Chakra Petch',sans-serif;font-style:italic;font-size:30px;font-weight:700;letter-spacing:.04em">PULSE</h1><span style="font-size:14px;color:#A3AAB6">내가 팔로우한 채널 <b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">7</b></span></div>
 
   <section style="display:flex;flex-direction:column;gap:14px">
     <div style="display:flex;align-items:center;gap:10px"><span style="width:10px;height:10px;border-radius:50%;background:#FF2E4D"></span><h2 style="margin:0;font-size:18px;font-weight:900">지금 방송 중</h2><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#A3AAB6">3</span></div>
