@@ -7,7 +7,7 @@ import { emoteSrc, type Emote } from '../components/ui/mascot.ts'
 import { paymentRetryPath, usePaymentConfirm } from '../features/wallet/hooks/usePaymentConfirm.ts'
 import type { ReactNode } from 'react'
 
-const n = (v: number) => `${v.toLocaleString('ko-KR')} 비트`
+const n = (v: number) => `${v.toLocaleString('ko-KR')} Beat`
 
 function Card({ ok, emote, title, children, actions }: { ok?: boolean; emote: Emote; title: string; children?: ReactNode; actions: ReactNode }) {
   return (

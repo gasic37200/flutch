@@ -77,7 +77,7 @@ export function useChat(broadcastId: number | undefined, { onEvent, connected }:
         // 후원 강조 줄도 저장되지 않는 실시간 줄이라 차단 알림 줄과 같은 방식으로 둔다(익명 처리는 서버가 이벤트 형태로 이미 함)
         const afterId = qc.getQueryData<ChatPage>(key)?.items.at(-1)?.id ?? null
         const name = donation.donor?.nickname ?? '익명의 후원자'
-        setSystems((s) => [...s.slice(-49), { key: nextSystemKey++, afterId, text: `${name}님이 ${donation.amount}비트를 후원했어요`, donation }])
+        setSystems((s) => [...s.slice(-49), { key: nextSystemKey++, afterId, text: `${name}님이 ${donation.amount} Beat를 후원했어요`, donation }])
       }),
       onEvent('resync', () => void qc.invalidateQueries({ queryKey: key })),
     ]

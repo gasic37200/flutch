@@ -14,7 +14,7 @@ export default function ClutchButton({ clutch }: { clutch: ReturnType<typeof use
       </Button>
     )
   }
-  const label = next === 'paid' ? '1비트' : combo > 0 ? `COMBO x${combo}` : 'CLUTCH'
+  const label = next === 'paid' ? '1 Beat' : combo > 0 ? `COMBO x${combo}` : 'CLUTCH'
   return (
     <Button onClick={() => void press()} loading={sending} variant='primary' size='md' className='w-full md:w-40' aria-label={`클러치 (${label})`}>
       <Icon name='bolt' className='size-4' />

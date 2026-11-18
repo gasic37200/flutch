@@ -12,7 +12,7 @@ export default function DonationLine({ donation: d }: { donation: Donation }) {
         <b className='break-all'>{donorName(d)}</b>
         {d.anonymous && d.donor && <Badge tone='anonymous' />}
         <b className='font-mono text-burst'>{beats(d.amount)}</b>
-        <span className='text-text-muted'>비트 후원</span>
+        <span className='text-text-muted'>Beat 후원</span>
       </div>
       {d.message && <span className='break-words text-text-muted'>{d.message}</span>}
     </li>

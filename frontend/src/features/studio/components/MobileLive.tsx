@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import DonationAlert from '../../donation/components/DonationAlert.tsx'
 import ChatOverlay from '../../chat/components/ChatOverlay.tsx'
 import Badge from '../../../components/ui/Badge.tsx'
 import Button from '../../../components/ui/Button.tsx'
 import Icon from '../../../components/ui/Icon.tsx'
+import Modal from '../../../components/ui/Modal.tsx'
 import type { useStudio } from '../hooks/useStudio.ts'
+import StudioInfoForm from './StudioInfoForm.tsx'
 import StudioGauge from './StudioGauge.tsx'
 import LevelMeter from './LevelMeter.tsx'
 import StudioPreview from './StudioPreview.tsx'
@@ -13,6 +16,7 @@ const round = 'flex size-14 items-center justify-center rounded-full bg-surface-
 // 모바일 방송 중: 카메라가 전체 화면, 그 위에 상태 줄·원형 버튼·마이크 레벨을 얹는다. 채팅은 읽기 전용 오버레이, 후원 알림은 그 위(넘기기 가능).
 export default function MobileLive({ s }: { s: ReturnType<typeof useStudio> }) {
   const { media, env, data } = s
+  const [editing, setEditing] = useState(false)
   if (!data) return null
   const error = s.pub.error ?? media.error
   return (
@@ -58,7 +62,7 @@ export default function MobileLive({ s }: { s: ReturnType<typeof useStudio> }) {
         </div>
       )}
 
-      <div className='absolute right-20 bottom-24 left-4 text-xs text-text-muted [text-shadow:0_1px_2px_var(--color-bg)]' role='status'>
+      <div className='absolute right-20 bottom-24 left-4 text-[11px] text-text-dim [text-shadow:0_1px_2px_var(--color-bg)]' role='status'>
         {s.wakeLockMissing ? '화면이 꺼지지 않게 설정해 주세요. 이 브라우저에서는 자동으로 막을 수 없어요.' : '화면 꺼짐 방지 켜짐'}
         <br />
         다른 앱으로 이동하면 카메라가 멈출 수 있어요.
@@ -85,7 +89,16 @@ export default function MobileLive({ s }: { s: ReturnType<typeof useStudio> }) {
             <Icon name='micOff' className='size-6' />
           </button>
         )}
+        <button type='button' aria-label='방송 정보 수정' onClick={() => setEditing(true)} className={round}>
+          {/* 공용 Icon에 연필이 없어 시안 경로를 그대로 둔다 */}
+          <svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className='size-6' aria-hidden>
+            <path d='M4 20h4L19 9l-4-4L4 16z' />
+          </svg>
+        </button>
       </div>
+      <Modal open={editing} onClose={() => setEditing(false)} title='방송 정보 수정'>
+        <StudioInfoForm broadcast={data} onSaved={() => setEditing(false)} />
+      </Modal>
     </div>
   )
 }

@@ -17,7 +17,7 @@ import StudioPage from './pages/StudioPage.tsx'
 import WalletPage from './pages/WalletPage.tsx'
 import WatchPage from './pages/WatchPage.tsx'
 
-// 로그인·가입은 셸 없는 전체 화면(시안), 나머지 페이지는 AppShell 안에서 그려지고 에러 화면(errorElement)도 같은 셸 안에 뜬다.
+// 로그인·가입·스튜디오는 셸 없는 전체 화면(시안), 나머지 페이지는 AppShell 안에서 그려지고 에러 화면(errorElement)도 같은 셸 안에 뜬다.
 export const router = createBrowserRouter([
   {
     element: <AuthShell bare />,
@@ -26,6 +26,10 @@ export const router = createBrowserRouter([
       { path: 'login', element: <AuthPage mode="login" /> },
       { path: 'signup', element: <AuthPage mode="signup" /> },
       { path: 'signup/kakao', element: <AuthPage mode="kakao" /> },
+      // 스튜디오·방송 등록/수정도 셸 없는 전체 화면: 스튜디오 전용 상단바(시안)
+      { path: 'studio', element: <StudioPage /> },
+      { path: 'broadcasts/new', element: <BroadcastFormPage /> },
+      { path: 'broadcasts/:broadcastId/edit', element: <BroadcastFormPage /> },
     ],
   },
   {
@@ -38,9 +42,6 @@ export const router = createBrowserRouter([
           { path: 'explore', element: <ExplorePage /> },
           { path: 'live/:broadcastId', element: <WatchPage /> },
           { path: 'manage', element: <ManagePage /> },
-          { path: 'broadcasts/new', element: <BroadcastFormPage /> },
-          { path: 'broadcasts/:broadcastId/edit', element: <BroadcastFormPage /> },
-          { path: 'studio', element: <StudioPage /> },
           { path: 'pulse', element: <PulsePage /> },
           { path: 'replay', element: <ReplayListPage /> },
           { path: 'replay/:recordingId', element: <ReplayPage /> },

@@ -31,13 +31,13 @@ export default function BurstButton({ burst, mode }: { burst: ReturnType<typeof 
             </Button>
             <Button variant='burst' onClick={() => void b.send()} loading={b.sending} disabled={!b.valid || b.short}>
               <Icon name='bolt' className='size-4' />
-              {b.valid ? `${num(b.amount)}비트 보내기` : '보내기'}
+              {b.valid ? `${num(b.amount)} Beat 보내기` : '보내기'}
             </Button>
           </>
         }
       >
         <div className='flex flex-col gap-3'>
-          <p className='text-text-muted'>쓴 비트만큼 게이지가 올라요(1비트 = 1점). 스트리머에게 후원으로 전달돼요.</p>
+          <p className='text-text-muted'>쓴 비트만큼 게이지가 올라요(1 Beat = 1점). 스트리머에게 후원으로 전달돼요.</p>
           <div className='flex items-center justify-between gap-3'>
             <span className='text-text-muted'>100%까지</span>
             <BeatAmount amount={b.bitsToFull} unit className='text-lg' />

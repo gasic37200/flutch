@@ -36,4 +36,4 @@ export function AuthCard({ title, description, wide, children }: { title: string
 }
 
 /** 입력칸을 시안 높이(48)로 키운다. */
-export const tall = '[&_input]:h-12 [&_input]:text-[15px]'
+export const tall = '[&_input]:h-[46px] [&_input]:text-[15px]'
