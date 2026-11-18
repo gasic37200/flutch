@@ -15,21 +15,23 @@ body{margin:0;background:#0A0C0F}
 a{color:#B0F612}
 .ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
 .ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
-.texture{background:#0A0C0F url(../brand/bg-speed.jpg) center/cover}
+.texture{background:#0A0C0F url(/_blob/3d8747c0d27ead1c50b2d826552c3c41) center/cover}
+.bf-app{container-type:inline-size;container-name:bf}
+@container bf (max-width:600px){.bf-wrap{padding:20px 16px 40px!important}.bf-cats{grid-template-columns:repeat(2,minmax(0,1fr))!important}.bf-actions>*{flex:1 1 100%}.bf-copy{margin-left:0!important}.bf-title{font-size:22px!important}.st-label{display:none}}
 </style>
 </helmet>
-<div style="min-height:100vh;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
+<div class="bf-app" style="width:100%;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
   <header style="display:flex;align-items:center;gap:16px;padding:0 24px;height:64px;border-bottom:1px solid #191D25;box-sizing:border-box">
-    <img src="../brand/logo-flutch.png" alt="FLUTCH" style="height:28px">
-    <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;letter-spacing:.08em;color:#A3AAB6">STUDIO</span>
+    <img src="/_blob/93d57471d9c5b41b1a3934e836414b56" alt="FLUTCH" style="height:28px">
+    <span class="st-label" style="font-family:'Chakra Petch',sans-serif;font-weight:700;letter-spacing:.08em;color:#A3AAB6">STUDIO</span>
   </header>
 
-  <div style="max-width:1080px;margin:0 auto;padding:32px 24px 48px;display:flex;flex-wrap:wrap;gap:28px;box-sizing:border-box">
+  <div class="bf-wrap" style="max-width:1080px;margin:0 auto;padding:32px 24px 48px;display:flex;flex-wrap:wrap;gap:28px;box-sizing:border-box">
     <form style="flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:20px">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <h1 style="margin:0;font-size:26px;font-weight:900">새 방송 등록</h1>
+        <h1 class="bf-title" style="margin:0;font-size:26px;font-weight:900">새 방송 등록</h1>
         <span style="font-size:13px;color:#A3AAB6">대기 중인 방송 <b style="font-family:'JetBrains Mono',monospace;color:#F3F5F7">2</b> / 5</span>
-        <button type="button" class="ch6" style="margin-left:auto;height:40px;padding:0 14px;border:0;background:#191D25;color:#F3F5F7;font-size:14px;font-family:'Noto Sans KR',sans-serif;display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"></path></svg>이전 방송 정보 복사</button>
+        <button type="button" class="ch6 bf-copy" style="margin-left:auto;height:40px;padding:0 14px;border:0;background:#191D25;color:#F3F5F7;font-size:14px;font-family:'Noto Sans KR',sans-serif;display:inline-flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"></path></svg>이전 방송 정보 복사</button>
       </div>
 
       <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#A3AAB6">제목 <span style="color:#7C8494">(필수, 2~50자)</span>
@@ -39,7 +41,7 @@ a{color:#B0F612}
 
       <fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px">
         <legend style="font-size:13px;color:#A3AAB6;margin-bottom:8px">카테고리 <span style="color:#7C8494">(필수)</span></legend>
-        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">
+        <div class="bf-cats" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">
           <sc-for list="{{cats}}" as="c" hint-placeholder-count="8">
             <label class="ch6" style="height:48px;display:flex;align-items:center;justify-content:center;background:{{c.bg}};color:{{c.fg}};font-weight:{{c.w}};font-size:14px"><input type="radio" name="cat" style="position:absolute;opacity:0">{{c.label}}</label>
           </sc-for>
@@ -59,7 +61,7 @@ a{color:#B0F612}
         <button type="button" role="switch" aria-checked="true" aria-label="녹화" style="width:48px;height:28px;border-radius:999px;border:0;background:#B0F612;position:relative"><span style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#0A0C0F"></span></button>
       </div></div>
 
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div class="bf-actions" style="display:flex;gap:10px;flex-wrap:wrap">
         <button type="button" class="ch6" style="height:50px;padding:0 24px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:16px;font-family:'Noto Sans KR',sans-serif">등록하고 스튜디오로</button>
         <button type="button" class="ch6" style="height:50px;padding:0 20px;border:0;background:#191D25;color:#F3F5F7;font-size:15px;font-family:'Noto Sans KR',sans-serif">대기 방송으로 저장</button>
       </div>
@@ -68,10 +70,10 @@ a{color:#B0F612}
 
     <aside style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:10px">
       <span style="font-size:13px;color:#A3AAB6">목록에 이렇게 보여요</span>
-      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;display:flex;flex-direction:column">
-        <div class="texture" style="aspect-ratio:16/9;position:relative"><span style="position:absolute;top:8px;left:8px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;padding:2px 6px">LIVE</span><span style="position:absolute;left:8px;bottom:8px;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:13px">FPS</span><img src="../brand/face-sleepy.png" alt="" style="position:absolute;right:8px;bottom:8px;width:26px;height:26px;border-radius:50%"></div>
-        <div style="padding:12px 14px;display:flex;flex-direction:column;gap:6px"><b style="font-size:15px">주말 시참 랭크전</b><div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#A3AAB6"><img src="../brand/face-excited.png" alt="" style="width:20px;height:20px;border-radius:50%;box-shadow:0 0 0 2px #4DA3FF">김플러 · #랭크 #시청자참여</div></div>
-      </div></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="texture ch12" style="aspect-ratio:16/9;position:relative"><span style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:5px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;padding:2px 6px;letter-spacing:.06em"><span style="width:5px;height:5px;border-radius:50%;background:#fff"></span>LIVE</span><span style="position:absolute;left:8px;bottom:8px;background:rgba(10,12,15,.85);color:#FF2E4D;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;padding:2px 6px">0</span></div>
+        <div style="display:flex;gap:10px;min-width:0"><img src="/_blob/fb2b18c2689951d60837df6ed1dbd08c" alt="" style="width:32px;height:32px;border-radius:50%;box-shadow:0 0 0 2px #4DA3FF;flex:none"><div style="display:flex;flex-direction:column;gap:3px;min-width:0"><b style="font-size:14px;line-height:1.35">주말 시참 랭크전</b><span style="font-size:12px;color:#A3AAB6">김플러</span><span style="display:flex;gap:6px;margin-top:2px"><span class="ch6" style="font-size:11px;padding:2px 7px;background:#191D25;color:#A3AAB6">FPS</span><span class="ch6" style="font-size:11px;padding:2px 7px;background:#191D25;color:#A3AAB6">#랭크</span><span class="ch6" style="font-size:11px;padding:2px 7px;background:#191D25;color:#A3AAB6">#시청자참여</span></span></div></div>
+      </div>
       <span style="font-size:12px;color:#7C8494">썸네일은 방송 중 1분마다 자동으로 캡처돼요.</span>
     </aside>
   </div>

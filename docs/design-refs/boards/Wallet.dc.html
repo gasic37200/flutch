@@ -16,26 +16,39 @@ a{color:#B0F612}
 .ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
 .ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
 .dots{background-image:radial-gradient(rgba(176,246,18,.45) 1px,transparent 1.5px);background-size:6px 6px}
+.wl-app{container-type:inline-size;container-name:wl}
+@container wl (max-width:600px){
+  .wl-wrap{padding:20px 16px 40px!important;gap:24px!important}
+  .wl-wrap h1{font-size:22px!important}
+  .wl-balance{padding:18px!important}
+  .wl-balance b{font-size:30px!important}
+  .wl-balance svg{display:none}
+  .wl-charge{width:100%}
+  .wl-filters{flex-wrap:nowrap!important;overflow-x:auto;margin:0 -16px;padding:0 16px}
+  .wl-filters>*{flex:0 0 auto}
+  .wl-filters h2{width:100%}
+  .wl-row{padding:12px 14px!important;gap:10px!important}
+  .wl-type{width:64px!important;font-size:11px!important}
+}
 </style>
 </helmet>
-<div style="min-height:100vh;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
-  <div style="max-width:1200px;margin:0 auto;padding:32px 24px 48px;display:flex;flex-wrap:wrap;gap:28px;box-sizing:border-box">
+<div class="wl-app" style="width:100%;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
+  <div class="wl-wrap" style="max-width:1200px;margin:0 auto;padding:32px 24px 48px;display:flex;flex-wrap:wrap;gap:28px;box-sizing:border-box">
 
     <main style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:20px">
       <h1 style="margin:0;font-size:26px;font-weight:900">내 지갑</h1>
 
-      <div style="filter:drop-shadow(0 0 12px rgba(176,246,18,.35))"><div class="ch12" style="background:#B0F612;padding:1px"><div class="ch12" style="background:#12151B;padding:24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;position:relative;overflow:hidden">
-        <div class="dots" style="position:absolute;right:0;top:0;width:180px;height:100px;opacity:.6"></div>
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:relative"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg>
+      <div style="filter:drop-shadow(0 0 12px rgba(176,246,18,.35))"><div class="ch12" style="background:#B0F612;padding:1px"><div class="ch12 wl-balance" style="background:#12151B;padding:24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;position:relative;overflow:hidden">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:relative"><path d="M2 12h4l2.5-6 4 12 3-9 2 3H22"></path></svg>
         <div style="position:relative;display:flex;flex-direction:column;gap:4px;flex:1">
           <span style="font-size:14px;color:#A3AAB6">보유 비트</span>
-          <span><b style="font-family:'JetBrains Mono',monospace;font-size:40px">3,500</b> <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:#B0F612;font-size:20px">Beats</span></span>
+          <span><b style="font-family:'JetBrains Mono',monospace;font-size:40px">3,500</b> <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;color:#B0F612;font-size:20px">Beat</span></span>
           <span style="font-size:12px;color:#7C8494">1 Beat = 1원 · 보유 한도 3,000,000</span>
         </div>
-        <button type="button" class="ch6" style="position:relative;height:50px;padding:0 26px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:16px;font-family:'Noto Sans KR',sans-serif">충전하기</button>
+        <button type="button" class="ch6 wl-charge" style="position:relative;height:50px;padding:0 26px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:16px;font-family:'Noto Sans KR',sans-serif">충전하기</button>
       </div></div></div>
 
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="wl-filters" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <h2 style="margin:0;font-size:18px;font-weight:900;margin-right:auto">사용 내역</h2>
         <sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
           <button type="button" class="ch6" aria-pressed="{{f.on}}" style="height:34px;padding:0 12px;border:0;background:{{f.bg}};color:{{f.fg}};font-size:13px;font-weight:{{f.w}};font-family:'Noto Sans KR',sans-serif">{{f.label}}</button>
@@ -45,8 +58,8 @@ a{color:#B0F612}
 
       <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;display:flex;flex-direction:column">
         <sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
-          <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid #191D25">
-            <span class="ch6" style="width:84px;text-align:center;font-size:12px;padding:4px 0;background:#191D25;color:#A3AAB6">{{r.type}}</span>
+          <div class="wl-row" style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid #191D25">
+            <span class="ch6 wl-type" style="width:84px;flex:none;text-align:center;font-size:12px;padding:4px 0;background:#191D25;color:#A3AAB6">{{r.type}}</span>
             <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><b style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{r.desc}}</b><span style="font-size:12px;color:#7C8494">{{r.date}}</span></div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
               <b style="font-family:'JetBrains Mono',monospace;font-size:15px;color:{{r.color}}">{{r.amount}}</b>
@@ -70,7 +83,7 @@ a{color:#B0F612}
         </div>
         <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#A3AAB6">직접 입력 (1,000 ~ 1,000,000)<input type="text" inputmode="numeric" placeholder="비트" class="ch6" style="height:46px;border:0;background:#191D25;color:#F3F5F7;padding:0 12px;font-family:'JetBrains Mono',monospace;font-size:15px"></label>
         <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#A3AAB6">결제 금액</span><b style="font-family:'JetBrains Mono',monospace">10,000원</b></div>
-        <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#A3AAB6">충전 후 잔액</span><b style="font-family:'JetBrains Mono',monospace;color:#B0F612">13,500 Beats</b></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#A3AAB6">충전 후 잔액</span><b style="font-family:'JetBrains Mono',monospace;color:#B0F612">13,500 Beat</b></div>
         <button type="button" class="ch6" style="height:52px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:16px;font-family:'Noto Sans KR',sans-serif">10,000원 결제하기</button>
         <span style="font-size:12px;color:#7C8494;line-height:1.6">토스페이먼츠 테스트 결제예요. 실제로 돈이 나가지 않아요.<br>테스트 모드 충전은 환불을 지원하지 않아요.</span>
       </div></div>

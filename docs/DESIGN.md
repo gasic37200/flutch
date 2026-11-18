@@ -44,7 +44,7 @@
 | 역할 | 글꼴 |
 |---|---|
 | 한글·본문 | Noto Sans KR (400·500·700·900). 시안과 같은 글꼴을 그대로 쓴다 |
-| 영문 제목·라벨 (LIVE, CLUTCH FEED, SUPER BURST, Beats) | Chakra Petch (굵게, 필요 시 기울임) |
+| 영문 제목·라벨 (LIVE, CLUTCH FEED, SUPER BURST, Beat) | Chakra Petch (굵게, 필요 시 기울임) |
 | 숫자·카운터 (시청자 수, 비트, 게이지 %, 시간) | JetBrains Mono |
 모두 OFL 라이선스 → README 출처 표기.
 

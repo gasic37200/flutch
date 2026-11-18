@@ -3,6 +3,16 @@
 > 원본: [FLUTCH 디자인 시안 (아티팩트, 비공개)](https://claude.ai/artifact/X4mcgYsXY9tngprQf1qh6N) — 2026-11-10 메인 세션이 내보냄. 서브에이전트는 아티팩트를 열 수 없으므로 **이 폴더가 시안의 기준**이다.
 > 시안을 고치면 메인 세션이 다시 내보낸다.
 
+> **2026-11-18 재내보내기(사용자 시안 갱신)**: 보드를 최신 아티팩트로 교체하고 폭별 미리보기 보드(`*W768/W1024/W1920/W2560`, `*Mobile`), `BrandAssets`(E 보드: 이모티콘·배너), `Comp*`(컴포넌트 시트)를 추가했다. 새 보드의 이미지는 `/_blob/<id>` 그대로다 — 아래 표로 프론트 파일에 대응한다.
+>
+> | `/_blob/` id | 프론트 파일 |
+> |---|---|
+> | 93d57471… | `/brand/logo-flutch.png` (로고) |
+> | 3d8747c0… | `/brand/bg-speed.jpg` (배경 텍스처) |
+> | e1bda6ef… | `/brand/banner-play-on-flutch.webp` (E2 사이드바 배너, 프레임 포함 — 테두리·모서리 덧씌우지 않음) |
+> | 9c0e7194… 84a8a7f1… ec28e700… efce14b0… 7c90d19c… d68c5d66… 3174a44d… 3b2d6fe3… 0b9432dd… 3f272b25… 2e3aa2a2… b382b800… 328e7a62… 585a570b… 8a7fc297… c1b8fdae… | `/brand/emotes/01-basic` 02-excited 03-tilt 04-surprised 05-sleepy 06-angry 07-smitten 08-peek 09-crying 10-heart 11-tongue 12-meh 13-bye 14-sweat 15-hiding 16-humming `.png` (E1 순서) |
+> | fb2b18c2… bc352f43… 10d98373… 등 원형 얼굴 | 기존 `/brand/face-*.png`(프로필 사진 전용) |
+
 - 파일 하나 = 보드 하나. `<x-dc>` 안의 HTML·인라인 스타일이 시안 그대로다(색·간격·글꼴 크기·사선 모서리 `ch12`/`ch6`·배지·문구). `{{…}}`·`<sc-for>`는 예시 데이터 반복이다.
 - 이미지는 `../brand/` 파일을 가리킨다(아티팩트의 `/_blob/…`를 해시로 대조해 바꿈). 프론트에서는 `/brand/<파일>`.
 - 시안의 hex는 참고값이다. 코드에서는 `frontend/src/styles/tokens.css` 토큰만 쓴다(AGENTS §6). 시안 색이 토큰에 없으면 토큰을 추가한다.

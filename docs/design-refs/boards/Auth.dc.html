@@ -15,42 +15,43 @@ body{margin:0;background:#0A0C0F}
 a{color:#B0F612}a:hover{color:#D4FF6A}
 .ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
 .ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
-.texture{background:#0A0C0F url(../brand/bg-speed.jpg) center/cover}
+/* one composition at every width: full-bleed background + centered card */
+.ac-app{container-type:inline-size;container-name:ac;position:relative;background:#0A0C0F url(/_blob/3d8747c0d27ead1c50b2d826552c3c41) center/cover}
+.ac-shade{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(10,12,15,.72) 0%,rgba(10,12,15,.9) 55%,rgba(10,12,15,.97) 100%)}
+.ac-col{position:relative;box-sizing:border-box;margin:0 auto;padding:56px 24px 64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;min-height:900px}
+.ac-card-in{padding:32px}
+.ac-in{height:48px;border:0;background:#12151B;box-shadow:inset 0 0 0 1px rgba(176,246,18,.25);color:#F3F5F7;padding:0 14px;font-size:15px;font-family:'Noto Sans KR',sans-serif}
+@container ac (max-width:600px){.ac-col{padding:28px 16px 40px;gap:18px;justify-content:flex-start;min-height:0}.ac-card-in{padding:20px}.ac-brand img{height:32px!important}.ac-brand span{font-size:13px!important}.ac-title{font-size:22px!important}}
 </style>
 </helmet>
-<div style="min-height:100vh;display:flex;flex-wrap:wrap;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
-
-  <section class="texture" style="flex:1 1 480px;min-height:420px;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:48px;box-sizing:border-box;overflow:hidden">
-    <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,12,15,.2),rgba(10,12,15,.75))"></div>
-    <img src="../brand/logo-flutch.png" alt="FLUTCH" style="position:relative;height:48px;align-self:flex-start">
-    <img src="../brand/mascot-controller.png" alt="컨트롤러를 든 FLUTCH 마스코트 고양이" style="position:relative;width:min(300px,60%);align-self:center">
-    <div style="position:relative;display:flex;flex-direction:column;gap:8px">
-      <span style="font-size:30px;font-weight:900;line-height:1.3">심장이 뛰는 순간,<br>플러치.</span>
-      <span style="font-family:'Chakra Petch',sans-serif;font-style:italic;font-weight:700;color:#B0F612;letter-spacing:.04em">Feel the Moment. Live on FLUTCH.</span>
+<div class="ac-app" style="width:100%;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif">
+  <div class="ac-shade"></div>
+  <div class="ac-col">
+    <div class="ac-brand" style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+      <img src="/_blob/93d57471d9c5b41b1a3934e836414b56" alt="FLUTCH" style="height:44px">
+      <span style="font-family:'Chakra Petch',sans-serif;font-style:italic;font-weight:700;color:#B0F612;letter-spacing:.04em;font-size:15px">Feel the Moment. Live on FLUTCH.</span>
     </div>
-  </section>
 
-  <section style="flex:1 1 440px;display:flex;align-items:center;justify-content:center;padding:48px 24px;box-sizing:border-box">
-    <div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:20px">
-      <h1 style="margin:0;font-size:26px;font-weight:900">로그인</h1>
-      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#A3AAB6">아이디<input type="text" autocomplete="username" class="ch6" style="height:48px;border:0;background:#12151B;box-shadow:inset 0 0 0 1px rgba(176,246,18,.25);color:#F3F5F7;padding:0 14px;font-size:15px;font-family:'Noto Sans KR',sans-serif"></label>
-      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#A3AAB6">비밀번호<input type="password" autocomplete="current-password" class="ch6" style="height:48px;border:0;background:#12151B;box-shadow:inset 0 0 0 1px rgba(176,246,18,.25);color:#F3F5F7;padding:0 14px;font-size:15px;font-family:'Noto Sans KR',sans-serif"></label>
+    <div class="ch12" style="width:100%;max-width:440px;background:rgba(176,246,18,.25);padding:1px;filter:drop-shadow(0 0 24px rgba(176,246,18,.12))"><div class="ch12 ac-card-in" style="background:rgba(18,21,27,.94);display:flex;flex-direction:column;gap:18px">
+      <h1 class="ac-title" style="margin:0;font-size:26px;font-weight:900">로그인</h1>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#A3AAB6">아이디<input type="text" autocomplete="username" class="ch6 ac-in"></label>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#A3AAB6">비밀번호<input type="password" autocomplete="current-password" class="ch6 ac-in"></label>
       <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#A3AAB6"><input type="checkbox" style="width:18px;height:18px;accent-color:#B0F612">로그인 상태 유지 (30일)</label>
       <button type="button" class="ch6" style="height:50px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:16px;font-family:'Noto Sans KR',sans-serif">로그인</button>
-      <p style="margin:0;font-size:13px;color:#A3AAB6">아직 계정이 없나요? <a href="#">회원가입</a> · 비밀번호를 잊으면 복구할 수 없어요.</p>
+      <p style="margin:0;font-size:13px;color:#A3AAB6;text-align:center">아직 계정이 없나요? <a href="#">회원가입</a></p>
+      <p style="margin:0;font-size:12px;color:#7C8494;text-align:center">비밀번호를 잊으면 복구할 수 없어요.</p>
+    </div></div>
 
-      <div style="display:flex;align-items:center;gap:12px;font-size:13px;color:#7C8494"><span style="flex:1;height:1px;background:#191D25"></span>심사·체험용<span style="flex:1;height:1px;background:#191D25"></span></div>
-      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:10px">
-        <b style="font-size:14px">테스트 계정으로 바로 로그인</b>
-        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
-          <button type="button" class="ch6" style="height:72px;border:0;background:#191D25;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><img src="../brand/face-excited.png" alt="" style="width:28px;height:28px;border-radius:50%;box-shadow:0 0 0 2px #4DA3FF"><span style="font-size:13px">스트리머1</span></button>
-          <button type="button" class="ch6" style="height:72px;border:0;background:#191D25;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><img src="../brand/face-joy.png" alt="" style="width:28px;height:28px;border-radius:50%;box-shadow:0 0 0 2px #9B7BFF"><span style="font-size:13px">스트리머2</span></button>
-          <button type="button" class="ch6" style="height:72px;border:0;background:#191D25;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><img src="../brand/face-happy.png" alt="" style="width:28px;height:28px;border-radius:50%;box-shadow:0 0 0 2px #5CF2A0"><span style="font-size:13px">시청자</span></button>
-        </div>
-        <span style="font-size:12px;color:#7C8494">스트리머1로 방송을 만들고, 스트리머2로 수정·삭제를 시도하면 권한 거절을 확인할 수 있어요.</span>
-      </div></div>
+    <div style="width:100%;max-width:440px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:12px;font-size:12px;color:#7C8494"><span style="flex:1;height:1px;background:#262B35"></span>심사·체험용 테스트 계정<span style="flex:1;height:1px;background:#262B35"></span></div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+        <button type="button" class="ch6" style="height:68px;border:0;background:rgba(25,29,37,.9);color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><img src="/_blob/fb2b18c2689951d60837df6ed1dbd08c" alt="" style="width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 2px #4DA3FF"><span style="font-size:13px">스트리머1</span></button>
+        <button type="button" class="ch6" style="height:68px;border:0;background:rgba(25,29,37,.9);color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><img src="/_blob/bc352f43bbb2d1944886ee0adcae6a09" alt="" style="width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 2px #9B7BFF"><span style="font-size:13px">스트리머2</span></button>
+        <button type="button" class="ch6" style="height:68px;border:0;background:rgba(25,29,37,.9);color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><img src="/_blob/10d9837330741e565420a49e87ab07f0" alt="" style="width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 2px #5CF2A0"><span style="font-size:13px">시청자</span></button>
+      </div>
+      <span style="font-size:12px;color:#7C8494;text-align:center;line-height:1.6">스트리머1로 방송을 만들고, 스트리머2로 수정·삭제를 시도하면 권한 거절을 확인할 수 있어요.</span>
     </div>
-  </section>
+  </div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
