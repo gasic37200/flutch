@@ -24,7 +24,7 @@ export default function LoginForm() {
             로그인 상태 유지 (30일)
           </CheckRow>
           <FormAlert message={f.error?.message ?? (f.kakaoFailed ? '카카오 로그인에 실패했어요. 다시 시도해 주세요.' : undefined)} />
-          <Button type='submit' size='lg' loading={f.pending} className='h-[50px] w-full'>
+          <Button type='submit' size='xl' loading={f.pending} className='w-full'>
             로그인
           </Button>
         </form>
@@ -38,7 +38,7 @@ export default function LoginForm() {
         )}
         <p className='text-center text-[13px] text-text-muted'>
           아직 계정이 없나요?{' '}
-          <Link to='/signup' className='inline-flex min-h-11 items-center font-semibold text-brand hover:underline'>
+          <Link to='/signup' className='inline-flex min-h-11 items-center text-brand underline hover:text-brand-hover'>
             회원가입
           </Link>
         </p>

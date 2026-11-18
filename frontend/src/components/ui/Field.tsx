@@ -28,7 +28,7 @@ export default function Field(props: InputProps | AreaProps) {
 
   return (
     <div className={className}>
-      <label htmlFor={id} className={hideLabel ? 'sr-only' : 'mb-1 block text-sm font-semibold text-text-muted'}>
+      <label htmlFor={id} className={hideLabel ? 'sr-only' : 'mb-1.5 block text-[13px] font-normal text-text-muted'}>
         {label}
       </label>
       {/* 글로우는 clip-path 밖 래퍼에 건다 */}
@@ -37,7 +37,7 @@ export default function Field(props: InputProps | AreaProps) {
           {multiline ? (
             <textarea {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)} {...shared} className={`${control} min-h-24 py-2`} />
           ) : (
-            <input {...(rest as InputHTMLAttributes<HTMLInputElement>)} {...shared} className={`${control} h-[38px]`} />
+            <input {...(rest as InputHTMLAttributes<HTMLInputElement>)} {...shared} className={`${control} h-[42px]`} />
           )}
         </div>
       </div>

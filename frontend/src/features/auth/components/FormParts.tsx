@@ -5,16 +5,17 @@ import Icon from '../../../components/ui/Icon.tsx'
 export function FormAlert({ message }: { message?: string }) {
   if (!message) return null
   return (
-    <p role='alert' className='flex items-start gap-2 text-sm text-text'>
+    <p role='alert' className='flex items-start gap-2 text-sm text-text-muted'>
       <Icon name='alert' className='mt-0.5 size-4 shrink-0 text-brand' />
       {message}
     </p>
   )
 }
 
-export function CheckRow({ checked, onChange, children }: { checked: boolean; onChange: (v: boolean) => void; children: ReactNode }) {
+/** compact: 박스 안에 모아 둔 줄(시안 약관 박스)은 44px 높이 대신 글자 높이 */
+export function CheckRow({ checked, onChange, children, compact }: { checked: boolean; onChange: (v: boolean) => void; children: ReactNode; compact?: boolean }) {
   return (
-    <label className='flex min-h-11 items-center gap-2 text-sm text-text'>
+    <label className={`flex items-center gap-2 ${compact ? 'min-h-6' : 'min-h-11'} text-sm text-text-muted`}>
       <input type='checkbox' checked={checked} onChange={(e) => onChange(e.target.checked)} className='size-[18px] accent-brand' />
       <span>{children}</span>
     </label>

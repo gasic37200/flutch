@@ -1,12 +1,11 @@
 import { Link } from 'react-router'
 import Button from '../../../components/ui/Button.tsx'
 import Field from '../../../components/ui/Field.tsx'
-import Panel from '../../../components/ui/Panel.tsx'
 import { useSignupForm } from '../hooks/useAuthForms.ts'
 import { AuthCard, tall } from './AuthLayout.tsx'
 import { CheckRow, FormAlert } from './FormParts.tsx'
 
-const link = 'inline-flex min-h-11 items-center px-1 text-[13px] text-brand hover:underline'
+const link = 'text-[13px] text-brand underline hover:text-brand-hover'
 
 export default function SignupForm() {
   const f = useSignupForm()
@@ -16,8 +15,8 @@ export default function SignupForm() {
         <Field className={tall} label='아이디' hint='4~20자 영문 소문자·숫자, 나중에 바꿀 수 없어요' value={f.values.loginId} onChange={(e) => f.set.loginId(e.target.value)} error={f.error?.fields.loginId} autoComplete='username' autoCapitalize='none' maxLength={20} required />
         <Field className={tall} label='비밀번호' type='password' hint='영문+숫자 8~64자' value={f.values.password} onChange={(e) => f.set.password(e.target.value)} error={f.error?.fields.password} autoComplete='new-password' maxLength={64} required />
         <Field className={tall} label='닉네임' hint='2~12자 한글·영문·숫자, 바꾸면 30일 뒤에 다시 바꿀 수 있어요' value={f.values.nickname} onChange={(e) => f.set.nickname(e.target.value)} error={f.error?.fields.nickname} counter maxLength={12} required />
-        <Panel innerClassName='flex flex-col gap-2.5 px-4 py-3.5'>
-          <label className='flex min-h-11 items-center gap-2 text-sm font-bold'>
+        <div className='chamfer flex flex-col gap-2.5 bg-surface-2 px-4 py-3.5 text-sm [--c:6px]'>
+          <label className='flex min-h-6 items-center gap-2 text-sm font-bold'>
             <input
               type='checkbox'
               checked={f.values.agreeTerms && f.values.agreePrivacy && f.values.over14}
@@ -30,10 +29,10 @@ export default function SignupForm() {
             />
             전체 동의
           </label>
-          <div className='h-px bg-surface-2' />
+          <div className='h-px bg-border' />
           <div className='flex items-center gap-2'>
             <div className='grow'>
-              <CheckRow checked={f.values.agreeTerms} onChange={f.set.agreeTerms}>
+              <CheckRow compact checked={f.values.agreeTerms} onChange={f.set.agreeTerms}>
                 [필수] 이용약관 동의
               </CheckRow>
             </div>
@@ -43,7 +42,7 @@ export default function SignupForm() {
           </div>
           <div className='flex items-center gap-2'>
             <div className='grow'>
-              <CheckRow checked={f.values.agreePrivacy} onChange={f.set.agreePrivacy}>
+              <CheckRow compact checked={f.values.agreePrivacy} onChange={f.set.agreePrivacy}>
                 [필수] 개인정보처리방침 동의
               </CheckRow>
             </div>
@@ -51,17 +50,17 @@ export default function SignupForm() {
               보기
             </Link>
           </div>
-          <CheckRow checked={f.values.over14} onChange={f.set.over14}>
+          <CheckRow compact checked={f.values.over14} onChange={f.set.over14}>
             [필수] 만 14세 이상이에요
           </CheckRow>
-        </Panel>
+        </div>
         <FormAlert message={f.error?.message} />
-        <Button type='submit' size='lg' loading={f.pending} disabled={!f.canSubmit} className='h-[50px] w-full'>
+        <Button type='submit' size='xl' loading={f.pending} disabled={!f.canSubmit} className='w-full'>
           가입하기
         </Button>
         <p className='text-center text-[13px] text-text-muted'>
           이미 계정이 있나요?{' '}
-          <Link to='/login' className='font-semibold text-brand hover:underline'>
+          <Link to='/login' className='text-brand underline hover:text-brand-hover'>
             로그인
           </Link>
         </p>

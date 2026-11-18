@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { Link } from 'react-router'
 
-// 크기(바깥 높이): lg 44 = 기본·대표 CTA·터치 최소, md 40 = 패널 안 보조, sm 36 = 밀집 목록·인라인.
+// 크기(바깥 높이): xl 50 = 인증 폼 주 버튼, lg 44 = 기본·대표 CTA·터치 최소, md 40 = 패널 안 보조, sm 36 = 밀집 목록·인라인.
 // 빨강(danger)은 "방송 종료"에만(DESIGN §2), burst(노랑)는 SUPER BURST에만. outline은 영구 밴·삭제·탈퇴 확인용 흰 테두리.
 // neutral은 테두리 없는 일반 버튼(취소·아이콘). 테두리 층(edge)과 안쪽 층(face)을 따로 칠해 1px 테두리를 만든다.
 const variants = {
@@ -12,7 +12,7 @@ const variants = {
   outline: { edge: 'bg-text', face: 'bg-surface text-text font-bold' },
   burst: { edge: 'bg-burst', face: 'bg-burst text-bg font-display font-bold italic tracking-wide hover:brightness-110' },
 }
-const sizes = { lg: 'h-[42px] px-5 text-[15px]', md: 'h-[38px] px-4 text-sm', sm: 'h-[34px] px-4 text-sm', icon: 'size-[42px]' }
+const sizes = { xl: 'h-12 px-6 text-base', lg: 'h-[42px] px-5 text-[15px]', md: 'h-[38px] px-4 text-sm', sm: 'h-[34px] px-4 text-sm', icon: 'size-[42px]' }
 
 type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {
   variant?: keyof typeof variants

@@ -13,7 +13,7 @@ export function useCharge(balance: number) {
   const amount = custom ? Number(custom) : preset
   const valid = Number.isInteger(amount) && amount >= MIN_AMOUNT && amount <= MAX_AMOUNT
   const after = balance + (valid ? amount : 0)
-  const error = custom && !valid ? '1,000 ~ 1,000,000 사이로 입력해 주세요.' : after > BALANCE_LIMIT ? '보유 한도(3,000,000비트)를 넘을 수 없어요.' : payment.error
+  const error = custom && !valid ? '1,000 ~ 1,000,000 사이로 입력해 주세요.' : after > BALANCE_LIMIT ? '보유 한도(3,000,000 Beat)를 넘을 수 없어요.' : payment.error
 
   return {
     preset,
