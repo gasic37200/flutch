@@ -7,7 +7,7 @@ import { useAuth } from '../../auth/hooks/useAuth.ts'
 import { useToggleFollow } from '../hooks/useFollow.ts'
 
 /** 팔로우/언팔로우. 비로그인은 로그인으로 안내, 본인에게는 그리지 않는다. 상태는 서버가 준 프로필(`['user', id]` 캐시 공유). */
-export default function FollowButton({ userId, size }: { userId: number; size?: 'md' | 'lg' }) {
+export default function FollowButton({ userId, size, idle = 'primary' }: { userId: number; size?: 'md' | 'lg'; /** 팔로우 전 버튼 모양(시청 화면 시안은 테두리 버튼) */ idle?: 'primary' | 'secondary' }) {
   const { me } = useAuth()
   const { pathname, search } = useLocation()
   const toggle = useToggleFollow(userId)
@@ -23,7 +23,7 @@ export default function FollowButton({ userId, size }: { userId: number; size?: 
   }
   return (
     <Button
-      variant={following ? 'neutral' : 'primary'}
+      variant={following ? 'neutral' : idle}
       size={size}
       loading={toggle.isPending || profile.isPending}
       aria-pressed={following}

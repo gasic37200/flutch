@@ -16,6 +16,8 @@ type Props = {
   className: string
   /** 제목 줄 표시 방식. 모바일 탭처럼 이미 탭 이름이 있으면 `hidden xl:block` */
   headerClassName?: string
+  /** 시청 화면 시안의 "최근 50개" 안내 */
+  recent?: boolean
 }
 
 // 저장되지 않는 실시간 줄: 차단 알림(아이콘·글자로 구분)과 후원 강조 줄.
@@ -30,15 +32,16 @@ const systemLine = (s: SystemLine) =>
   )
 
 // 채팅 패널: 제목 · 목록(role=log) · 입력창. 시청 화면·스튜디오가 같이 쓴다.
-export default function ChatCard({ chat, broadcast, className, headerClassName = '' }: Props) {
+export default function ChatCard({ chat, broadcast, className, headerClassName = '', recent }: Props) {
   const { ref, contentRef, onScroll, toBottom, unseen } = useChatScroll(chat)
   const composer = useChatComposer(broadcast, chat, toBottom)
   const isOwner = broadcast?.viewer?.isOwner ?? false
   const live = broadcast?.status === 'LIVE'
   return (
     <Panel aria-label='채팅' className={className} innerClassName='flex h-full flex-col'>
-      <div className={`border-b border-surface-2 px-4 py-3.5 ${headerClassName}`}>
+      <div className={`flex items-center border-b border-surface-2 px-4 py-3.5 ${headerClassName}`}>
         <b className='text-[15px]'>채팅</b>
+        {recent && <span className='ml-auto text-xs text-text-dim'>최근 50개</span>}
       </div>
       {chat.reconnecting && (
         <p role='status' className='border-b border-surface-2 px-4 py-1.5 text-xs text-text-dim'>
