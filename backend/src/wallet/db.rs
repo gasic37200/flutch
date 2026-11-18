@@ -171,10 +171,11 @@ pub async fn lock_order(
     .await
 }
 
-/// 주문자가 탈퇴했는지(확정 트랜잭션용).
+/// 주문자가 탈퇴했는지(확정 트랜잭션용). FOR SHARE: 진행 중인 탈퇴(사용자 행 잠금)가 끝날 때까지 기다리고,
+/// 확정이 커밋될 때까지 탈퇴가 시작되지 못한다(탈퇴는 이 뒤에 적립된 잔액까지 소멸시킨다).
 pub async fn user_withdrawn(conn: &mut PgConnection, user_id: i64) -> Result<bool, sqlx::Error> {
     sqlx::query_scalar!(
-        r#"SELECT withdrawn_at IS NOT NULL AS "withdrawn!" FROM users WHERE id = $1"#,
+        r#"SELECT withdrawn_at IS NOT NULL AS "withdrawn!" FROM users WHERE id = $1 FOR SHARE"#,
         user_id
     )
     .fetch_one(conn)

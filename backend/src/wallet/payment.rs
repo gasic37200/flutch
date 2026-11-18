@@ -316,6 +316,11 @@ async fn finalize(state: &Arc<AppState>, p: &TossPayment) -> Result<PaymentResul
         tracing::error!(order_id = %order.order_id, toss_amount = p.total_amount, amount = order.amount, "toss amount mismatch");
         return Err(PaymentError::AmountMismatch.into());
     }
+    // 잠금 순서: 주문 → 사용자 → 방송 FOR SHARE → 지갑. 후원·클러치(방송 → 지갑)와 같은 순서라 교착이 없다.
+    let live = match order.broadcast_id {
+        Some(b) => db::broadcast_status_for_share(&mut tx, b).await?,
+        None => None,
+    };
     match super::credit_charge(&mut tx, order.user_id, order.amount, order.id).await {
         Ok(_) => {}
         Err(WalletError::AlreadyCredited) => {
@@ -341,42 +346,39 @@ async fn finalize(state: &Arc<AppState>, p: &TossPayment) -> Result<PaymentResul
         order.broadcast_id,
         order.donation_amount,
         order.donation_anonymous,
-    ) {
-        let live = db::broadcast_status_for_share(&mut tx, broadcast_id).await?;
-        if let Some((owner_id, status)) = live
-            && status == "LIVE"
-            && !crate::chat::ban_state(&state.db, owner_id, order.user_id)
-                .await?
-                .is_some_and(|b| b.permanent)
+    ) && let Some((owner_id, status)) = live
+        && status == "LIVE"
+        && !crate::chat::ban_state(&mut *tx, owner_id, order.user_id)
+            .await?
+            .is_some_and(|b| b.permanent)
+    {
+        match super::debit(
+            &mut tx,
+            order.user_id,
+            amount,
+            DebitKind::Donation { broadcast_id },
+        )
+        .await
         {
-            match super::debit(
-                &mut tx,
-                order.user_id,
-                amount,
-                DebitKind::Donation { broadcast_id },
-            )
-            .await
-            {
-                Ok(posted) => {
-                    super::insert_donation(
-                        &mut tx,
-                        &NewDonation {
-                            broadcast_id,
-                            donor_id: order.user_id,
-                            kind: DonationKind::Donation,
-                            amount,
-                            anonymous,
-                            message: order.donation_message.as_deref(),
-                            ledger_entry_id: posted.ledger_entry_id,
-                        },
-                    )
-                    .await?;
-                    donated = true;
-                }
-                // 주문 뒤 잔액을 다른 데 써서 모자라면 충전만 한다(notice).
-                Err(WalletError::Insufficient) => {}
-                Err(e) => return Err(e.into()),
+            Ok(posted) => {
+                super::insert_donation(
+                    &mut tx,
+                    &NewDonation {
+                        broadcast_id,
+                        donor_id: order.user_id,
+                        kind: DonationKind::Donation,
+                        amount,
+                        anonymous,
+                        message: order.donation_message.as_deref(),
+                        ledger_entry_id: posted.ledger_entry_id,
+                    },
+                )
+                .await?;
+                donated = true;
             }
+            // 주문 뒤 잔액을 다른 데 써서 모자라면 충전만 한다(notice).
+            Err(WalletError::Insufficient) => {}
+            Err(e) => return Err(e.into()),
         }
     }
     tx.commit().await?;

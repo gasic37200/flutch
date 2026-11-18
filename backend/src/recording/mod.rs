@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use axum::Router;
 use axum::routing::{get, post};
+use chrono::DateTime;
 use serde_json::Value;
 
 use crate::AppState;
@@ -127,6 +128,12 @@ pub async fn egress_ended(state: &AppState, info: &Value) -> Result<(), AppError
     let num = |v: &Value| v.as_i64().or_else(|| v.as_str()?.parse().ok());
     let size = file.and_then(|f| num(&f["size"])).filter(|n| *n > 0);
     let duration_ns = file.and_then(|f| num(&f["duration"])).unwrap_or(0);
+    // 영상 0초의 실제 시각(나노초): 파일 시작, 없으면 Egress 시작. 송출 시작보다 몇 초 늦어 다시보기 동기화 기준이 된다.
+    let video_started_at = file
+        .and_then(|f| num(&f["startedAt"]))
+        .or_else(|| num(&info["startedAt"]))
+        .filter(|n| *n > 0)
+        .map(DateTime::from_timestamp_nanos);
     let done = info["status"] == "EGRESS_COMPLETE";
 
     let (finished, status) = match size {
@@ -137,6 +144,7 @@ pub async fn egress_ended(state: &AppState, info: &Value) -> Result<(), AppError
                 size,
                 ((duration_ns + 500_000_000) / 1_000_000_000) as i32,
                 state.config.recording.retention_days,
+                video_started_at,
             )
             .await?,
             RecordingStatus::Ready,
@@ -151,8 +159,14 @@ pub async fn egress_ended(state: &AppState, info: &Value) -> Result<(), AppError
     };
     match finished {
         Some(f) => publish_updated(state, f.broadcast_id, f.id, status),
-        // 이미 처리됐거나, 끝나기 전에 방송을 지워 deleted가 된 녹화 → 방금 올라온 파일을 지운다
-        None => purge(state).await?,
+        // 이미 처리됐거나, 끝나기 전에 방송을 지워 deleted가 된 녹화 → 방금 올라온 파일을 지운다.
+        // 삭제 때의 즉시 정리는 업로드 전이라 빈 키를 지우고 표시(키)를 비웠을 수 있어 다시 삭제 대기로 둔다.
+        None => {
+            if let Some((id, broadcast_id)) = db::deleted_without_key(&state.db, egress_id).await? {
+                db::requeue_delete(&state.db, id, &object_key(broadcast_id)).await?;
+            }
+            purge(state).await?
+        }
     }
     Ok(())
 }

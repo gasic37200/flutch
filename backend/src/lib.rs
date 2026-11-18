@@ -65,6 +65,7 @@ pub fn app(state: Arc<AppState>) -> Router {
 /// DB 풀. 연결마다 UTC로 고정한다(architecture §7-1).
 pub async fn connect_db(url: &str) -> Result<PgPool, sqlx::Error> {
     PgPoolOptions::new()
+        .max_connections(20)
         .after_connect(|conn, _meta| {
             Box::pin(async move {
                 sqlx::query("SET TIME ZONE 'UTC'").execute(conn).await?;

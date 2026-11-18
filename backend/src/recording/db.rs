@@ -78,16 +78,18 @@ pub async fn finish_ready(
     size_bytes: i64,
     duration_sec: i32,
     retention_days: i64,
+    video_started_at: Option<DateTime<Utc>>,
 ) -> Result<Option<Finished>, sqlx::Error> {
     sqlx::query_as!(
         Finished,
         "UPDATE recordings SET status = 'ready', size_bytes = $2, duration_sec = $3,
-                expires_at = now() + make_interval(days => $4::int)
+                expires_at = now() + make_interval(days => $4::int), video_started_at = $5
          WHERE egress_id = $1 AND status = 'recording' RETURNING id, broadcast_id",
         egress_id,
         size_bytes,
         duration_sec,
         retention_days as i32,
+        video_started_at,
     )
     .fetch_optional(db)
     .await
@@ -155,6 +157,33 @@ pub async fn pending_deletes(db: &PgPool) -> Result<Vec<(i64, String)>, sqlx::Er
     .collect())
 }
 
+/// 이 Egress의 녹화가 지워졌고 파일 삭제도 끝난 것으로 표시돼 있으면(키 없음) `(id, 방송 id)`.
+pub async fn deleted_without_key(
+    db: &PgPool,
+    egress_id: &str,
+) -> Result<Option<(i64, i64)>, sqlx::Error> {
+    Ok(sqlx::query!(
+        "SELECT id, broadcast_id FROM recordings
+          WHERE egress_id = $1 AND status = 'deleted' AND object_key IS NULL",
+        egress_id
+    )
+    .fetch_optional(db)
+    .await?
+    .map(|r| (r.id, r.broadcast_id)))
+}
+
+/// 지운 녹화를 다시 파일 삭제 대기로(`pending_deletes`가 집는다).
+pub async fn requeue_delete(db: &PgPool, id: i64, key: &str) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "UPDATE recordings SET object_key = $2 WHERE id = $1 AND status = 'deleted'",
+        id,
+        key
+    )
+    .execute(db)
+    .await
+    .map(drop)
+}
+
 pub async fn clear_key(db: &PgPool, id: i64) -> Result<(), sqlx::Error> {
     sqlx::query!("UPDATE recordings SET object_key = NULL WHERE id = $1", id)
         .execute(db)
@@ -198,7 +227,7 @@ pub async fn find(db: &PgPool, f: &Filter) -> Result<Vec<Row>, sqlx::Error> {
         r#"SELECT r.id, r.broadcast_id, b.owner_id,
                   CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS "owner_nickname!",
                   b.title, b.category, b.thumbnail_path, b.peak_viewers, r.views,
-                  COALESCE(b.started_at, b.created_at) AS "started_at!",
+                  COALESCE(r.video_started_at, b.started_at, b.created_at) AS "started_at!",
                   r.status, r.duration_sec, r.object_key, r.expires_at
            FROM recordings r
            JOIN broadcasts b ON b.id = r.broadcast_id

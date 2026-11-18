@@ -480,3 +480,64 @@ async fn clips_from_ready_recordings(db: PgPool) {
     assert_eq!(page2["items"][0]["id"], early);
     assert!(page2["nextCursor"].is_null());
 }
+
+/// LIVE 중 삭제: 즉시 정리는 업로드 전이라 아직 없는 키를 지운다. 그 뒤 Egress가 파일을 올리고 완료를 알리면
+/// 그 파일도 지워져야 한다(공개 URL에 남지 않게, T45 감사).
+#[sqlx::test]
+async fn recording_deleted_before_upload_purged(db: PgPool) {
+    let env = setup(db, i64::MAX);
+    let (cookie, uid) = login_as(&env.app, "streamer1").await;
+    let id = create(&env.app, &cookie).await;
+    live(&env, &cookie, uid, id).await;
+    let rid = recording_id(&env, id).await;
+    let eg = egress_id(&env, rid).await;
+
+    let res = send(
+        &env.app,
+        empty_req("DELETE", &format!("{B}/{id}"), Some(&cookie)),
+    )
+    .await;
+    assert_eq!(res.status, StatusCode::NO_CONTENT);
+    let key = format!("recordings/{id}.mp4");
+    assert_eq!(*env.store.deleted.lock().unwrap(), vec![key.clone()]);
+
+    webhook(&env.app, egress_ended(&eg, "EGRESS_COMPLETE", 1000, 65)).await;
+    assert_eq!(status_of(&env, rid).await, ("deleted".into(), None));
+    assert_eq!(*env.store.deleted.lock().unwrap(), vec![key.clone(), key]);
+}
+
+/// 다시보기 시각 기준은 Egress 파일 시작(송출 시작보다 늦다). 상세 startedAt·클립 startSec이 그 값을 쓴다.
+#[sqlx::test]
+async fn recording_video_started_at_from_egress(db: PgPool) {
+    let env = setup(db.clone(), i64::MAX);
+    let (cookie, uid) = login_as(&env.app, "streamer1").await;
+    let id = create(&env.app, &cookie).await;
+    live(&env, &cookie, uid, id).await;
+    end(&env, &cookie, id).await;
+    let rid = recording_id(&env, id).await;
+    let eg = egress_id(&env, rid).await;
+    // 영상은 송출 시작 3초 뒤부터(나노초, protojson int64 문자열)
+    let (ns, expected): (i64, chrono::DateTime<chrono::Utc>) = sqlx::query_as(
+        "SELECT (extract(epoch FROM started_at) * 1000000)::bigint * 1000 + 3000000000,
+                started_at + interval '3 seconds'
+         FROM broadcasts WHERE id = $1",
+    )
+    .bind(id)
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    let mut ev = egress_ended(&eg, "EGRESS_COMPLETE", 1000, 65);
+    ev["egressInfo"]["fileResults"][0]["startedAt"] = json!(ns.to_string());
+    webhook(&env.app, ev).await;
+
+    let res = get(&env, &format!("{R}/{rid}")).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    let started: chrono::DateTime<chrono::Utc> =
+        res.json["startedAt"].as_str().unwrap().parse().unwrap();
+    assert_eq!(started, expected);
+
+    // 송출 40초에 발동 → 영상 37초 → 30초 전부터 = 7초
+    super_at(&db, id, 40).await;
+    let res = get(&env, CLIPS).await;
+    assert_eq!(res.json["items"][0]["startSec"], 7, "{}", res.json);
+}

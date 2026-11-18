@@ -1,12 +1,12 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT withdrawn_at IS NOT NULL AS \"withdrawn!\" FROM users WHERE id = $1",
+  "query": "SELECT 1 AS one FROM users WHERE id = $1 FOR NO KEY UPDATE",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "withdrawn!",
-        "type_info": "Bool",
+        "name": "one",
+        "type_info": "Int4",
         "origin": "Expression"
       }
     ],
@@ -19,5 +19,5 @@
       null
     ]
   },
-  "hash": "26391d4c62b1aaae7a41cd7a84d3ecab11253a62f98458273bbc8f377c8a7a66"
+  "hash": "9d9b9ec193c695a0b27506c5a11a26d539d5e7fe1219aac94d197d07a2691209"
 }

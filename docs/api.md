@@ -70,7 +70,7 @@ type Chat = {
   id: number; broadcastId: number; author: UserSummary
   body: string | null                  // 욕설은 *** 로 가린 결과. 삭제됐으면 null
   edited: boolean; deleted: boolean    // "(수정됨)" / "삭제된 메시지입니다"
-  badges: ('streamer' | 'donor')[]     // donor = 이 방송에 donation·burst 후원 이력(익명 포함)
+  badges: ('streamer' | 'donor')[]     // donor = 이 방송에 donation·burst 후원 이력(익명 후원 제외 — 신원 노출 방지, 사용자 승인 11/18)
   createdAt: string
 }
 
@@ -94,7 +94,8 @@ type RecordingStatus = 'recording' | 'ready' | 'failed' | 'deleted'
 type RecordingCard = {
   id: number; broadcastId: number; owner: UserSummary
   title: string; category: Category; thumbnailUrl: string | null
-  durationSec: number; peakViewers: number; views: number; startedAt: string
+  durationSec: number; peakViewers: number; views: number
+  startedAt: string                    // 영상 0초의 실제 시각(Egress 파일 시작, egress_ended 웹훅). 없으면 방송 startedAt
 }
 type RecordingDetail = Omit<RecordingCard, 'durationSec'> & {
   status: RecordingStatus
@@ -187,7 +188,7 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 |---|---|---|---|---|
 | POST `/broadcasts/{id}/live` | 소유자 | `{tabId, takeover?: boolean}` | 200 `{broadcast: BroadcastDetail, livekit: LiveKitToken}` (publish 토큰) | 401, 404, 403 `BROADCAST_NOT_OWNER`, 422, 409 `BROADCAST_INVALID_TRANSITION`·`BROADCAST_LIVE_LIMIT`·`LIVE_PUBLISHER_ACTIVE` |
 | DELETE `/broadcasts/{id}/live` | 소유자 | — | 200 `BroadcastDetail` (ENDED) | 401, 404, 403, 409 `BROADCAST_INVALID_TRANSITION` |
-| POST `/broadcasts/{id}/viewer-token` | 누구나 | `{tabId, guestId?}` (비로그인은 `guestId` 필수) | 200 `LiveKitToken` (subscribe 전용) | 404, 422, 409 `BROADCAST_NOT_LIVE` |
+| POST `/broadcasts/{id}/viewer-token` | 누구나 | `{tabId, guestId?}` (비로그인은 `guestId` 필수) | 200 `LiveKitToken` (subscribe 전용) | 404, 422, 409 `BROADCAST_NOT_LIVE`, 429 `RATE_LIMITED`(IP 1분 30회) |
 
 `POST /live`는 "시작 또는 이어서 송출"이다:
 | 현재 상태 | 동작 |
@@ -202,7 +203,7 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 - **60초 유예**(설정값 `LIVE_GRACE_SECS`): 송출자 퇴장 웹훅 → `disconnectedAt` 기록 + `broadcast.reconnecting`. 송출자 신원의 참가 웹훅 → 해제 + `broadcast.resumed`. **송출자 판정은 신원 + `canPublish`**: 같은 신원이라도 구독 전용 참가자(같은 탭의 시청 토큰)는 유예를 풀거나 시작하지 않는다(T15a). 5초 주기 작업이 유예가 지난 LIVE를 찾으면 LiveKit 참가자 목록을 한 번 확인해(웹훅 순서가 뒤바뀌는 경우) 송출 권한의 송출자가 있으면 해제, 없으면(또는 확인 실패) 종료(reason `disconnect`). 종료 UPDATE는 `disconnectedAt`이 남아 있을 때만 — 확인과 종료 사이에 참가 웹훅이 유예를 풀었으면 끝내지 않는다.
 - **서버 재시작**: 시작 후 첫 주기에 LIVE 방송마다 LiveKit 참가자 목록으로 시청자 수를 복구하고, 송출자가 없으면 유예 시작(60초 뒤 자연 종료), 유예 중인데 송출자가 있으면 해제. LiveKit 호출이 실패하면 DB를 바꾸지 않고 다음 주기에 다시 한다.
 - TS 타입: 요청 `StartLiveRequest`·`ViewerTokenRequest`, 응답 `StartLiveResponse`·`LiveKitToken`. 형식 오류는 422 `fields.tabId`·`fields.guestId`.
-- 종료(`DELETE /live`, 60초 유예 만료, 3시간 초과, LIVE 중 삭제 공통): ENDED 전이(`endedAt`) → LiveKit 방 삭제(송출 실제 중단) → Egress 종료 → `broadcast.ended`. READY·ENDED에서 `DELETE /live`는 `BROADCAST_INVALID_TRANSITION`.
+- 종료(`DELETE /live`, 60초 유예 만료, 3시간 초과, LIVE 중 삭제 공통): ENDED 전이(`endedAt`) → Egress 종료(파일 마무리) → LiveKit 방 삭제(송출 실제 중단) → `broadcast.ended`. READY·ENDED에서 `DELETE /live`는 `BROADCAST_INVALID_TRANSITION`.
 - **LiveKit 신원**: 로그인 `u:<userId>:<tabId>`, 비로그인 `g:<guestId>:<tabId>`. 방 이름 `broadcast-<id>`. `tabId`는 탭마다 `sessionStorage`의 랜덤값, `guestId`는 브라우저 `localStorage`의 랜덤값, 둘 다 `^[A-Za-z0-9_-]{8,64}$`(아니면 422). 로그인 사용자의 `guestId`는 무시한다.
 - 권한: publish 토큰 = `roomJoin, canPublish(camera·microphone·screen_share·screen_share_audio), canSubscribe`, 시청 토큰 = `roomJoin, canSubscribe, hidden`(`canPublish=false` 명시 — LiveKit은 빠지면 true로 본다). 둘 다 `canPublishData=false`, TTL 4시간. `hidden`이면 다른 참가자(송출자·시청자 클라이언트)에게 시청자 신원이 보이지 않는다. 참가·퇴장 웹훅과 서버 API 참가자 목록에는 그대로 나온다(로컬 LiveKit v1.13 실측, T15a).
 - 시청자 수: 참가·퇴장 웹훅으로 서버 메모리에 방송별 신원 → 접속 `sid`를 두고(같은 신원 재접속은 새 참가가 옛 퇴장보다 먼저 올 수 있어 퇴장은 `sid`가 같을 때만 지운다), 사용자 단위(`u:<id>`/`g:<id>`)로 묶어 센다(같은 사용자 여러 탭은 1명). **방송 소유자(`u:<ownerId>:` 전부)와 우리 형식이 아닌 신원(Egress 등)은 제외**. 바뀔 때 `viewer.count`, `peakViewers`는 올라갈 때만 DB에 저장.
@@ -346,8 +347,8 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 - 다시보기 화면의 채팅·후원은 `GET /broadcasts/{broadcastId}/chats`·`/donations`(전체 목록을 받아 프론트가 recording.startedAt 기준으로 동기화).
 - 녹화 실패는 방송 상태와 무관(방송은 정상 ENDED). 소유자 관리 화면은 `Broadcast.recording.status=failed`로 "녹화에 실패했어요".
 - 영상은 방송당 `recordings/{broadcastId}.mp4`, `videoUrl`은 `RECORDING_PUBLIC_BASE_URL` + `/` + 객체 키. 저장소 설정이 없으면 녹화는 꺼지고 `Broadcast.recording`은 null.
-- 삭제(보관 기간·용량 초과·방송 숨김)는 상태를 `deleted`로 먼저 바꾼 뒤 파일을 지운다. 파일 삭제가 실패하면 표시가 남아 1시간 주기 작업이 다시 지운다(고아 파일·깨진 링크 둘 다 남지 않는 순서). 종료 후 4시간(방송 최대 길이+1시간) 안에 `egress_ended`가 없으면 `failed`.
-- 시나리오: `recording_saved_after_end_survives_restart` `recording_failure_does_not_break_broadcast` `recording_deleted_with_broadcast_hide` `recording_retention_cleanup`
+- 삭제(보관 기간·용량 초과·방송 숨김)는 상태를 `deleted`로 먼저 바꾼 뒤 파일을 지운다. 파일 삭제가 실패하면 표시가 남아 1시간 주기 작업이 다시 지운다(고아 파일·깨진 링크 둘 다 남지 않는 순서). 업로드가 끝나기 전에 지운 방송(LIVE 중·종료 직후 삭제)은 `egress_ended`가 와도 `deleted`를 유지하고 방금 올라온 파일을 다시 지운다(T45). 종료 후 4시간(방송 최대 길이+1시간) 안에 `egress_ended`가 없으면 `failed`.
+- 시나리오: `recording_saved_after_end_survives_restart` `recording_failure_does_not_break_broadcast` `recording_deleted_with_broadcast_hide` `recording_deleted_before_upload_purged` `recording_video_started_at_from_egress` `recording_retention_cleanup`
 
 ## 9. 팔로우·스트리머 페이지 (f09)
 | 메서드·경로 | 권한 | 요청 | 응답 | 에러 |

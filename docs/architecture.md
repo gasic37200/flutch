@@ -63,7 +63,7 @@ flowchart LR
 3. WebSocket `/broadcasts/{id}/events` 구독: 채팅·제목 변경·후원·게이지·종료 이벤트.
 
 ### 종료 (정상 / 비정상)
-- 정상: `DELETE /live` → ENDED 전이 → LiveKit 방 삭제(송출 강제 중단) → Egress 종료 → `broadcast.ended`.
+- 정상: `DELETE /live` → ENDED 전이 → Egress 종료(파일 마무리) → LiveKit 방 삭제(송출 강제 중단) → `broadcast.ended`.
 - 비정상: LiveKit 웹훅 `participant_left`(송출자) → `disconnected_at` 기록 → 스케줄러가 60초 지나도 복귀 없으면 위 종료 절차. 복귀하면 `disconnected_at` 해제.
 
 ### 결제 (충전하고 후원하기)
@@ -151,7 +151,7 @@ frontend/src/
 | payment_orders | order_id(유니크), payment_key(유니크), user_id, purpose(`charge`/`donation`), amount(결제=충전 금액), broadcast_id·donation_amount·donation_anonymous·donation_message(donation 주문만), status(`pending`/`done`/`expired`/`failed`), expires_at, confirmed_at |
 | donations | broadcast_id, donor_id, amount, kind(donation/clutch/burst), anonymous, message, ledger_entry_id(유니크, 차감 원장을 가리킴 — 원장 쪽에 donation_id는 두지 않음) |
 | clutch_events / super_clutches | broadcast_id, user_id, source(`free`/`paid`/`burst`/`donation` — 게이지 점수 출처를 한 테이블에. `donation`은 T43부터 쓰지 않음, 후원은 게이지 미반영), points, created_at / broadcast_id, triggered_at, expires_at(=+5분), rotation_order, shown_at(히어로 회전 마지막 슬롯 시작, T29) |
-| recordings / recording_views | broadcast_id(유니크, 1:1), egress_id(유니크), status(`recording`/`ready`/`failed`/`deleted`), object_key, **size_bytes**, duration_sec, expires_at, views / (recording_id, viewer_key(`u:<id>`/`g:<익명id>`), date_kst(기본값 KST 오늘)) 유니크 |
+| recordings / recording_views | broadcast_id(유니크, 1:1), egress_id(유니크), status(`recording`/`ready`/`failed`/`deleted`), object_key, **size_bytes**, duration_sec, expires_at, video_started_at(영상 0초 실제 시각, Egress 파일 시작 — 다시보기·클립 시간 기준), views / (recording_id, viewer_key(`u:<id>`/`g:<익명id>`), date_kst(기본값 KST 오늘)) 유니크 |
 
 ### 7-1. 데이터 기본 규칙
 - **ID**: 모든 테이블 `BIGINT GENERATED ALWAYS AS IDENTITY`(채팅 커서 페이지네이션이 증가하는 id를 전제).

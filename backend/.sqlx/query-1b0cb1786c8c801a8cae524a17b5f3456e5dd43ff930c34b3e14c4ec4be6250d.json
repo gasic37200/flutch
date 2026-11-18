@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE recordings SET object_key = $2 WHERE id = $1 AND status = 'deleted'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1b0cb1786c8c801a8cae524a17b5f3456e5dd43ff930c34b3e14c4ec4be6250d"
+}

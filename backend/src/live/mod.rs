@@ -5,13 +5,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 
-use axum::Router;
 use axum::http::StatusCode;
 use axum::routing::post;
+use axum::{Extension, Router};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::AppState;
+use crate::auth::rate_limit::RateLimiter;
 use crate::broadcast::BroadcastDetail;
 use crate::error::AppError;
 use crate::scheduler::Scheduler;
@@ -34,6 +35,11 @@ pub fn routes() -> Router<Arc<AppState>> {
             post(handlers::viewer_token),
         )
         .route("/livekit/webhook", post(webhook::receive))
+        // 시청 토큰 발급 제한: IP당 1분 30회(메모리라 재시작하면 비워진다)
+        .layer(Extension(Arc::new(RateLimiter::new(
+            30,
+            Duration::from_secs(60),
+        ))))
 }
 
 /// 주기 작업(5초): 시작 후 첫 성공 한 번은 LiveKit 실제 상태와 동기화(실패하면 다음 주기에 다시), 매번 유예·3시간 자동 종료.

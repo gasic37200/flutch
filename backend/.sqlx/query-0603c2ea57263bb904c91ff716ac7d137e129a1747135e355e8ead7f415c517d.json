@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT c.id, c.broadcast_id, c.streamer_id, c.user_id,\n                  CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS \"nickname!\",\n                  c.body, c.edited_at, c.deleted_at, c.created_at,\n                  b.status AS broadcast_status,\n                  EXISTS (SELECT 1 FROM donations d\n                           WHERE d.broadcast_id = c.broadcast_id AND d.donor_id = c.user_id\n                             AND d.kind IN ('donation', 'burst')) AS \"donor!\"\n             FROM chats c\n             JOIN users u ON u.id = c.user_id\n             JOIN broadcasts b ON b.id = c.broadcast_id AND b.hidden_at IS NULL\n            WHERE c.broadcast_id = $1 AND ($2::bigint IS NULL OR c.id < $2)\n            ORDER BY c.id DESC\n            LIMIT $3",
+  "query": "SELECT c.id, c.broadcast_id, c.streamer_id, c.user_id,\n                  CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS \"nickname!\",\n                  c.body, c.edited_at, c.deleted_at, c.created_at,\n                  b.status AS broadcast_status,\n                  EXISTS (SELECT 1 FROM donations d\n                           WHERE d.broadcast_id = c.broadcast_id AND d.donor_id = c.user_id\n                             AND d.kind IN ('donation', 'burst') AND NOT d.anonymous) AS \"donor!\"\n             FROM chats c\n             JOIN users u ON u.id = c.user_id\n             JOIN broadcasts b ON b.id = c.broadcast_id AND b.hidden_at IS NULL\n            WHERE c.broadcast_id = $1 AND ($2::bigint IS NULL OR c.id < $2)\n            ORDER BY c.id DESC\n            LIMIT $3",
   "describe": {
     "columns": [
       {
@@ -136,5 +136,5 @@
       null
     ]
   },
-  "hash": "066fe0db145c0a22ba9f50d68ed28ecb6cce24ff279aa52fbd59896669058c77"
+  "hash": "0603c2ea57263bb904c91ff716ac7d137e129a1747135e355e8ead7f415c517d"
 }

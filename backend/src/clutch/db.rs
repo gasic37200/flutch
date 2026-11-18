@@ -188,7 +188,7 @@ pub async fn clips(
            JOIN recordings r ON r.broadcast_id = b.id
                             AND r.status = 'ready' AND r.object_key IS NOT NULL
            CROSS JOIN LATERAL (
-               SELECT GREATEST(0, floor(extract(epoch FROM s.triggered_at - b.started_at))::int - $2::int) AS start_sec
+               SELECT GREATEST(0, floor(extract(epoch FROM s.triggered_at - COALESCE(r.video_started_at, b.started_at)))::int - $2::int) AS start_sec
            ) c
            WHERE b.started_at IS NOT NULL
              AND r.duration_sec > c.start_sec
