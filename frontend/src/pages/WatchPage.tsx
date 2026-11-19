@@ -11,6 +11,8 @@ import { useClutch } from '../features/watch/hooks/useClutch.ts'
 import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import Icon from '../components/ui/Icon.tsx'
 import ChatCard from '../features/chat/components/ChatCard.tsx'
+import ChatOverlay from '../features/chat/components/ChatOverlay.tsx'
+import { chatStyle, FS_RESERVE, layoutOf } from '../features/live/overlayLayout.ts'
 import { useChat } from '../features/chat/hooks/useChat.ts'
 import Player from '../features/watch/components/Player.tsx'
 import WatchTabs from '../features/watch/components/WatchTabs.tsx'
@@ -38,6 +40,7 @@ function WatchPageBody() {
   const mobile = useMediaQuery('(max-width: 600px)')
   const alerts = useDonationAlerts(events.onEvent, viewer.muted || player.volume === 0)
   const donations = useDonationList(id, { onEvent: events.onEvent, live: broadcast?.status === 'LIVE' })
+  const layout = layoutOf(broadcast?.overlayLayout)
   const [tab, setTab] = useState('chat')
   const navigate = useNavigate()
 
@@ -58,8 +61,13 @@ function WatchPageBody() {
         <div className='flex flex-col gap-3.5 max-[600px]:gap-0'>
           {/* 가로 화면(낮은 뷰포트)에서는 영상이 화면 높이 안에 들어오도록 폭을 줄인다 */}
           <div className='relative mx-auto w-full max-w-[calc((100dvh-5rem)*16/9)]'>
-            <Player view={view} source={source} broadcast={broadcast} player={player} tts={alerts.tts} onUnmute={() => void viewer.unmute()} />
-            <DonationAlert alerts={alerts} owner={broadcast?.viewer?.isOwner} />
+            <Player view={view} source={source} broadcast={broadcast} player={player} tts={alerts.tts} layout={layout} onUnmute={() => void viewer.unmute()}>
+              <DonationAlert alerts={alerts} owner={broadcast?.viewer?.isOwner} layout={layout} />
+              {/* 채팅 오버레이는 전체화면에서만(평소엔 옆·아래 채팅 패널) */}
+              {player.fullscreen && player.chatOverlay && (
+                <ChatOverlay items={chat.items} systems={chat.systems} shown={6} style={chatStyle(layout, FS_RESERVE)} className='absolute text-[length:clamp(11px,1.2cqw,15px)] leading-[1.45]' />
+              )}
+            </Player>
             {/* 600 이하는 헤더를 숨기므로 영상 위에 뒤로가기를 둔다 */}
             <button type='button' aria-label='뒤로 가기' onClick={() => void navigate(-1)} className='absolute top-2 left-2 z-10 flex size-11 items-center justify-center rounded-full bg-bg/70 text-text min-[601px]:hidden'>
               <Icon name='back' />

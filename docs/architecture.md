@@ -143,7 +143,7 @@ frontend/src/
 |---|---|
 | users | login_id(`^[a-z0-9]{4,20}$`, 유니크·영구, 카카오 계정은 NULL), password_hash(카카오 NULL), kakao_id(유니크), nickname(**활성 사용자끼리 `lower()` 유니크** — 탈퇴 후 30일 보류는 앱이 확인), nickname_changed_at, failed_login_count, locked_until(5회 실패 잠금), withdrawn_at |
 | sessions | token_hash(SHA-256 32바이트 bytea, PK), user_id, expires_at, remember, last_seen_at |
-| broadcasts | owner_id, status(`READY`/`LIVE`/`ENDED`, 상태별 started_at·ended_at 유무 CHECK), title, category, tags(text[], 최대 3), record, pip_corner(`top_left`/`top_right`/`bottom_left`/`bottom_right`, 기본 `bottom_right`), **publisher_identity**(현재 송출 기기의 LiveKit 신원), started_at, ended_at, disconnected_at, peak_viewers, thumbnail_path, hidden_at(ENDED만). 부분 유니크 `broadcasts_one_live_per_owner`(owner_id WHERE LIVE) |
+| broadcasts | owner_id, status(`READY`/`LIVE`/`ENDED`, 상태별 started_at·ended_at 유무 CHECK), title, category, tags(text[], 최대 3), record, pip_corner(`top_left`/`top_right`/`bottom_left`/`bottom_right`, 기본 `bottom_right` — overlay_layout 이전 값, 제출 후 정리), overlay_layout(JSONB NULL, 웹캠·후원 알림·채팅 오버레이 위치 %, 새 방송은 소유자의 마지막 값 복사), **publisher_identity**(현재 송출 기기의 LiveKit 신원), started_at, ended_at, disconnected_at, peak_viewers, thumbnail_path, hidden_at(ENDED만). 부분 유니크 `broadcasts_one_live_per_owner`(owner_id WHERE LIVE) |
 | chats | broadcast_id, streamer_id(`(broadcast_id, streamer_id)` → broadcasts`(id, owner_id)` 복합 FK), user_id, body(원문), edited_at, deleted_at |
 | bans / ban_events | streamer_id, user_id, until(NULL=영구), `(streamer_id, user_id)` 유니크 = 현재 상태 / action(`timeout`/`ban`/`unban`), until — **추가만**(트리거) |
 | follows | follower_id, streamer_id, 유니크·자기 자신 금지 |
@@ -175,7 +175,8 @@ frontend/src/
 
 ## 9. 화면 + 웹캠 동시 송출 (PIP)
 - 스트리머가 **화면 공유 트랙과 카메라 트랙을 따로** 보내고, **시청자 화면에서** 카메라를 화면 모서리에 겹쳐 그린다. 브라우저 캔버스 합성은 하지 않는다(게임 창으로 전환하면 백그라운드 탭의 그리기가 느려져 방송이 멈추기 때문).
-- 위치: 스트리머가 네 모서리 중 선택 → `broadcasts.pip_corner` 저장 → `broadcast.updated`로 시청자 반영.
+- 위치: 스트리머가 스튜디오 "배치 편집"에서 웹캠·후원 알림·채팅 오버레이를 끌어서 놓음(영상 기준 %) → `broadcasts.overlay_layout` 저장 → `broadcast.updated`로 시청자 반영. 시청 화면은 아래 컨트롤 줄을 가리지 않게 웹캠·채팅을 영상 높이 10%(전체화면 12%) 위로 올린다. 채팅 오버레이는 시청자가 전체화면일 때만(토글, 브라우저 저장).
+- 후원 알림 크기: 영상 영역이 CSS 크기 컨테이너(`@container`)라 폭 비례(일반 `clamp(200px,42cqw,520px)`, 10,000 이상 `clamp(240px,50cqw,600px)`). 시청·스튜디오 미리보기·전체화면·모바일 송출·다시보기 공통.
 - 송출 중 웹캠 켜기·끄기 가능(트랙 추가·제거 → 시청자 화면 자동 반영).
 - 화면 공유가 끊기고 카메라만 남으면 시청자 화면에 카메라를 크게 표시.
 - 시청자: PIP 숨기기 버튼(모바일에서는 탭으로 숨김·표시).

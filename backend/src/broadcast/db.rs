@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 
-use super::{Broadcast, BroadcastStatus, RecordingRef, parse_enum};
+use super::{Broadcast, BroadcastStatus, OverlayLayout, RecordingRef, parse_enum};
 use crate::auth::UserSummary;
 use crate::error::AppError;
 
@@ -15,6 +15,8 @@ pub struct Row {
     pub tags: Vec<String>,
     pub record: bool,
     pub pip_corner: String,
+    /// JSONB를 text로 읽는다(sqlx json 기능 없이)
+    pub overlay_layout: Option<String>,
     pub started_at: Option<DateTime<Utc>>,
     pub ended_at: Option<DateTime<Utc>>,
     pub disconnected_at: Option<DateTime<Utc>>,
@@ -42,6 +44,11 @@ impl Row {
             tags: self.tags,
             record: self.record,
             pip_corner: parse_enum(&self.pip_corner)?,
+            overlay_layout: self
+                .overlay_layout
+                .map(|t| serde_json::from_str::<OverlayLayout>(&t))
+                .transpose()
+                .map_err(|e| AppError::Internal(format!("bad overlay_layout: {e}")))?,
             // shortcut: thumbnail_path를 캐시 무효화용 버전 문자열로 쓴다(T12가 그렇게 채운다).
             thumbnail_url: self
                 .thumbnail_path
@@ -85,6 +92,7 @@ pub async fn find(db: &PgPool, f: &Filter) -> Result<Vec<Row>, sqlx::Error> {
         r#"SELECT b.id, b.owner_id,
                   CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS "owner_nickname!",
                   b.status, b.title, b.category, b.tags, b.record, b.pip_corner,
+                  b.overlay_layout::text AS overlay_layout,
                   b.started_at, b.ended_at, b.disconnected_at, b.peak_viewers,
                   b.thumbnail_path, b.created_at,
                   r.id AS "recording_id?", r.status AS "recording_status?",
@@ -147,9 +155,13 @@ pub async fn insert_ready(
     if ready >= limit {
         return Ok(None);
     }
+    // 배치는 같은 소유자가 마지막으로 정한 값을 이어 쓴다(방송마다 다시 배치하지 않게)
     let id = sqlx::query_scalar!(
-        "INSERT INTO broadcasts (owner_id, title, category, tags, record)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id",
+        "INSERT INTO broadcasts (owner_id, title, category, tags, record, overlay_layout)
+         VALUES ($1, $2, $3, $4, $5,
+                 (SELECT overlay_layout FROM broadcasts
+                  WHERE owner_id = $1 AND overlay_layout IS NOT NULL ORDER BY id DESC LIMIT 1))
+         RETURNING id",
         owner_id,
         title,
         category,
@@ -170,6 +182,8 @@ pub struct Patch {
     pub tags: Option<Vec<String>>,
     pub record: Option<bool>,
     pub pip_corner: Option<String>,
+    /// JSON 문자열
+    pub overlay_layout: Option<String>,
 }
 
 /// 현재 상태가 `expected`일 때만 수정한다. 그 사이 상태가 바뀌었으면 false.
@@ -187,7 +201,8 @@ pub async fn update_fields(
     let res = sqlx::query!(
         "UPDATE broadcasts SET title = COALESCE($3, title), category = COALESCE($4, category),
                 tags = COALESCE($5, tags), record = COALESCE($6, record),
-                pip_corner = COALESCE($7, pip_corner)
+                pip_corner = COALESCE($7, pip_corner),
+                overlay_layout = COALESCE($8::text::jsonb, overlay_layout)
          WHERE id = $1 AND status = $2 AND hidden_at IS NULL",
         id,
         expected,
@@ -196,6 +211,7 @@ pub async fn update_fields(
         p.tags.as_deref(),
         p.record,
         p.pip_corner,
+        p.overlay_layout,
     )
     .execute(db)
     .await?;

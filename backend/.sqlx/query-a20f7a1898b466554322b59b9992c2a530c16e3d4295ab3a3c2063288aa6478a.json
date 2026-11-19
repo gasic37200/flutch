@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO broadcasts (owner_id, title, category, tags, record)\n         VALUES ($1, $2, $3, $4, $5) RETURNING id",
+  "query": "INSERT INTO broadcasts (owner_id, title, category, tags, record, overlay_layout)\n         VALUES ($1, $2, $3, $4, $5,\n                 (SELECT overlay_layout FROM broadcasts\n                  WHERE owner_id = $1 AND overlay_layout IS NOT NULL ORDER BY id DESC LIMIT 1))\n         RETURNING id",
   "describe": {
     "columns": [
       {
@@ -28,5 +28,5 @@
       false
     ]
   },
-  "hash": "5d9c0f20bafba75b5abc7f7e33b0f3482fe6fd408c8cd9af1c71a040f3e5713d"
+  "hash": "a20f7a1898b466554322b59b9992c2a530c16e3d4295ab3a3c2063288aa6478a"
 }

@@ -41,10 +41,14 @@ type Category = 'just_chatting' | 'game' | 'fps' | 'rpg' | 'horror' | 'virtual' 
 // 화면 라벨: 저스트채팅·종합게임·FPS·RPG·공포게임·버추얼·스포츠·음악 (프론트 상수)
 type PipCorner = 'top_left' | 'top_right' | 'bottom_left' | 'bottom_right'
 type BroadcastStatus = 'READY' | 'LIVE' | 'ENDED'
+// 영상 기준 %(0~100). alert: x=가로 가운데·y=위 끝 / cam: x·y=왼쪽 위, w=폭 / chat: x=왼쪽·y=아래 끝(위로 쌓임), w=폭
+// 기본(null일 때 프론트): alert {50,4}, cam {76,75,w22}, chat {2,94,w30}
+type OverlayLayout = { alert: { x: number; y: number }; cam: { x: number; y: number; w: number }; chat: { x: number; y: number; w: number } }
 
 type Broadcast = {
   id: number; owner: UserSummary; status: BroadcastStatus
-  title: string; category: Category; tags: string[]; record: boolean; pipCorner: PipCorner
+  title: string; category: Category; tags: string[]; record: boolean; pipCorner: PipCorner   // pipCorner는 이전 값(프론트 안 씀, 제출 후 정리)
+  overlayLayout: OverlayLayout | null  // 스튜디오 배치 편집 결과. null이면 프론트 기본 배치
   thumbnailUrl: string | null          // `/media/thumbs/{id}.jpg?v=<갱신시각>`, null이면 기본 이미지
   viewerCount: number                  // LIVE만 의미, 그 외 0
   peakViewers: number
@@ -162,20 +166,21 @@ type Page<T> = { items: T[]; nextCursor: string | null }
 | GET `/broadcasts` | 누구나 | `?category=&q=&cursor=&limit=` | 200 `Page<Broadcast>` — **LIVE·미숨김만**, 시청자 수 내림차순 | 422 |
 | POST `/broadcasts` | 로그인 | `{title, category, tags?: string[], record?: boolean(기본 true)}` | 201 `BroadcastDetail` (READY) | 401, 422, 409 `BROADCAST_READY_LIMIT` |
 | GET `/broadcasts/{id}` | 누구나(READY도 링크로 열림) | — | 200 `BroadcastDetail` | 404(없음·숨김) |
-| PATCH `/broadcasts/{id}` | 소유자 | `{title?, category?, tags?, record?, pipCorner?}` | 200 `BroadcastDetail`, `broadcast.updated` 발행 | 401, 404, 403 `BROADCAST_NOT_OWNER`, 422, 409 `BROADCAST_FIELD_LOCKED` |
+| PATCH `/broadcasts/{id}` | 소유자 | `{title?, category?, tags?, record?, pipCorner?, overlayLayout?}` | 200 `BroadcastDetail`, `broadcast.updated` 발행 | 401, 404, 403 `BROADCAST_NOT_OWNER`, 422, 409 `BROADCAST_FIELD_LOCKED` |
 | DELETE `/broadcasts/{id}` | 소유자 | — | 204 | 401, 404, 403 `BROADCAST_NOT_OWNER` |
 | PUT `/broadcasts/{id}/thumbnail` | 소유자·LIVE | 본문 이미지 바이트, `Content-Type: image/jpeg`, 최대 512KB | 204 (최신 1장만 덮어씀, `thumbnailUrl`의 `?v=`가 바뀌고 `broadcast.updated` 발행) | 401, 404, 403, 422 `BROADCAST_THUMBNAIL_INVALID`, 409 `BROADCAST_NOT_LIVE` |
 | GET `/me/broadcasts` | 로그인 | `?status=READY\|LIVE\|ENDED&cursor=&limit=` | 200 `Page<Broadcast>` — 내 방송(미숨김) 최신 등록순, READY 포함 | 401 |
 | GET `/users/{id}/broadcasts` | 누구나 | `?cursor=&limit=` | 200 `Page<Broadcast>` — 그 스트리머의 **ENDED·미숨김** 최신순(다시보기는 `recording`) | 404 |
 
-- 검증: `title` 2~50자·FLUTCH 금지어/욕설 불가, `category`는 8개 코드 중 하나, `tags` 최대 3개·각 1~10자·금지어 불가·중복 제거, `pipCorner`는 4개 값 중 하나. 실패는 422 `fields`.
+- 검증: `title` 2~50자·FLUTCH 금지어/욕설 불가, `category`는 8개 코드 중 하나, `tags` 최대 3개·각 1~10자·금지어 불가·중복 제거, `pipCorner`는 4개 값 중 하나, `overlayLayout`은 세 요소·필드가 모두 있어야 하고(빠지면 422 형식 오류) 값은 0~100·폭은 0 초과(아니면 422 `fields.overlayLayout`). 실패는 422 `fields`.
+- `POST /broadcasts`는 같은 소유자가 마지막으로 저장한 `overlayLayout`(가장 최근 방송 중 값이 있는 것)을 새 방송에 복사한다. 없으면 null.
 - `q`: 1~30자, 제목·닉네임·태그 부분 일치(대소문자 무시). `category`와 함께 쓸 수 있다. 다시보기 검색은 `GET /recordings?q=`(검색 화면은 LIVE 결과 뒤에 다시보기 결과를 이어 붙인다).
 - 상태별 수정 가능 필드 (그 외 필드가 본문에 있으면 409 `BROADCAST_FIELD_LOCKED`):
 
   | 상태 | 수정 가능 |
   |---|---|
-  | READY | `title` `category` `tags` `record` `pipCorner` |
-  | LIVE | `title` `category` `tags` `pipCorner` |
+  | READY | `title` `category` `tags` `record` `pipCorner` `overlayLayout` |
+  | LIVE | `title` `category` `tags` `pipCorner` `overlayLayout` |
   | ENDED | `title` |
 - 목록 정렬·커서: `GET /me/broadcasts`·`GET /users/{id}/broadcasts`는 최신 id 순이고 `nextCursor`는 마지막 항목 id다(T04). `GET /broadcasts`는 **시청자 수 내림차순, 동률은 최신순**이고 `nextCursor`는 순위 위치(앞에서 건너뛸 개수)다 — 시청자 수가 서버 메모리 값이라 조건에 맞는 LIVE를 전부 읽어 정렬한다(T08b). 페이지 사이에 시청자 수가 바뀌면 경계에서 한 방송이 겹치거나 빠질 수 있다(홈은 10초 폴링). 잘못된 `limit`(숫자 아님)·`cursor`·`category`·`status`는 422, `limit`은 1~50으로 보정한다.
 - 등록 한도: 내 READY가 이미 5개면 `BROADCAST_READY_LIMIT`. "이전 방송 정보 복사"는 별도 API 없이 프론트가 `GET /me/broadcasts`의 값을 등록 폼에 채운다.
@@ -382,7 +387,7 @@ type Clip = { id: number /* super_clutch id */; recordingId: number; videoUrl: s
 | `chat.created` / `chat.updated` | public | `Chat` |
 | `chat.deleted` | public | `{id}` |
 | `chat.system` | public | `{kind: 'timeout' \| 'ban', user: UserSummary, until: string \| null}` → "OOO님의 채팅이 10분간 제한되었어요" / "OOO님이 차단되었어요". `ban`이면 그 사용자 메시지 전부 삭제 표시 |
-| `broadcast.updated` | public | `Broadcast` (제목·카테고리·태그·PIP·LIVE 전이·썸네일) |
+| `broadcast.updated` | public | `Broadcast` (제목·카테고리·태그·PIP·오버레이 배치·LIVE 전이·썸네일) |
 | `broadcast.ended` | public | `{endedAt, peakViewers, durationSec, reason: 'owner' \| 'disconnect' \| 'max_duration' \| 'deleted', recording: {id, status} \| null}` |
 | `broadcast.reconnecting` | public | `{since}` — 송출자 끊김, 60초 유예 시작 |
 | `broadcast.resumed` | public | `{}` |

@@ -8,8 +8,9 @@ import { useClutch } from '../../watch/hooks/useClutch.ts'
 import { useBroadcastEvents } from '../../live/hooks/useBroadcastEvents.ts'
 import { usePublisher, type MediaSource } from '../../live/hooks/usePublisher.ts'
 import { useToast } from '../../../hooks/useToast.ts'
-import type { PipCorner } from '../../../api/generated/PipCorner.ts'
+import { layoutOf } from '../../live/overlayLayout.ts'
 import { detectEnv } from '../environment.ts'
+import { useLayoutEditor } from './useLayoutEditor.ts'
 import { useElapsed } from './useElapsed.ts'
 import { useWakeLock } from './useWakeLock.ts'
 import { useThumbnailCapture } from './useThumbnailCapture.ts'
@@ -91,12 +92,13 @@ export function useStudio(broadcastId: number | undefined) {
     await media.flipCamera()
   }
 
-  /** 웹캠 PIP 위치: 서버에 저장하면 broadcast.updated로 시청자에게 반영된다 */
-  const setPipCorner = (pipCorner: PipCorner) =>
-    updateBroadcast.mutate(
-      { title: null, category: null, tags: null, record: null, pipCorner },
-      { onError: () => toast({ tone: 'error', message: '웹캠 위치를 바꾸지 못했어요.' }) },
-    )
+  /** 웹캠·후원 알림·채팅 배치: 서버에 저장하면 broadcast.updated로 시청자에게 바로 반영된다 */
+  const layout = useLayoutEditor(layoutOf(data?.overlayLayout), (overlayLayout) =>
+    updateBroadcast.mutateAsync(
+      { title: null, category: null, tags: null, record: null, pipCorner: null, overlayLayout },
+      { onError: () => toast({ tone: 'error', message: '배치를 저장하지 못했어요. 다시 시도해 주세요.' }) },
+    ),
+  )
 
   const stop = async () => {
     setEnding(true)
@@ -132,7 +134,7 @@ export function useStudio(broadcastId: number | undefined) {
     flipCamera,
     pipOn: !!media.pipStream,
     togglePip: (on: boolean) => (on ? media.capturePip() : media.stopPip()),
-    setPipCorner,
+    layout,
     goLive: () => pub.start(),
   }
 }

@@ -98,6 +98,7 @@ export function useBroadcastForm(existing?: Broadcast, onSaved?: () => void) {
         tags: locked.tags ? null : finalTags,
         record: locked.record ? null : record,
         pipCorner: null,
+        overlayLayout: null,
       },
       { onSuccess: () => (onSaved ? (toast({ tone: 'success', message: '방송 정보를 저장했어요.' }), onSaved()) : done('/manage')) },
     )

@@ -314,6 +314,12 @@ pub async fn update(
         .tags
         .as_deref()
         .and_then(|t| field_err(&mut fields, "tags", check_tags(t)));
+    if req.overlay_layout.as_ref().is_some_and(|l| !l.is_valid()) {
+        fields.insert(
+            "overlayLayout".into(),
+            "위치는 0~100% 안이어야 해요.".into(),
+        );
+    }
     if !fields.is_empty() {
         return Err(AppError::Validation(fields));
     }
@@ -327,6 +333,7 @@ pub async fn update(
                 || req.tags.is_some()
                 || req.record.is_some()
                 || req.pip_corner.is_some()
+                || req.overlay_layout.is_some()
         }
     };
     if locked {
@@ -339,6 +346,12 @@ pub async fn update(
         tags,
         record: req.record,
         pip_corner: req.pip_corner.as_ref().map(enum_str).transpose()?,
+        overlay_layout: req
+            .overlay_layout
+            .as_ref()
+            .map(serde_json::to_string)
+            .transpose()
+            .map_err(|e| AppError::Internal(format!("overlay_layout encode: {e}")))?,
     };
     if !db::update_fields(&state.db, id, status, &patch).await? {
         return Err(BroadcastError::InvalidTransition.into());
