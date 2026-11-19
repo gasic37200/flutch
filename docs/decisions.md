@@ -132,3 +132,4 @@
 - WebSocket: Origin 검사 + 쿠키로 사용자 식별, **연결별 필터링**(익명 후원자 실명은 소유자 연결만). 홈은 WebSocket 없이 10초 폴링.
 - 토스 웹훅: 서명 대신 결제 조회 API로 재확인. 결제위젯 키 사용.
 - 로컬 개발: compose.dev에 로컬 LiveKit 서버. CI: Postgres service + `SQLX_OFFLINE`. 이미지: `ubuntu-24.04-arm` 러너 네이티브 빌드.
+- 후원 TTS 추가(2026-11-19 사용자 결정): backlog에서 범위로 올림. 브라우저 `speechSynthesis`, 프론트 전용, 후원 메시지만 읽음(이름·금액 제외) → [features/06](features/06-wallet-donation.md).
