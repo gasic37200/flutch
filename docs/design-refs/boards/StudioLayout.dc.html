@@ -32,7 +32,9 @@ input[type=range]{accent-color:#B0F612}
 .st-app{container-type:inline-size;container-name:st}
 .st-body{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding:20px 24px;max-width:1920px;margin:0 auto;box-sizing:border-box;align-items:start}
 @container st (max-width:1279px){.st-body{grid-template-columns:minmax(0,1fr) 320px;gap:16px;padding:16px}}
-@container st (max-width:1023px){.st-body{grid-template-columns:minmax(0,1fr)}.st-aside{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}}
+.st-aside{position:sticky;top:20px;height:calc(100vh - 104px);min-height:560px}
+/* narrow: one column, chat right under the preview so it is visible without scrolling */
+@container st (max-width:1023px){.st-body{display:flex;flex-direction:column;align-items:stretch}.st-main{display:contents!important}.st-main>*{order:2}.st-main>:first-child{order:1}.st-ctrl{order:4}.st-aside{order:3;position:static;height:auto;min-height:0}.st-chat{height:340px;flex:none!important}}
 @container st (max-width:767px){.st-header{padding:10px 16px!important}.st-label{display:none}}
 </style>
 </helmet>
@@ -51,7 +53,7 @@ input[type=range]{accent-color:#B0F612}
 
   <div class="st-body">
 
-    <main style="min-width:0;display:flex;flex-direction:column;gap:14px">
+    <main class="st-main" style="min-width:0;display:flex;flex-direction:column;gap:14px">
       <div class="ch6" role="toolbar" aria-label="배치 편집" style="display:flex;align-items:center;flex-wrap:wrap;gap:10px 12px;padding:10px 14px;background:#191D25">
         <b style="font-size:15px;color:#B0F612">배치 편집</b>
         <span style="font-size:13px;color:#A3AAB6">요소를 끌어서 옮기세요 · 선택 후 방향키 1%, Shift+방향키 5%</span>
@@ -68,7 +70,7 @@ input[type=range]{accent-color:#B0F612}
         <div class="al ch12" role="button" tabindex="0" aria-label="후원 알림 위치, 가로 50% 세로 4%" style="box-shadow:0 0 0 2px #F3F5F7;cursor:grabbing"><div class="ch12"><span class="wave" aria-hidden="true"></span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="t">후원 알림 미리보기 <span style="font-family:'JetBrains Mono',monospace;color:#B0F612">5,000</span> Beat</span><span class="m">실제 크기 · 일반 42% / 10,000 이상 50%</span></div></div></div>
         <span class="tag" style="left:50%;top:calc(4% + 84px);transform:translateX(-50%);background:#F3F5F7">후원 알림 · 가로 50% · 세로 4% · 가운데 맞춤</span>
         <div class="cov ed" role="button" tabindex="0" aria-label="채팅 오버레이 위치">
-          <span class="tag" style="top:-26px">채팅 오버레이 · 전체화면 시청자에게만</span>
+          <span class="tag" style="top:-26px">채팅 오버레이 · 시청자 화면에 표시 (시청자가 끌 수 있음)</span>
           <div><b style="color:#2EE6D6">에임장인</b> ㄷㄷ 방금 그거 실화냐</div>
           <div><b style="color:#9B7BFF">밤샘냥</b> 와 미쳤다 ㄷㄷ</div>
           <div><b style="color:#5CF2A0">수다곰</b> 클러치각이다!</div>
@@ -77,7 +79,7 @@ input[type=range]{accent-color:#B0F612}
       </div>
       <span style="font-size:12px;color:#7C8494;margin-top:-6px">영상 밖으로는 못 나가요. 완료하면 시청자 화면에 바로 반영 · 기본 위치: 알림 위 가운데, 웹캠 오른쪽 아래, 채팅 왼쪽 아래</span>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px">
+      <div class="st-ctrl" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px">
         <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:14px">
           <b style="font-size:15px">영상</b>
           <div role="radiogroup" aria-label="송출 모드" style="display:flex;gap:8px">
@@ -112,34 +114,28 @@ input[type=range]{accent-color:#B0F612}
       </div>
     </main>
 
-    <aside class="st-aside" style="min-width:0;display:flex;flex-direction:column;gap:14px">
-      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:12px">
-        <div style="display:flex;align-items:center"><b style="font-size:15px">방송 정보</b><span style="margin-left:auto;font-size:12px;color:#7C8494">방송 중에도 바로 반영</span></div>
-        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#A3AAB6">제목<input type="text" value="[대회 준비중] 오늘도 클러치 가보자!" class="ch6" style="height:42px;border:0;background:#191D25;color:#F3F5F7;padding:0 12px;font-size:14px;font-family:'Noto Sans KR',sans-serif"></label>
-        <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#A3AAB6">카테고리<select class="ch6" style="height:42px;border:0;background:#191D25;color:#F3F5F7;padding:0 10px;font-size:14px;font-family:'Noto Sans KR',sans-serif"><option>FPS</option></select></label>
-        <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#A3AAB6">태그 (최대 3개)<div style="display:flex;gap:6px;flex-wrap:wrap"><span class="ch6" style="padding:4px 10px;background:#191D25;color:#F3F5F7">랭크 ×</span><span class="ch6" style="padding:4px 10px;background:#191D25;color:#F3F5F7">대회준비 ×</span><span class="ch6" style="padding:4px 10px;background:#191D25;color:#F3F5F7">소통 ×</span></div></div>
-        <button type="button" class="ch6" style="height:42px;border:0;background:#B0F612;color:#0A0C0F;font-weight:700;font-size:14px;font-family:'Noto Sans KR',sans-serif">변경 저장</button>
+    <aside class="st-aside" style="min-width:0;display:flex;flex-direction:column;gap:12px">
+      <div class="ch12 st-chat" style="background:rgba(176,246,18,.25);padding:1px;flex:1;min-height:0;display:flex"><div class="ch12" style="background:#12151B;padding:14px 16px;display:flex;flex-direction:column;gap:10px;flex:1;min-height:0">
+        <div style="display:flex;align-items:center"><b style="font-size:15px">채팅</b><span style="margin-left:auto;font-size:12px;color:#7C8494">닉네임 누르면 차단·밴·기록</span></div>
+        <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;font-size:14px;line-height:1.45">
+          <sc-for list="{{chat}}" as="c" hint-placeholder-count="12"><div><b style="color:{{c.color}}">{{c.name}}</b> {{c.text}}</div></sc-for>
+          <div class="ch6" style="background:rgba(176,246,18,.12);box-shadow:inset 0 0 0 1px rgba(176,246,18,.4);padding:6px 10px"><b style="color:#B0F612">밤샘냥 · 5,000 Beat</b> 방금 그 3대1 미쳤다 진짜</div>
+        </div>
+        <div class="ch6" style="display:flex;align-items:center;gap:8px;height:44px;padding:0 6px 0 12px;background:#191D25"><span style="flex:1;font-size:14px;color:#7C8494">채팅을 입력하세요</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7C8494">0/200</span><button type="button" aria-label="보내기" style="width:36px;height:36px;border:0;background:transparent;color:#B0F612"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 3 3 10l7 3 3 7z"></path><path d="m10 13 4-4"></path></svg></button></div>
       </div></div>
 
-      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:10px">
-        <div style="display:flex;align-items:center"><b style="font-size:15px">후원 알림 대기열</b><span style="margin-left:auto;font-size:12px;color:#7C8494">10초씩 표시</span></div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="flex:1;font-size:14px;line-height:1.4">TTS 읽기<br><span style="font-size:12px;color:#7C8494">후원 메시지를 소리로 읽어줘요 · 송출에 포함</span></span>
-          <button type="button" role="switch" aria-checked="true" aria-label="후원 TTS 읽기" style="width:48px;height:28px;border-radius:999px;border:0;background:#B0F612;position:relative;flex:none"><span style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#0A0C0F"></span></button>
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px;flex:none"><div class="ch12" style="background:#12151B;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px"><b style="font-size:14px">후원 알림 대기열</b><span style="font-size:12px;color:#7C8494">10초씩</span><span style="flex:1"></span><span style="font-size:12px;color:#A3AAB6">TTS 읽기</span><button type="button" role="switch" aria-checked="true" aria-label="후원 TTS 읽기" style="width:40px;height:24px;border-radius:999px;border:0;background:#B0F612;position:relative;flex:none"><span style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#0A0C0F"></span></button></div>
+        <div class="ch6" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#191D25">
+          <div style="flex:1;min-width:0;font-size:13px"><b>밤샘냥 · <span style="font-family:'JetBrains Mono',monospace;color:#B0F612">5,000</span></b> <span style="color:#A3AAB6">표시 중 · 7초</span></div>
+          <button type="button" class="ch6" style="height:32px;padding:0 12px;border:0;background:#262B35;color:#F3F5F7;font-size:13px;font-family:'Noto Sans KR',sans-serif">스킵</button>
         </div>
-        <div class="ch6" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#191D25">
-          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><b style="font-size:14px">밤샘냥 · <span style="font-family:'JetBrains Mono',monospace;color:#B0F612">5,000</span></b><span style="font-size:12px;color:#A3AAB6">표시 중 · 7초 남음</span></div>
-          <button type="button" class="ch6" style="height:36px;padding:0 14px;border:0;background:#262B35;color:#F3F5F7;font-size:13px;font-family:'Noto Sans KR',sans-serif">스킵</button>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;color:#A3AAB6;padding:0 4px"><span>다음 · 익명의 후원자 (실명: 라라)</span><b style="font-family:'JetBrains Mono',monospace;color:#FFC21A">10,000</b></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#A3AAB6;padding:0 2px"><span>다음 · 익명의 후원자 (실명: 라라) 외 2건</span><b style="font-family:'JetBrains Mono',monospace;color:#FFC21A">10,000</b></div>
       </div></div>
 
-      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px"><div class="ch12" style="background:#12151B;padding:16px;display:flex;flex-direction:column;gap:8px;font-size:13px">
-        <b style="font-size:15px">채팅</b>
-        <div><b style="color:#2EE6D6">에임장인</b> ㄷㄷ 방금 그거 실화냐</div>
-        <div><b style="color:#9B7BFF">밤샘냥</b> 와 미쳤다 ㄷㄷ</div>
-        <div><b style="color:#5CF2A0">수다곰</b> 클러치각이다!</div>
-        <span style="color:#7C8494">닉네임을 누르면 임시차단·영구 밴·채팅 기록</span>
+      <div class="ch12" style="background:rgba(176,246,18,.25);padding:1px;flex:none"><div class="ch12" style="background:#12151B;padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#7C8494">방송 정보</span><b style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">[대회 준비중] 오늘도 클러치 가보자!</b><span style="font-size:12px;color:#A3AAB6">FPS · 랭크 · 대회준비 · 소통</span></div>
+        <button type="button" aria-expanded="false" class="ch6" style="height:32px;padding:0 12px;border:0;background:#191D25;color:#F3F5F7;font-size:13px;font-family:'Noto Sans KR',sans-serif;flex:none">수정 ▾</button>
       </div></div>
     </aside>
   </div>
@@ -149,7 +145,14 @@ input[type=range]{accent-color:#B0F612}
 class Component extends DCLogic {
   renderVals() {
     var bars = function (n) { var a = []; for (var i = 0; i < 20; i++) a.push(i < n ? (i < 14 ? '#B0F612' : '#F3F5F7') : '#262B35'); return a; };
-    return { micBars: bars(13), sysBars: bars(9) };
+    return { chat: [
+      { name: '에임장인', color: '#2EE6D6', text: 'ㄷㄷ 방금 그거 실화냐' }, { name: '수다곰', color: '#5CF2A0', text: '클러치각이다!' },
+      { name: '라라', color: '#E8ECF1', text: '이번 판 이기면 대회 간다' }, { name: '골골', color: '#4DA3FF', text: '김플러 화이팅!!' },
+      { name: '용사킴', color: '#B0F612', text: '오늘 컨디션 좋아 보여요' }, { name: '모닝톡', color: '#9B7BFF', text: '방금 들어왔어요 ㅎㅇ' },
+      { name: '시청자123', color: '#A3AAB6', text: '에임 미쳤네' }, { name: '밤샘냥', color: '#9B7BFF', text: '와 미쳤다 ㄷㄷ' },
+      { name: '겜스터', color: '#FFC21A', text: '다음 판 언제 해요?' }, { name: '네온비비드', color: '#2EE6D6', text: '클립 각 나왔다' },
+      { name: '에임장인', color: '#2EE6D6', text: 'ㅋㅋㅋㅋㅋ' }
+    ], micBars: bars(13), sysBars: bars(9) };
   }
 }
 </script>
