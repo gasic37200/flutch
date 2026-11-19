@@ -11,6 +11,7 @@ import ReplayGrid from '../features/replay/components/ReplayGrid.tsx'
 import FollowButton from '../features/follow/components/FollowButton.tsx'
 import { count } from '../features/replay/format.ts'
 import ManageTab from '../features/streamer/components/ManageTab.tsx'
+import { recentFirst } from '../features/broadcast/hooks/useManageBroadcasts.ts'
 import PastBroadcasts from '../features/streamer/components/PastBroadcasts.tsx'
 import { useStreamer, type StreamerTab } from '../features/streamer/hooks/useStreamer.ts'
 import { errorKindOf } from '../hooks/errorKind.ts'
@@ -31,7 +32,8 @@ function StreamerPageBody() {
   if (profile.isPending) return <Skeleton className='h-40 w-full max-w-5xl' />
 
   const { user, followerCount, liveBroadcast } = profile.data
-  const pastItems = past.data?.pages.flatMap((p) => p.items) ?? []
+  // shortcut: 불러온 페이지 안에서만 종료 시각순, 서버 커서가 id순이라 "더 보기" 경계에서 순서가 섞일 수 있음 — 서버 ended_at 정렬로 바꿀 때
+  const pastItems = (past.data?.pages.flatMap((p) => p.items) ?? []).sort(recentFirst)
   const tabs: { id: StreamerTab; label: string }[] = [
     { id: 'broadcasts', label: '방송' },
     { id: 'replays', label: '다시보기' },

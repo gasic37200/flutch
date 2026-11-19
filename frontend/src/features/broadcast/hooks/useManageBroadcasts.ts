@@ -7,15 +7,18 @@ import { useDeleteBroadcast, useMyBroadcasts } from './useBroadcasts.ts'
 export const READY_LIMIT = 5
 const ORDER = { READY: 0, LIVE: 1, ENDED: 2 }
 
-/** 내 방송 관리: READY → LIVE → ENDED 순(같은 상태끼리는 최신 등록순) + 삭제 확인 상태. */
+// 끝난 방송은 종료 시각, 나머지는 등록 시각 기준 최신순. 서버는 등록(id)순이라 늦게 진행한 방송이 아래로 밀린다.
+const when = (b: Broadcast) => Date.parse(b.endedAt ?? b.startedAt ?? b.createdAt)
+export const recentFirst = (a: Broadcast, b: Broadcast) => when(b) - when(a)
+
+/** 내 방송 관리: READY → LIVE → ENDED 순(같은 상태끼리는 최신순) + 삭제 확인 상태. */
 export function useManageBroadcasts() {
   const query = useMyBroadcasts()
   const [target, setTarget] = useState<Broadcast | null>(null)
   const remove = useDeleteBroadcast()
   const toast = useToast()
 
-  // 정렬은 안정 정렬이라 서버의 최신순이 유지된다
-  const items = [...(query.data?.items ?? [])].sort((a, b) => ORDER[a.status] - ORDER[b.status])
+  const items = [...(query.data?.items ?? [])].sort((a, b) => ORDER[a.status] - ORDER[b.status] || recentFirst(a, b))
 
   const confirmDelete = () => {
     if (!target) return
