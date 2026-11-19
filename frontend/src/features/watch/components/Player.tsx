@@ -19,7 +19,7 @@ type Props = {
   tts: { on: boolean; toggle: () => void }
   /** 스트리머 배치(웹캠 위치) */
   layout: OverlayLayout
-  /** 영상 위 오버레이(후원 알림·전체화면 채팅). 전체화면 요소 안에 있어야 전체화면에서도 보인다 */
+  /** 영상 위 오버레이(후원 알림·채팅). 전체화면 요소 안에 있어야 전체화면에서도 보인다 */
   children?: ReactNode
   onUnmute: () => void
 }
@@ -201,16 +201,17 @@ export default function Player({ view, source, broadcast, player: p, tts, layout
             </>
           )}
           <span className='grow' />
-          {fs && (
-            <button
-              type='button'
-              onClick={p.toggleChatOverlay}
-              aria-pressed={p.chatOverlay}
-              className={`chamfer h-9 px-3 text-[13px] font-bold [--c:6px] focus-visible:outline-2 focus-visible:outline-text ${p.chatOverlay ? 'bg-brand/18 text-brand ring-1 ring-brand/50 ring-inset' : 'bg-bg/60 text-text-muted ring-1 ring-border ring-inset'}`}
-            >
-              채팅 오버레이 {p.chatOverlay ? '켜짐' : '꺼짐'}
-            </button>
-          )}
+          {/* 시안 Watch·WatchFullscreen: 채팅 오버레이 켜고 끄기(기본 켬) */}
+          <button
+            type='button'
+            onClick={p.toggleChatOverlay}
+            aria-pressed={p.chatOverlay}
+            aria-label='채팅 오버레이'
+            className={`chamfer inline-flex items-center font-bold [--c:6px] focus-visible:outline-2 focus-visible:outline-text ${fs ? 'h-9 px-3 text-[13px]' : 'h-8 gap-[5px] px-2.5 text-xs'} ${p.chatOverlay ? 'bg-brand/15 text-brand ring-1 ring-brand/50 ring-inset' : 'bg-bg/60 text-text-muted ring-1 ring-border ring-inset'}`}
+          >
+            {!fs && <Icon name='chat' className='size-[15px]' />}
+            채팅
+          </button>
           {p.hasPip && (
             <button type='button' onClick={p.togglePip} aria-pressed={p.pipHidden} aria-label={p.pipHidden ? '웹캠 보이기' : '웹캠 숨기기'} className={iconBtn}>
               <Icon name='camera' className={`size-5 ${p.pipHidden ? 'text-text-dim' : ''}`} />

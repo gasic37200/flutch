@@ -65,7 +65,7 @@ export function LayoutLayer({ editor: { boxRef, handlers }, layout: l, selected:
         'chat',
         chatStyle(l),
         'flex flex-col gap-1 text-[length:clamp(11px,1.2cqw,14px)] leading-[1.45]',
-        { cls: '-top-6.5 -left-1', text: '채팅 오버레이 · 전체화면 시청자에게만' },
+        { cls: '-top-6.5 -left-1', text: '채팅 오버레이 · 시청자 화면에 표시 (시청자가 끌 수 있음)' },
         SAMPLE_CHAT.map(([n, t, c]) => (
           <p key={n} className='w-fit bg-bg/60 px-2 py-[3px]'>
             <b className={c}>{n}</b> {t}
