@@ -19,7 +19,7 @@ export type DonationAlerts = ReturnType<typeof useDonationAlerts>
  * 시청 화면은 공개형, 스튜디오(소유자)는 실명 이벤트를 받는다(서버가 연결별로 골라 보냄).
  * `volume`은 띠링·TTS 소리 크기(시청자 음소거면 0). TTS 켜고 끄기는 스튜디오 스위치만 바꾸고 이 브라우저에만 저장된다(시청자 토글 없음).
  */
-export function useDonationAlerts(onEvent: OnEvent, volume = 1) {
+export function useDonationAlerts(onEvent: OnEvent, volume = 1, owner = false) {
   const toast = useToast()
   const [queue, setQueue] = useState<DonationCreated[]>([])
   const [skipping, setSkipping] = useState(false)
@@ -57,7 +57,8 @@ export function useDonationAlerts(onEvent: OnEvent, volume = 1) {
     return () => clearTimeout(t)
   }, [currentId])
 
-  useAlertSound(current?.donation, volume, ttsOn)
+  // 저장된 끄기 설정은 스튜디오(소유자)에만 적용: 예전 시청 토글로 꺼 둔 브라우저도 다시 읽는다
+  useAlertSound(current?.donation, volume, owner ? ttsOn : true)
 
   const toggleTts = () => {
     if (ttsOn) stopSpeaking()
