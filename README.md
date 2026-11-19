@@ -49,7 +49,9 @@ FLUTTER의 두근거림과 CLUTCH의 짜릿함을 결합한 이름처럼, 라이
 - 회원가입(`/signup`)도 가능합니다(이메일·휴대폰 인증 없음).
 
 ## 시연 영상
-(준비 중)
+[![FLUTCH 시연 영상](https://img.youtube.com/vi/qI1Yhp7nLWo/hqdefault.jpg)](https://youtu.be/qI1Yhp7nLWo)
+
+https://youtu.be/qI1Yhp7nLWo — 2분 17초, 소리 없음. 방송 등록 → 배치 편집 → 송출 → 시청·채팅·클러치·후원 알림 → 종료 → 다시보기·지갑 → 모바일 시청. 로컬 테스트 환경을 브라우저 자동화로 녹화해 화면 공유는 테스트용 가짜 영상(초록 화면)입니다.
 
 ## 스크린샷
 | 홈 | 시청 (채팅·후원 알림·클러치 게이지) |
