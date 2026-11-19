@@ -1,15 +1,10 @@
 import type { Donation } from '../../api/generated/Donation.ts'
-import { beats, donorName } from './format.ts'
 
 const MAX_MESSAGE = 100
 const KEY = 'flutch.donationTts'
 
-/** 익명은 소유자 이벤트에 실명이 있어도 공개 이름으로 읽는다(스튜디오 탭 소리가 방송에 실릴 수 있음). */
-export function ttsText(d: Donation) {
-  const who = d.anonymous ? '익명의 후원자' : donorName(d)
-  const msg = d.message?.trim().slice(0, MAX_MESSAGE)
-  return `${who}님, ${beats(d.amount)} Beat 후원.${msg ? ` ${msg}` : ''}`
-}
+/** 후원 메시지만 읽는다(최대 100자). 닉네임·금액은 읽지 않아 익명 후원자 실명이 소리로 새지 않는다. 메시지가 없으면 빈 문자열. */
+export const ttsText = (d: Donation) => d.message?.trim().slice(0, MAX_MESSAGE) ?? ''
 
 export const ttsSupported = () => typeof speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined'
 

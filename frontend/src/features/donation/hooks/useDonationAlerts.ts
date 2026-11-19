@@ -44,7 +44,8 @@ export function useDonationAlerts(onEvent: OnEvent, silent = false) {
   // 알림이 바뀔 때만 읽는다(볼륨을 만져도 다시 읽지 않음). 다음 알림·넘기기·언마운트는 cleanup이 끊는다.
   const currentDonation = current?.donation
   useEffect(() => {
-    if (currentDonation && canSpeak.current) speak(ttsText(currentDonation))
+    const text = currentDonation && ttsText(currentDonation)
+    if (text && canSpeak.current) speak(text)
     return stopSpeaking
   }, [currentDonation])
 

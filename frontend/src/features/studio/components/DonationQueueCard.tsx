@@ -18,6 +18,14 @@ export default function DonationQueueCard({ alerts }: { alerts: DonationAlerts }
         <h2 className='text-[15px] font-bold'>후원 알림 대기열</h2>
         <span className='ml-auto text-xs text-text-dim'>10초씩 표시</span>
       </div>
+      <div className='flex items-center gap-2.5'>
+        <span className='grow text-sm leading-snug'>
+          TTS 읽기
+          <br />
+          <span className='text-xs text-text-dim'>후원 메시지를 소리로 읽어줘요</span>
+        </span>
+        <Switch label='후원 TTS 읽기' checked={alerts.tts.on} onChange={alerts.tts.toggle} />
+      </div>
       {d ? (
         <div className='chamfer flex items-center gap-2.5 bg-surface-2 px-3 py-2.5 [--c:6px]'>
           <div className='flex min-w-0 grow flex-col gap-0.5'>
@@ -33,10 +41,6 @@ export default function DonationQueueCard({ alerts }: { alerts: DonationAlerts }
       ) : (
         <p className='bg-surface-2 px-3 py-2.5 text-[13px] text-text-muted'>대기 중인 후원 알림이 없어요.</p>
       )}
-      <div className='flex items-center justify-between gap-2 px-1'>
-        <span className='text-[13px] text-text-muted'>TTS 읽기</span>
-        <Switch label='후원 음성 읽기' checked={alerts.tts.on} onChange={alerts.tts.toggle} />
-      </div>
       {next && (
         <div className='flex justify-between gap-2 px-1 text-[13px] text-text-muted'>
           <span className='min-w-0 truncate'>다음 · {name(next)}</span>

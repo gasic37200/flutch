@@ -123,6 +123,12 @@ const iconBtn = 'inline-flex size-10 items-center justify-center text-text hover
 export default function Player({ view, source, broadcast, player: p, tts, onUnmute }: Props) {
   const { videoRef, pipRef, micRef, shareAudioRef, boxRef } = p
   if (view === 'loading') return <Skeleton className='aspect-video w-full' />
+  const ttsBtn = (
+    <button type='button' onClick={tts.toggle} aria-pressed={tts.on} aria-label={tts.on ? '후원 TTS 끄기' : '후원 TTS 켜기'} title={tts.on ? '후원 TTS 끄기' : '후원 TTS 켜기'} className={`inline-flex h-10 items-center gap-1 px-2 focus-visible:outline-2 focus-visible:outline-text ${tts.on ? 'text-brand' : 'text-text-dim'}`}>
+      <Icon name={tts.on ? 'ttsOn' : 'ttsOff'} className='size-[18px]' />
+      <span className='font-display text-xs font-bold tracking-[.04em]'>TTS</span>
+    </button>
+  )
   const playing = view === 'playing'
   const live = broadcast?.status === 'LIVE'
   return (
@@ -153,13 +159,17 @@ export default function Player({ view, source, broadcast, player: p, tts, onUnmu
       {playing && (
         <div className='absolute inset-x-0 bottom-0 flex h-12 items-center gap-1.5 bg-linear-to-t from-bg/90 to-bg/0 px-2.5'>
           {p.muted ? (
-            <Button size='sm' variant='neutral' onClick={onUnmute}>
-              <Icon name='volume' className='size-4' />
-              소리 켜기
-            </Button>
+            <>
+              <Button size='sm' variant='neutral' onClick={onUnmute}>
+                <Icon name='volume' className='size-4' />
+                소리 켜기
+              </Button>
+              {ttsBtn}
+            </>
           ) : (
             <>
               <Icon name='volume' className='mx-2.5 size-5' />
+              {ttsBtn}
               <input
                 type='range'
                 min={0}
@@ -172,15 +182,12 @@ export default function Player({ view, source, broadcast, player: p, tts, onUnmu
               />
             </>
           )}
-          <button type='button' onClick={tts.toggle} aria-pressed={tts.on} aria-label={tts.on ? '후원 음성 읽기 끄기' : '후원 음성 읽기 켜기'} className={`${iconBtn} ml-auto`}>
-            <Icon name='tts' className={tts.on ? '' : 'text-text-dim'} />
-          </button>
           {p.hasPip && (
-            <button type='button' onClick={p.togglePip} aria-pressed={p.pipHidden} aria-label={p.pipHidden ? '웹캠 보이기' : '웹캠 숨기기'} className={iconBtn}>
+            <button type='button' onClick={p.togglePip} aria-pressed={p.pipHidden} aria-label={p.pipHidden ? '웹캠 보이기' : '웹캠 숨기기'} className={`${iconBtn} ml-auto`}>
               <Icon name='camera' className={p.pipHidden ? 'text-text-dim' : ''} />
             </button>
           )}
-          <button type='button' onClick={p.toggleFullscreen} aria-label={p.fullscreen ? '전체화면 해제' : '전체화면'} className={iconBtn}>
+          <button type='button' onClick={p.toggleFullscreen} aria-label={p.fullscreen ? '전체화면 해제' : '전체화면'} className={`${iconBtn} ${p.hasPip ? '' : 'ml-auto'}`}>
             <Icon name={p.fullscreen ? 'collapse' : 'expand'} />
           </button>
         </div>
