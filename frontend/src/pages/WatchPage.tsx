@@ -33,12 +33,12 @@ function WatchPageBody() {
   const id = Number(useParams().broadcastId) || undefined
   const { broadcast, error, refetch, view, source, viewer, events } = useWatch(id)
   const chat = useChat(id, events)
-  const player = usePlayer(viewer.tracks, viewer.muted)
+  const player = usePlayer(viewer.tracks, viewer.muted, viewer.unmute)
   const clutch = useClutch(broadcast, events.onEvent)
   const burst = useBurst(broadcast, events.onEvent)
   const desktop = useMediaQuery('(min-width: 1024px)')
   const mobile = useMediaQuery('(max-width: 600px)')
-  const alerts = useDonationAlerts(events.onEvent, viewer.muted || player.volume === 0)
+  const alerts = useDonationAlerts(events.onEvent, viewer.muted ? 0 : player.volume)
   const donations = useDonationList(id, { onEvent: events.onEvent, live: broadcast?.status === 'LIVE' })
   const layout = layoutOf(broadcast?.overlayLayout)
   const [tab, setTab] = useState('chat')
@@ -61,7 +61,7 @@ function WatchPageBody() {
         <div className='flex flex-col gap-3.5 max-[600px]:gap-0'>
           {/* 가로 화면(낮은 뷰포트)에서는 영상이 화면 높이 안에 들어오도록 폭을 줄인다 */}
           <div className='relative mx-auto w-full max-w-[calc((100dvh-5rem)*16/9)]'>
-            <Player view={view} source={source} broadcast={broadcast} player={player} tts={alerts.tts} layout={layout} onUnmute={() => void viewer.unmute()}>
+            <Player view={view} source={source} broadcast={broadcast} player={player} layout={layout} onUnmute={() => void viewer.unmute()}>
               <DonationAlert alerts={alerts} owner={broadcast?.viewer?.isOwner} layout={layout} />
               {/* 채팅 오버레이(스트리머 배치 위치, 시청자가 끌 수 있음). 일반 화면은 시안 Watch: 4줄·영상 폭 600 이하 3줄·한 줄 말줄임, 전체화면은 WatchFullscreen: 6줄 */}
               {player.chatOverlay &&

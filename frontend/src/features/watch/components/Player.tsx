@@ -16,7 +16,6 @@ type Props = {
   source?: 'screen' | 'camera'
   broadcast: BroadcastDetail | undefined
   player: ReturnType<typeof usePlayer>
-  tts: { on: boolean; toggle: () => void }
   /** 스트리머 배치(웹캠 위치) */
   layout: OverlayLayout
   /** 영상 위 오버레이(후원 알림·채팅). 전체화면 요소 안에 있어야 전체화면에서도 보인다 */
@@ -125,15 +124,9 @@ function Overlay({ view, broadcast, source }: Pick<Props, 'view' | 'broadcast' |
 const iconBtn ='inline-flex size-10 items-center justify-center text-text hover:text-brand focus-visible:outline-2 focus-visible:outline-text'
 
 // 표현만: 상태·트랙·볼륨·PIP 숨김은 useWatch·usePlayer가 준다.
-export default function Player({ view, source, broadcast, player: p, tts, layout, children, onUnmute }: Props) {
+export default function Player({ view, source, broadcast, player: p, layout, children, onUnmute }: Props) {
   const { videoRef, pipRef, micRef, shareAudioRef, boxRef } = p
   if (view === 'loading') return <Skeleton className='aspect-video w-full' />
-  const ttsBtn = (
-    <button type='button' onClick={tts.toggle} aria-pressed={tts.on} aria-label={tts.on ? '후원 TTS 끄기' : '후원 TTS 켜기'} title={tts.on ? '후원 TTS 끄기' : '후원 TTS 켜기'} className={`inline-flex h-10 items-center gap-1 px-2 focus-visible:outline-2 focus-visible:outline-text ${tts.on ? 'text-brand' : 'text-text-dim'}`}>
-      <Icon name={tts.on ? 'ttsOn' : 'ttsOff'} className='size-[18px]' />
-      <span className='font-display text-xs font-bold tracking-[.04em]'>TTS</span>
-    </button>
-  )
   const playing = view === 'playing'
   const live = broadcast?.status === 'LIVE'
   const fs = p.fullscreen
@@ -182,12 +175,10 @@ export default function Player({ view, source, broadcast, player: p, tts, layout
                 <Icon name='volume' className='size-4' />
                 소리 켜기
               </Button>
-              {ttsBtn}
             </>
           ) : (
             <>
               <Icon name='volume' className='mx-2.5 size-5' />
-              {ttsBtn}
               <input
                 type='range'
                 min={0}

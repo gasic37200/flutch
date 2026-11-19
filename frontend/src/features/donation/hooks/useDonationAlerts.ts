@@ -1,16 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '../../../api/client.ts'
 import type { DonationCreated } from '../../../api/generated/DonationCreated.ts'
 import { useToast } from '../../../hooks/useToast.ts'
 import type { OnEvent } from '../../live/hooks/useBroadcastEvents.ts'
-import { loadTtsOn, saveTtsOn, speak, stopSpeaking, ttsText } from '../tts.ts'
+import { loadTtsOn, saveTtsOn, stopSpeaking } from '../tts.ts'
+import { useAlertSound } from './useAlertSound.ts'
 import { errorText } from '../../wallet/hooks/errorText.ts'
 
 export const ALERT_MS = 10_000
 /** 후원 이벤트를 받고 알림을 띄우기까지(송출 지연에 맞춰 영상과 비슷한 때 뜨게) */
 export const ALERT_DELAY_MS = 3_000
-/** 알림이 뜨고 TTS를 읽기 시작하기까지 */
-export const TTS_DELAY_MS = 1_000
 const MAX_QUEUE = 30
 
 export type DonationAlerts = ReturnType<typeof useDonationAlerts>
@@ -18,16 +17,13 @@ export type DonationAlerts = ReturnType<typeof useDonationAlerts>
 /**
  * 후원 알림 큐: 이벤트를 받고 3초 뒤 큐에 넣어, 도착 순서대로 10초씩 보여 준다. `donation.skipped`는 그 후원을 큐에서 뺀다(표시 중이면 다음으로).
  * 시청 화면은 공개형, 스튜디오(소유자)는 실명 이벤트를 받는다(서버가 연결별로 골라 보냄).
+ * `volume`은 띠링·TTS 소리 크기(시청자 음소거면 0). TTS 켜고 끄기는 스튜디오 스위치만 바꾸고 이 브라우저에만 저장된다(시청자 토글 없음).
  */
-export function useDonationAlerts(onEvent: OnEvent, silent = false) {
+export function useDonationAlerts(onEvent: OnEvent, volume = 1) {
   const toast = useToast()
   const [queue, setQueue] = useState<DonationCreated[]>([])
   const [skipping, setSkipping] = useState(false)
   const [ttsOn, setTtsOn] = useState(loadTtsOn)
-  const canSpeak = useRef(false)
-  useEffect(() => {
-    canSpeak.current = ttsOn && !silent
-  })
 
   useEffect(() => {
     const timers = new Set<ReturnType<typeof setTimeout>>()
@@ -61,17 +57,7 @@ export function useDonationAlerts(onEvent: OnEvent, silent = false) {
     return () => clearTimeout(t)
   }, [currentId])
 
-  // 알림이 바뀔 때만 읽는다(볼륨을 만져도 다시 읽지 않음). 뜬 뒤 1초 뒤 시작, 그 전에 넘어가면 읽지 않는다. 다음 알림·넘기기·언마운트는 cleanup이 끊는다.
-  const currentDonation = current?.donation
-  useEffect(() => {
-    const text = currentDonation && ttsText(currentDonation)
-    if (!text) return
-    const t = setTimeout(() => canSpeak.current && speak(text), TTS_DELAY_MS)
-    return () => {
-      clearTimeout(t)
-      stopSpeaking()
-    }
-  }, [currentDonation])
+  useAlertSound(current?.donation, volume, ttsOn)
 
   const toggleTts = () => {
     if (ttsOn) stopSpeaking()

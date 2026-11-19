@@ -6,6 +6,7 @@ import type { Donation } from '../../../api/generated/Donation.ts'
 import ChatOverlay from '../../chat/components/ChatOverlay.tsx'
 import DonationAlert from '../../donation/components/DonationAlert.tsx'
 import { useAuth } from '../../auth/hooks/useAuth.ts'
+import { useReplayPlayer } from '../hooks/useReplayPlayer.ts'
 
 function Notice({ title, sub, busy }: { title: string; sub?: string; busy?: boolean }) {
   return (
@@ -19,15 +20,18 @@ function Notice({ title, sub, busy }: { title: string; sub?: string; busy?: bool
 
 type Props = { recording: RecordingDetail; onPlay: () => void; clip?: { start: number; end?: number }; onTime?: (sec: number) => void; alert?: Donation; chats?: Chat[] }
 
-// 탐색·볼륨·전체화면·배속은 브라우저 기본 컨트롤을 쓴다. 영상이 아니면 같은 비율의 안내 박스를 보여 준다.
+// 탐색·볼륨·전체화면·배속은 브라우저 기본 컨트롤을 쓴다(단축키·알림 소리는 useReplayPlayer). 영상이 아니면 같은 비율의 안내 박스를 보여 준다.
 /** `clip`이 있으면 그 구간(초)만 재생한다(미디어 프래그먼트 `#t=시작,끝`: 구간 끝에서 멈춘다). `onTime`은 재생 위치(초)를 알리고, `alert`는 영상 위에 후원 알림으로, `chats`는 최근 채팅으로 띄운다(채팅·후원 리플레이). */
 export default function ReplayVideo({ recording: r, onPlay, clip, onTime, alert, chats }: Props) {
   const [broken, setBroken] = useState(false)
   const { me } = useAuth()
+  const { videoRef, boxRef, media } = useReplayPlayer(alert)
   return (
-    <div className='@container relative aspect-video w-full overflow-hidden bg-bg bg-cover bg-center' style={{ backgroundImage: 'url(/brand/bg-speed.jpg)' }}>
+    <div ref={boxRef} className='@container relative aspect-video w-full overflow-hidden bg-bg bg-cover bg-center' style={{ backgroundImage: 'url(/brand/bg-speed.jpg)' }}>
       {r.status === 'ready' && r.videoUrl && !broken ? (
         <video
+          ref={videoRef}
+          {...media}
           src={clip ? `${r.videoUrl}#t=${clip.start}${clip.end ? `,${clip.end}` : ''}` : r.videoUrl}
           poster={r.thumbnailUrl ?? undefined}
           controls
