@@ -80,9 +80,11 @@ export function useCreateBroadcast() {
 
 export function useUpdateBroadcast(id: number | undefined) {
   const invalidate = useInvalidateBroadcasts()
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: (json: UpdateBroadcastRequest) => api<BroadcastDetail>(`/broadcasts/${id}`, { method: 'PATCH', json }),
-    onSuccess: invalidate,
+    // 응답을 바로 넣어 재조회 전까지 이전 값이 깜빡이지 않게 한다(배치 편집 완료 직후)
+    onSuccess: (d) => (qc.setQueryData(['broadcast', id], d), invalidate()),
   })
 }
 

@@ -52,3 +52,4 @@
 | [T34-clippy-online-empty-task-db.md](T34-clippy-online-empty-task-db.md) | T34 | 막 만든 task DB에 `DATABASE_URL`을 두면 `query!` 매크로가 빈 DB를 검사해 clippy 실패 → `SQLX_OFFLINE=true` 또는 `sqlx migrate run` 뒤 |
 | [T35-toss-window-under-dialog-top-layer.md](T35-toss-window-under-dialog-top-layer.md) | T35 | 토스 결제창(body 오버레이)이 `showModal()` 모달(top layer·inert) 뒤에 깔림 → 결제창이 떠 있는 동안 dialog를 `show()`로 내림 |
 | [T45-withdraw-lock-fk-key-share.md](T45-withdraw-lock-fk-key-share.md) | T45 | 탈퇴에 사용자 FOR UPDATE를 넣으면 후원의 FK 확인(KEY SHARE)과 교착 → FOR NO KEY UPDATE + 확정 FOR SHARE, 경쟁 재현은 미커밋 지갑 INSERT로 |
+| [T60-oxlint-refs-hook-object.md](T60-oxlint-refs-hook-object.md) | T60 | ref를 담은 훅 반환 객체의 속성 접근을 oxlint가 렌더 중 ref 읽기로 경고 → ref·핸들러는 구조 분해, 렌더 값은 prop, 핸들러는 data-key |

@@ -2,6 +2,8 @@ import type { RemoteTrack } from 'livekit-client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ViewerTracks } from '../../live/hooks/useViewer.ts'
 
+const CHAT_OVERLAY_KEY = 'flutch.chatOverlay'
+
 /** 트랙을 요소에 붙이고 떼는 것까지 책임진다. */
 function useAttach<T extends HTMLMediaElement>(track: RemoteTrack | undefined) {
   const ref = useRef<T>(null)
@@ -28,6 +30,23 @@ export function usePlayer(tracks: ViewerTracks, muted: boolean) {
   const boxRef = useRef<HTMLDivElement>(null)
   const [volume, setVolume] = useState(1)
   const [fullscreen, setFullscreen] = useState(false)
+  // 전체화면 채팅 오버레이: 시청자 로컬 설정(기본 켬)
+  const [chatOverlay, setChatOverlay] = useState(() => {
+    try {
+      return localStorage.getItem(CHAT_OVERLAY_KEY) !== 'off'
+    } catch {
+      return true
+    }
+  })
+  const toggleChatOverlay = () => {
+    const on = !chatOverlay
+    setChatOverlay(on)
+    try {
+      localStorage.setItem(CHAT_OVERLAY_KEY, on ? 'on' : 'off')
+    } catch {
+      /* 저장 실패해도 이번 방문에는 적용된다 */
+    }
+  }
 
   const audioMicTrack = tracks.microphone
   const audioShareTrack = tracks.screenShareAudio
@@ -48,5 +67,5 @@ export function usePlayer(tracks: ViewerTracks, muted: boolean) {
     else (videoRef.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null)?.webkitEnterFullscreen?.()
   }, [videoRef])
 
-  return { videoRef, pipRef, pipHidden, togglePip: () => setPipHidden((h) => !h), hasPip: !!(tracks.screenShare && tracks.camera), micRef, shareAudioRef, boxRef, volume, setVolume, fullscreen, toggleFullscreen, muted }
+  return { videoRef, pipRef, pipHidden, togglePip: () => setPipHidden((h) => !h), hasPip: !!(tracks.screenShare && tracks.camera), micRef, shareAudioRef, boxRef, volume, setVolume, fullscreen, toggleFullscreen, chatOverlay, toggleChatOverlay, muted }
 }

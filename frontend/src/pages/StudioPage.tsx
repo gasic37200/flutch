@@ -11,7 +11,8 @@ import Skeleton from '../components/ui/Skeleton.tsx'
 import AudioControl from '../features/studio/components/AudioControl.tsx'
 import MobileControls from '../features/studio/components/MobileControls.tsx'
 import MobileLive from '../features/studio/components/MobileLive.tsx'
-import PipControl from '../features/studio/components/PipControl.tsx'
+import PipControl, { LayoutEditRow } from '../features/studio/components/PipControl.tsx'
+import { LayoutLayer, LayoutToolbar } from '../features/studio/components/LayoutEditor.tsx'
 import StudioAside from '../features/studio/components/StudioAside.tsx'
 import StudioDialogs from '../features/studio/components/StudioDialogs.tsx'
 import DonationAlert from '../features/donation/components/DonationAlert.tsx'
@@ -137,7 +138,9 @@ export default function StudioPage() {
       </ChoiceChip>
     </div>
   )
-  const pip = screen && <PipControl on={s.pipOn} corner={data.pipCorner} onToggle={(on) => void s.togglePip(on)} onCorner={s.setPipCorner} />
+  const editing = s.layout.editing
+  const layoutRow = <LayoutEditRow editing={editing} onToggle={editing ? s.layout.cancel : s.layout.start} />
+  const pip = screen && <PipControl on={s.pipOn} onToggle={(on) => void s.togglePip(on)} />
   const micHeader = (
     <span className='flex grow items-center gap-2'>
       <b className='text-[15px]'>마이크</b>
@@ -191,7 +194,8 @@ export default function StudioPage() {
 
       <div className='mx-auto grid max-w-[1920px] items-start gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-5 xl:px-6 xl:py-5'>
         <div className='flex min-w-0 flex-col gap-3.5'>
-          {live && (
+          {editing && <LayoutToolbar editor={s.layout} />}
+          {live && !editing && (
             <div role='alert' className='chamfer flex flex-wrap items-center gap-x-2.5 gap-y-2 bg-surface-2 px-3.5 py-2.5 text-sm [--c:6px]'>
               <Icon name='info' className='size-[18px] shrink-0 text-brand' />
               <span>방송 시작 3시간이 되면 자동으로 종료돼요. 남은 시간 {remaining(s.elapsed)}</span>
@@ -207,12 +211,15 @@ export default function StudioPage() {
               </Bar>
             ))}
 
-          <div className='relative'>
+          <div className='flex flex-col gap-2'>
             <StudioPreview
               stream={media.stream}
               ended={media.videoEnded}
               tall={mobile}
-              pip={!mobile && s.pipOn && media.pipStream ? { stream: media.pipStream, corner: data.pipCorner } : undefined}
+              pip={!mobile && s.pipOn && media.pipStream ? media.pipStream : undefined}
+              layout={s.layout.layout}
+              className={editing ? 'ring-2 ring-brand' : ''}
+              overlay={editing ? <LayoutLayer editor={s.layout} layout={s.layout.layout} selected={s.layout.selected} hasCam={!!(s.pipOn && media.pipStream)} /> : <DonationAlert alerts={s.alerts} owner layout={s.layout.layout} />}
               placeholder={live ? `송출 미리보기 · ${screen ? '화면 공유' : '웹캠'}` : '미리보기 · 아직 송출되지 않아요'}
             >
               {media.videoEnded ? (
@@ -227,7 +234,7 @@ export default function StudioPage() {
                 </>
               )}
             </StudioPreview>
-            <DonationAlert alerts={s.alerts} owner />
+            {editing && <span className='text-xs text-text-dim'>영상 밖으로는 못 나가요. 완료하면 시청자 화면에 바로 반영 · 기본 위치: 알림 위 가운데, 웹캠 오른쪽 아래, 채팅 왼쪽 아래</span>}
           </div>
 
           {(pub.error || media.error) && (
@@ -254,6 +261,7 @@ export default function StudioPage() {
                   </Button>
                 )}
                 {pip}
+                {layoutRow}
               </Card>
               <Card title='소리'>
                 <AudioControl channel='mic' label='마이크' media={media} available={media.micReady} emptyHint='마이크가 꺼져 있어요. 시청자에게 목소리가 가지 않아요.' />
@@ -307,6 +315,7 @@ export default function StudioPage() {
                     </Button>
                   )}
                   {pip}
+                  {layoutRow}
                   <span className='text-xs text-text-dim'>같은 PC에서 내 방송을 소리 켠 채로 보면 소리가 되돌아와요.</span>
                 </Panel>
               ) : (

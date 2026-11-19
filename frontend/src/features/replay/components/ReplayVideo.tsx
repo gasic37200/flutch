@@ -25,7 +25,7 @@ export default function ReplayVideo({ recording: r, onPlay, clip, onTime, alert,
   const [broken, setBroken] = useState(false)
   const { me } = useAuth()
   return (
-    <div className='relative aspect-video w-full overflow-hidden bg-bg bg-cover bg-center' style={{ backgroundImage: 'url(/brand/bg-speed.jpg)' }}>
+    <div className='@container relative aspect-video w-full overflow-hidden bg-bg bg-cover bg-center' style={{ backgroundImage: 'url(/brand/bg-speed.jpg)' }}>
       {r.status === 'ready' && r.videoUrl && !broken ? (
         <video
           src={clip ? `${r.videoUrl}#t=${clip.start}${clip.end ? `,${clip.end}` : ''}` : r.videoUrl}

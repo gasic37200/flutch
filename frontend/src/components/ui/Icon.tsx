@@ -37,6 +37,7 @@ const paths = {
   lock: 'M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3',
   clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
   arrowDown: 'M12 5v14M6 13l6 6 6-6',
+  move: 'M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3',
 }
 
 export type IconName = keyof typeof paths | 'pulse'

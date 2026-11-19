@@ -537,16 +537,26 @@ async fn broadcast_overlay_layout_owner_only(db: PgPool) {
     ] {
         let res = patch(&app, &owner, id, json!({ "overlayLayout": bad })).await;
         assert_eq!(res.status, StatusCode::UNPROCESSABLE_ENTITY);
-        assert!(res.json["error"]["fields"]["overlayLayout"].is_string(), "{}", res.json);
+        assert!(
+            res.json["error"]["fields"]["overlayLayout"].is_string(),
+            "{}",
+            res.json
+        );
     }
     let bad = json!({ "alert": layout["alert"], "cam": layout["cam"] });
     let res = patch(&app, &owner, id, json!({ "overlayLayout": bad })).await;
     assert_eq!(res.status, StatusCode::UNPROCESSABLE_ENTITY);
-    assert_eq!(get(&app, &format!("{B}/{id}"), None).await.json["overlayLayout"], layout);
+    assert_eq!(
+        get(&app, &format!("{B}/{id}"), None).await.json["overlayLayout"],
+        layout
+    );
 
     // 새 방송은 소유자의 마지막 배치를 이어받는다(다른 사용자 방송은 기본값)
     let next = create(&app, &owner, "다음 방송").await;
-    assert_eq!(get(&app, &format!("{B}/{next}"), None).await.json["overlayLayout"], layout);
+    assert_eq!(
+        get(&app, &format!("{B}/{next}"), None).await.json["overlayLayout"],
+        layout
+    );
     let theirs = create(&app, &other, "남의 방송").await;
     assert!(get(&app, &format!("{B}/{theirs}"), None).await.json["overlayLayout"].is_null());
 

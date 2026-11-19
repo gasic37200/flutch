@@ -315,7 +315,10 @@ pub async fn update(
         .as_deref()
         .and_then(|t| field_err(&mut fields, "tags", check_tags(t)));
     if req.overlay_layout.as_ref().is_some_and(|l| !l.is_valid()) {
-        fields.insert("overlayLayout".into(), "위치는 0~100% 안이어야 해요.".into());
+        fields.insert(
+            "overlayLayout".into(),
+            "위치는 0~100% 안이어야 해요.".into(),
+        );
     }
     if !fields.is_empty() {
         return Err(AppError::Validation(fields));

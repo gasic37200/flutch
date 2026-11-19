@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import DonationAlert from '../../donation/components/DonationAlert.tsx'
 import ChatOverlay from '../../chat/components/ChatOverlay.tsx'
+import { DEFAULT_LAYOUT } from '../../live/overlayLayout.ts'
 import Badge from '../../../components/ui/Badge.tsx'
 import Button from '../../../components/ui/Button.tsx'
 import Icon from '../../../components/ui/Icon.tsx'
@@ -20,7 +21,7 @@ export default function MobileLive({ s }: { s: ReturnType<typeof useStudio> }) {
   if (!data) return null
   const error = s.pub.error ?? media.error
   return (
-    <div className='fixed inset-0 z-50 overflow-hidden bg-bg text-text'>
+    <div className='@container fixed inset-0 z-50 overflow-hidden bg-bg text-text'>
       <StudioPreview fill stream={media.stream} ended={media.videoEnded} placeholder='카메라 미리보기'>
         {media.videoEnded && <Button onClick={() => void s.reshare()}>카메라 다시 켜기</Button>}
       </StudioPreview>
@@ -52,8 +53,9 @@ export default function MobileLive({ s }: { s: ReturnType<typeof useStudio> }) {
         </p>
       )}
 
-      <DonationAlert alerts={s.alerts} owner className='top-28' />
-      <ChatOverlay items={s.chat.items} className='absolute right-20 bottom-36 left-4 max-h-44' />
+      {/* 위쪽 상태 줄을 피해 영상 높이 14%(약 top-28)에 둔다. 크기는 화면 폭 비례 */}
+      <DonationAlert alerts={s.alerts} owner layout={{ ...DEFAULT_LAYOUT, alert: { x: 50, y: 14 } }} />
+      <ChatOverlay items={s.chat.items} className='absolute right-20 bottom-36 left-4 max-h-44 text-[13px] leading-snug' />
 
       {media.micReady && (
         <div className='absolute right-4 bottom-30 flex flex-col items-center gap-1.5'>

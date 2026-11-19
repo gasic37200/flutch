@@ -5,7 +5,8 @@ import Button from '../../../components/ui/Button.tsx'
 import Icon from '../../../components/ui/Icon.tsx'
 import { emoteSrc, type Emote } from '../../../components/ui/mascot.ts'
 import Skeleton from '../../../components/ui/Skeleton.tsx'
-import { pipPosition } from '../../live/pip.ts'
+import type { OverlayLayout } from '../../../api/generated/OverlayLayout.ts'
+import { camStyle, FS_RESERVE, RESERVE } from '../../live/overlayLayout.ts'
 import { formatDuration, type WatchView } from '../hooks/useWatch.ts'
 import type { usePlayer } from '../hooks/usePlayer.ts'
 
@@ -16,6 +17,10 @@ type Props = {
   broadcast: BroadcastDetail | undefined
   player: ReturnType<typeof usePlayer>
   tts: { on: boolean; toggle: () => void }
+  /** 스트리머 배치(웹캠 위치) */
+  layout: OverlayLayout
+  /** 영상 위 오버레이(후원 알림·전체화면 채팅). 전체화면 요소 안에 있어야 전체화면에서도 보인다 */
+  children?: ReactNode
   onUnmute: () => void
 }
 
@@ -117,10 +122,10 @@ function Overlay({ view, broadcast, source }: Pick<Props, 'view' | 'broadcast' |
   }
 }
 
-const iconBtn = 'inline-flex size-10 items-center justify-center text-text hover:text-brand focus-visible:outline-2 focus-visible:outline-text'
+const iconBtn ='inline-flex size-10 items-center justify-center text-text hover:text-brand focus-visible:outline-2 focus-visible:outline-text'
 
 // 표현만: 상태·트랙·볼륨·PIP 숨김은 useWatch·usePlayer가 준다.
-export default function Player({ view, source, broadcast, player: p, tts, onUnmute }: Props) {
+export default function Player({ view, source, broadcast, player: p, tts, layout, children, onUnmute }: Props) {
   const { videoRef, pipRef, micRef, shareAudioRef, boxRef } = p
   if (view === 'loading') return <Skeleton className='aspect-video w-full' />
   const ttsBtn = (
@@ -131,33 +136,46 @@ export default function Player({ view, source, broadcast, player: p, tts, onUnmu
   )
   const playing = view === 'playing'
   const live = broadcast?.status === 'LIVE'
+  const fs = p.fullscreen
   return (
     <div
       ref={boxRef}
-      className='relative aspect-video w-full overflow-hidden bg-bg bg-cover bg-center'
+      className='@container relative aspect-video w-full overflow-hidden bg-bg bg-cover bg-center'
       style={playing ? undefined : { backgroundImage: 'url(/brand/bg-speed.jpg)' }}
     >
       <video ref={videoRef} muted playsInline autoPlay aria-label='방송 화면' className={`size-full object-contain ${playing ? '' : 'invisible'}`} />
-      {/* PIP: 숨겨도 요소는 남겨 다시 보일 때 트랙이 붙은 채로 있게 한다. 탭하면 숨김(모바일은 이 탭이 숨기기 버튼) */}
+      {/* 전체화면(시안 WatchFullscreen): 위아래 어둡게 + 왼쪽 위 LIVE·제목·시청자 수 */}
+      {fs && <div className='pointer-events-none absolute inset-0 bg-linear-to-b from-bg/55 via-bg/0 via-18% to-bg/80' />}
+      {/* PIP: 스트리머 배치 위치. 숨겨도 요소는 남겨 다시 보일 때 트랙이 붙은 채로 있게 한다. 탭하면 숨김(모바일은 이 탭이 숨기기 버튼) */}
       <button
         type='button'
         onClick={p.togglePip}
         aria-label='웹캠 숨기기'
-        className={`absolute aspect-video w-[24%] ring-1 ring-brand/60 ${pipPosition(broadcast?.pipCorner ?? 'bottom_right', { top: 'top-12', bottom: 'bottom-14' })} ${playing && p.hasPip && !p.pipHidden ? '' : 'hidden'}`}
+        style={camStyle(layout, fs ? FS_RESERVE : RESERVE)}
+        className={`absolute aspect-video ring-1 ring-brand/60 ${playing && p.hasPip && !p.pipHidden ? '' : 'hidden'}`}
       >
         <video ref={pipRef} muted playsInline autoPlay aria-label='웹캠 화면' className='size-full bg-bg object-cover' />
       </button>
       <audio ref={micRef} muted={p.muted} autoPlay />
       <audio ref={shareAudioRef} muted={p.muted} autoPlay />
       <Overlay view={view} broadcast={broadcast} source={source} />
-      {live && (
-        <div className='absolute top-3 right-3 flex gap-2 sm:top-3.5 sm:right-3.5'>
-          {broadcast.superClutchUntil && <Badge tone='superClutch' />}
-          <Badge tone='live' />
-        </div>
-      )}
+      {children}
+      {live &&
+        (fs ? (
+          <div className='absolute top-5 left-6 flex max-w-[60%] items-center gap-3'>
+            <Badge tone='live' />
+            {broadcast.superClutchUntil && <Badge tone='superClutch' />}
+            <b className='truncate text-base'>{broadcast.title}</b>
+            <span className='font-mono font-bold text-live'>{broadcast.viewerCount.toLocaleString('ko-KR')}</span>
+          </div>
+        ) : (
+          <div className='absolute top-3 right-3 flex gap-2 sm:top-3.5 sm:right-3.5'>
+            {broadcast.superClutchUntil && <Badge tone='superClutch' />}
+            <Badge tone='live' />
+          </div>
+        ))}
       {playing && (
-        <div className='absolute inset-x-0 bottom-0 flex h-12 items-center gap-1.5 bg-linear-to-t from-bg/90 to-bg/0 px-2.5'>
+        <div className={`absolute inset-x-0 bottom-0 flex items-center gap-1.5 ${fs ? 'h-15 gap-1 px-4' : 'h-12 bg-linear-to-t from-bg/90 to-bg/0 px-2.5'}`}>
           {p.muted ? (
             <>
               <Button size='sm' variant='neutral' onClick={onUnmute}>
@@ -182,12 +200,23 @@ export default function Player({ view, source, broadcast, player: p, tts, onUnmu
               />
             </>
           )}
-          {p.hasPip && (
-            <button type='button' onClick={p.togglePip} aria-pressed={p.pipHidden} aria-label={p.pipHidden ? '웹캠 보이기' : '웹캠 숨기기'} className={`${iconBtn} ml-auto`}>
-              <Icon name='camera' className={p.pipHidden ? 'text-text-dim' : ''} />
+          <span className='grow' />
+          {fs && (
+            <button
+              type='button'
+              onClick={p.toggleChatOverlay}
+              aria-pressed={p.chatOverlay}
+              className={`chamfer h-9 px-3 text-[13px] font-bold [--c:6px] focus-visible:outline-2 focus-visible:outline-text ${p.chatOverlay ? 'bg-brand/18 text-brand ring-1 ring-brand/50 ring-inset' : 'bg-bg/60 text-text-muted ring-1 ring-border ring-inset'}`}
+            >
+              채팅 오버레이 {p.chatOverlay ? '켜짐' : '꺼짐'}
             </button>
           )}
-          <button type='button' onClick={p.toggleFullscreen} aria-label={p.fullscreen ? '전체화면 해제' : '전체화면'} className={`${iconBtn} ${p.hasPip ? '' : 'ml-auto'}`}>
+          {p.hasPip && (
+            <button type='button' onClick={p.togglePip} aria-pressed={p.pipHidden} aria-label={p.pipHidden ? '웹캠 보이기' : '웹캠 숨기기'} className={iconBtn}>
+              <Icon name='camera' className={`size-5 ${p.pipHidden ? 'text-text-dim' : ''}`} />
+            </button>
+          )}
+          <button type='button' onClick={p.toggleFullscreen} aria-label={p.fullscreen ? '전체화면 해제' : '전체화면'} className={iconBtn}>
             <Icon name={p.fullscreen ? 'collapse' : 'expand'} />
           </button>
         </div>
