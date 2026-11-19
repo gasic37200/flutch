@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '../../../api/client.ts'
 import type { DonationCreated } from '../../../api/generated/DonationCreated.ts'
 import { useToast } from '../../../hooks/useToast.ts'
 import type { OnEvent } from '../../live/hooks/useBroadcastEvents.ts'
+import { loadTtsOn, saveTtsOn, speak, stopSpeaking, ttsText } from '../tts.ts'
 import { errorText } from '../../wallet/hooks/errorText.ts'
 
 export const ALERT_MS = 10_000
@@ -14,10 +15,15 @@ export type DonationAlerts = ReturnType<typeof useDonationAlerts>
  * 후원 알림 큐: 도착 순서대로 10초씩 보여 준다. `donation.skipped`는 그 후원을 큐에서 뺀다(표시 중이면 다음으로).
  * 시청 화면은 공개형, 스튜디오(소유자)는 실명 이벤트를 받는다(서버가 연결별로 골라 보냄).
  */
-export function useDonationAlerts(onEvent: OnEvent) {
+export function useDonationAlerts(onEvent: OnEvent, silent = false) {
   const toast = useToast()
   const [queue, setQueue] = useState<DonationCreated[]>([])
   const [skipping, setSkipping] = useState(false)
+  const [ttsOn, setTtsOn] = useState(loadTtsOn)
+  const canSpeak = useRef(false)
+  useEffect(() => {
+    canSpeak.current = ttsOn && !silent
+  })
 
   useEffect(() => {
     const offs = [
@@ -35,6 +41,19 @@ export function useDonationAlerts(onEvent: OnEvent) {
     return () => clearTimeout(t)
   }, [currentId])
 
+  // 알림이 바뀔 때만 읽는다(볼륨을 만져도 다시 읽지 않음). 다음 알림·넘기기·언마운트는 cleanup이 끊는다.
+  const currentDonation = current?.donation
+  useEffect(() => {
+    if (currentDonation && canSpeak.current) speak(ttsText(currentDonation))
+    return stopSpeaking
+  }, [currentDonation])
+
+  const toggleTts = () => {
+    if (ttsOn) stopSpeaking()
+    saveTtsOn(!ttsOn)
+    setTtsOn(!ttsOn)
+  }
+
   /** 소유자만(서버가 다시 검사). 성공하면 모든 연결에 skipped가 가고, 내 화면은 바로 넘긴다. */
   const skip = async () => {
     if (currentId === undefined || skipping) return
@@ -49,5 +68,5 @@ export function useDonationAlerts(onEvent: OnEvent) {
     }
   }
 
-  return { current: current?.donation, next: queue.at(1)?.donation, waiting: Math.max(0, queue.length - 1), skip, skipping }
+  return { current: current?.donation, next: queue.at(1)?.donation, waiting: Math.max(0, queue.length - 1), skip, skipping, tts: { on: ttsOn, toggle: toggleTts } }
 }

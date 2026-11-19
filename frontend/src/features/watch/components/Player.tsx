@@ -15,6 +15,7 @@ type Props = {
   source?: 'screen' | 'camera'
   broadcast: BroadcastDetail | undefined
   player: ReturnType<typeof usePlayer>
+  tts: { on: boolean; toggle: () => void }
   onUnmute: () => void
 }
 
@@ -119,7 +120,7 @@ function Overlay({ view, broadcast, source }: Pick<Props, 'view' | 'broadcast' |
 const iconBtn = 'inline-flex size-10 items-center justify-center text-text hover:text-brand focus-visible:outline-2 focus-visible:outline-text'
 
 // 표현만: 상태·트랙·볼륨·PIP 숨김은 useWatch·usePlayer가 준다.
-export default function Player({ view, source, broadcast, player: p, onUnmute }: Props) {
+export default function Player({ view, source, broadcast, player: p, tts, onUnmute }: Props) {
   const { videoRef, pipRef, micRef, shareAudioRef, boxRef } = p
   if (view === 'loading') return <Skeleton className='aspect-video w-full' />
   const playing = view === 'playing'
@@ -171,12 +172,15 @@ export default function Player({ view, source, broadcast, player: p, onUnmute }:
               />
             </>
           )}
+          <button type='button' onClick={tts.toggle} aria-pressed={tts.on} aria-label={tts.on ? '후원 음성 읽기 끄기' : '후원 음성 읽기 켜기'} className={`${iconBtn} ml-auto`}>
+            <Icon name='tts' className={tts.on ? '' : 'text-text-dim'} />
+          </button>
           {p.hasPip && (
-            <button type='button' onClick={p.togglePip} aria-pressed={p.pipHidden} aria-label={p.pipHidden ? '웹캠 보이기' : '웹캠 숨기기'} className={`${iconBtn} ml-auto`}>
+            <button type='button' onClick={p.togglePip} aria-pressed={p.pipHidden} aria-label={p.pipHidden ? '웹캠 보이기' : '웹캠 숨기기'} className={iconBtn}>
               <Icon name='camera' className={p.pipHidden ? 'text-text-dim' : ''} />
             </button>
           )}
-          <button type='button' onClick={p.toggleFullscreen} aria-label={p.fullscreen ? '전체화면 해제' : '전체화면'} className={`${iconBtn} ${p.hasPip ? '' : 'ml-auto'}`}>
+          <button type='button' onClick={p.toggleFullscreen} aria-label={p.fullscreen ? '전체화면 해제' : '전체화면'} className={iconBtn}>
             <Icon name={p.fullscreen ? 'collapse' : 'expand'} />
           </button>
         </div>

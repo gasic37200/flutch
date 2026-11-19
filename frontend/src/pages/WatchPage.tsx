@@ -36,7 +36,7 @@ function WatchPageBody() {
   const burst = useBurst(broadcast, events.onEvent)
   const desktop = useMediaQuery('(min-width: 1024px)')
   const mobile = useMediaQuery('(max-width: 600px)')
-  const alerts = useDonationAlerts(events.onEvent)
+  const alerts = useDonationAlerts(events.onEvent, viewer.muted || player.volume === 0)
   const donations = useDonationList(id, { onEvent: events.onEvent, live: broadcast?.status === 'LIVE' })
   const [tab, setTab] = useState('chat')
   const navigate = useNavigate()
@@ -58,7 +58,7 @@ function WatchPageBody() {
         <div className='flex flex-col gap-3.5 max-[600px]:gap-0'>
           {/* 가로 화면(낮은 뷰포트)에서는 영상이 화면 높이 안에 들어오도록 폭을 줄인다 */}
           <div className='relative mx-auto w-full max-w-[calc((100dvh-5rem)*16/9)]'>
-            <Player view={view} source={source} broadcast={broadcast} player={player} onUnmute={() => void viewer.unmute()} />
+            <Player view={view} source={source} broadcast={broadcast} player={player} tts={alerts.tts} onUnmute={() => void viewer.unmute()} />
             <DonationAlert alerts={alerts} owner={broadcast?.viewer?.isOwner} />
             {/* 600 이하는 헤더를 숨기므로 영상 위에 뒤로가기를 둔다 */}
             <button type='button' aria-label='뒤로 가기' onClick={() => void navigate(-1)} className='absolute top-2 left-2 z-10 flex size-11 items-center justify-center rounded-full bg-bg/70 text-text min-[601px]:hidden'>
