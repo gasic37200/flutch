@@ -1,6 +1,7 @@
 import type { RemoteTrack } from 'livekit-client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ViewerTracks } from '../../live/hooks/useViewer.ts'
+import { usePlayerShortcuts } from '../../../hooks/usePlayerShortcuts.ts'
 
 const CHAT_OVERLAY_KEY = 'flutch.chatOverlay'
 
@@ -20,7 +21,7 @@ function useAttach<T extends HTMLMediaElement>(track: RemoteTrack | undefined) {
  * 플레이어 요소 연결·볼륨·전체화면. 화면 공유 트랙이 우선이고 없으면 카메라를 크게 쓴다.
  * 화면 공유 소리가 있으면 마이크와 함께 각각 재생한다.
  */
-export function usePlayer(tracks: ViewerTracks, muted: boolean) {
+export function usePlayer(tracks: ViewerTracks, muted: boolean, unmute: () => Promise<void> | void) {
   const videoRef = useAttach<HTMLVideoElement>(tracks.screenShare ?? tracks.camera)
   // 화면 공유가 있을 때만 카메라를 PIP로 쓴다(없으면 위 videoRef가 카메라를 크게 보여 준다)
   const pipRef = useAttach<HTMLVideoElement>(tracks.screenShare ? tracks.camera : undefined)
@@ -66,6 +67,20 @@ export function usePlayer(tracks: ViewerTracks, muted: boolean) {
     // iOS Safari는 요소 전체화면이 없어 video 자체의 전용 전체화면을 쓴다
     else (videoRef.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null)?.webkitEnterFullscreen?.()
   }, [videoRef])
+
+  // 라이브 단축키: 스페이스는 영상·소리 요소를 멈추고 다시 틀기(다시 틀면 지금 시점부터), M은 처음 음소거면 소리 켜기 아니면 볼륨 0↔1
+  usePlayerShortcuts({
+    togglePlay: () => {
+      const stop = !videoRef.current?.paused
+      for (const el of [videoRef.current, pipRef.current, micRef.current, shareAudioRef.current]) if (el) void (stop ? el.pause() : el.play().catch(() => {}))
+    },
+    toggleMute: () => (muted ? void unmute() : setVolume((v) => (v > 0 ? 0 : 1))),
+    toggleFullscreen,
+    volume: (d) => {
+      if (muted && d > 0) void unmute()
+      setVolume((v) => Math.round(Math.min(1, Math.max(0, v + d)) * 100) / 100)
+    },
+  })
 
   return { videoRef, pipRef, pipHidden, togglePip: () => setPipHidden((h) => !h), hasPip: !!(tracks.screenShare && tracks.camera), micRef, shareAudioRef, boxRef, volume, setVolume, fullscreen, toggleFullscreen, chatOverlay, toggleChatOverlay, muted }
 }

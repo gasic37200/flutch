@@ -26,7 +26,7 @@ export function useStudio(broadcastId: number | undefined) {
   const broadcast = useBroadcast(broadcastId)
   const events = useBroadcastEvents(broadcastId)
   const chat = useChat(broadcastId, events)
-  const alerts = useDonationAlerts(events.onEvent)
+  const alerts = useDonationAlerts(events.onEvent, 1, true)
   const pub = usePublisher(broadcastId)
   const media = useStudioMedia(env)
   const updateBroadcast = useUpdateBroadcast(broadcastId)

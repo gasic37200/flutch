@@ -11,7 +11,7 @@ import Skeleton from '../components/ui/Skeleton.tsx'
 import AudioControl from '../features/studio/components/AudioControl.tsx'
 import MobileControls from '../features/studio/components/MobileControls.tsx'
 import MobileLive from '../features/studio/components/MobileLive.tsx'
-import PipControl, { LayoutEditRow } from '../features/studio/components/PipControl.tsx'
+import PipControl, { LayoutEditButton, LayoutEditRow } from '../features/studio/components/PipControl.tsx'
 import { LayoutLayer, LayoutToolbar } from '../features/studio/components/LayoutEditor.tsx'
 import StudioAside from '../features/studio/components/StudioAside.tsx'
 import StudioDialogs from '../features/studio/components/StudioDialogs.tsx'
@@ -286,8 +286,8 @@ export default function StudioPage() {
               </Card>
             </div>
           ) : (
-            // 송출 전(시안): 마이크 · 화면 소리(+PIP) 두 카드. 모드 전환은 미리보기 위 칩, 화면 바꾸기는 화면 소리 카드.
-            <div className='grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-3.5'>
+            // 송출 전(시안 StudioPrelive): 마이크 · 화면 소리 두 카드 + (화면 공유 모드) 전체 폭 웹캠 · 배치 카드. 모드 전환은 미리보기 위 칩, 화면 바꾸기는 화면 소리 카드.
+            <div className='grid gap-3.5 sm:grid-cols-2'>
               <Panel innerClassName='flex flex-col gap-2.5 p-4'>
                 <AudioControl channel='mic' label='마이크' header={micHeader} media={media} available={media.micReady} emptyHint='마이크가 꺼져 있어요. 시청자에게 목소리가 가지 않아요.' />
                 {!media.micReady && media.videoReady && (
@@ -316,12 +316,18 @@ export default function StudioPage() {
                       공유할 화면 바꾸기
                     </Button>
                   )}
-                  {pip}
-                  {layoutRow}
-                  <span className='text-xs text-text-dim'>같은 PC에서 내 방송을 소리 켠 채로 보면 소리가 되돌아와요.</span>
                 </Panel>
               ) : (
                 !s.env.canScreen && <p className='text-xs text-text-dim'>이 환경에서는 화면 공유를 쓸 수 없어 카메라 모드만 쓸 수 있어요.</p>
+              )}
+              {screen && (
+                <Panel className='col-span-full' innerClassName='flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3.5'>
+                  <b className='text-[15px]'>웹캠 · 배치</b>
+                  <PipControl on={s.pipOn} onToggle={(on) => void s.togglePip(on)} className='' />
+                  <span className='flex-1' />
+                  <span className='text-[13px] text-text-muted'>웹캠 · 후원 알림 · 채팅 위치</span>
+                  <LayoutEditButton editing={editing} onToggle={editing ? s.layout.cancel : s.layout.start} />
+                </Panel>
               )}
             </div>
           )}
