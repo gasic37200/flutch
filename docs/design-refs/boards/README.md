@@ -44,6 +44,9 @@ node docs/design-refs/tools/design-ref.mjs diff Wallet http://…/wallet --stora
 | SmallScreens.dc.html | 내 정보·탈퇴·카카오 닉네임·결제 결과·약관·스튜디오 모달·차단 입력창 | `/me` `/terms` `/privacy` 외 | T06c(내 정보·약관) · T09c(스튜디오 모달) · T20b·T23·T28·T18u |
 | Watch.dc.html · WatchMobile.dc.html · WatchStates.dc.html | 시청 데스크톱·모바일·상태 4종 | `/live/:id` | T11b (채팅 T17, 게이지·클러치 T19, 후원 T23) |
 | Studio.dc.html · StudioPrelive.dc.html · StudioMobile.dc.html | 송출 스튜디오(방송 중·송출 전·모바일) | `/studio?broadcast=` | T09c |
+| AlertScale.dc.html | 후원 알림 크기·위치 규칙(영상 폭 비례, 390·768·1440·2560 예시) | 시청·스튜디오·전체화면 공통 | (11/19 신규) |
+| StudioLayout.dc.html | 스튜디오 배치 편집 모드(웹캠·후원 알림·채팅 오버레이 끌어서 이동, 기본 위치로·취소·완료) | `/studio?broadcast=` | (11/19 신규) |
+| WatchFullscreen.dc.html | 시청 전체화면: 스트리머 배치대로 웹캠·후원 알림·채팅 오버레이 + 오버레이 켜고 끄기 | `/live/:id` 전체화면 | (11/19 신규) |
 | Overlays.dc.html | 후원 창·알림·SUPER CLUTCH 연출·시청자 팝업 | — | T23·T24·T18u |
 | Streamer.dc.html | 스트리머 페이지·관리 탭 | `/users/:id` | T26 |
 | Wallet.dc.html | 내 지갑·충전 창 | `/wallet` | T23 |

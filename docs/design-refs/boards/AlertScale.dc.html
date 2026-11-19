@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>후원 알림 크기 · 플레이어 폭 비례</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&amp;family=JetBrains+Mono:wght@500;700&amp;family=Noto+Sans+KR:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0A0C0F}
+.ch12{clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.wave{display:inline-block;vertical-align:middle;flex:none;background:currentColor;-webkit-mask:url(/_blob/f6543586bb296ec76dbbcbbf0df43ee9) center/contain no-repeat;mask:url(/_blob/f6543586bb296ec76dbbcbbf0df43ee9) center/contain no-repeat}
+.texture{background:#0A0C0F url(/_blob/3d8747c0d27ead1c50b2d826552c3c41) center/cover}
+/* player = size container; every alert size is a share of the player width (cqw), clamped */
+.pl{container-type:inline-size;position:relative;aspect-ratio:16/9;overflow:hidden;flex:none}
+.pip{position:absolute;right:2%;bottom:3%;width:22%;aspect-ratio:16/9;background:#191D25;box-shadow:0 0 0 1px #B0F612;display:flex;align-items:center;justify-content:center;font-size:clamp(10px,1.2cqw,13px);color:#A3AAB6}
+.al{position:absolute;left:50%;top:4%;transform:translateX(-50%);width:clamp(200px,42cqw,520px);background:#B0F612;padding:1px;box-sizing:border-box}
+.al>div{background:rgba(18,21,27,.96);padding:clamp(8px,1.4cqw,16px) clamp(10px,1.8cqw,20px);display:flex;gap:clamp(8px,1.2cqw,14px);align-items:center}
+.al .wave{width:clamp(18px,3cqw,32px);height:clamp(18px,3cqw,32px);color:#B0F612}
+.al .t{font-size:clamp(12px,1.5cqw,16px);font-weight:700;white-space:nowrap}
+.al .m{font-size:clamp(11px,1.3cqw,14px);color:#A3AAB6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.alb{position:absolute;left:50%;top:4%;transform:translateX(-50%);width:clamp(240px,50cqw,600px);filter:drop-shadow(0 0 clamp(8px,1.4cqw,18px) rgba(255,194,26,.45))}
+.alb>div{background:#FFC21A;padding:2px}
+.alb>div>div{background:rgba(18,21,27,.96);padding:clamp(10px,1.8cqw,22px);display:flex;gap:clamp(10px,1.4cqw,16px);align-items:center}
+.alb img{width:clamp(32px,6cqw,72px);height:clamp(32px,6cqw,72px);border-radius:50%;flex:none}
+.alb .n{font-size:clamp(13px,1.8cqw,20px);font-weight:700}
+.alb .a{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(18px,3cqw,32px);color:#FFC21A;line-height:1.1}
+.alb .a span{font-family:'Chakra Petch',sans-serif;font-size:clamp(12px,1.8cqw,20px)}
+.alb .m{font-size:clamp(11px,1.3cqw,14px);color:#A3AAB6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.lab{font-size:13px;color:#A3AAB6}
+.lab b{color:#F3F5F7;font-family:'JetBrains Mono',monospace}
+</style>
+</helmet>
+<div style="width:3160px;box-sizing:border-box;padding:48px;background:#0A0C0F;color:#F3F5F7;font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column;gap:40px">
+
+  <div class="ch12" style="background:#12151B;padding:20px 24px;display:flex;flex-direction:column;gap:8px;max-width:1500px">
+    <b style="font-size:18px">후원 알림 크기 = 플레이어(영상) 폭 비례</b>
+    <span style="font-size:14px;color:#A3AAB6;line-height:1.6">영상 영역을 크기 컨테이너로 두고(<code>container-type:inline-size</code>) 알림 크기를 폭의 비율로 정한다. 화면 폭이 아니라 <b style="color:#F3F5F7">영상 폭</b> 기준이라 시청·스튜디오 미리보기·전체화면 모두 같은 규칙.<br>
+    일반: 폭 <b style="color:#B0F612">42%</b> (최소 200px · 최대 520px) · 10,000 Beat 이상: 폭 <b style="color:#FFC21A">50%</b> (최소 240px · 최대 600px). 글자·여백·아이콘도 폭 비율로(최소값 아래로 안 줄어듦). 메시지는 한 줄, 넘치면 말줄임.<br>
+    위치는 스트리머가 스튜디오 "배치 편집"에서 정한 위치(영상 기준 %), 기본은 위 가운데(위에서 4%).</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(2,1512px);gap:40px">
+    <span class="lab">일반 후원</span><span class="lab">10,000 Beat 이상</span>
+  </div>
+
+  <sc-for list="{{sizes}}" as="s" hint-placeholder-count="4">
+    <div style="display:grid;grid-template-columns:repeat(2,1512px);gap:40px;align-items:start">
+      <div class="col">
+        <span class="lab">{{s.label}} · 영상 폭 <b>{{s.w}}px</b> → 알림 <b>{{s.n}}</b></span>
+        <div class="pl texture" style="width:{{s.w}}px">
+          <div class="pip">웹캠</div>
+          <div class="al ch12"><div class="ch12"><span class="wave" aria-hidden="true"></span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="t">용사킴님 <span style="font-family:'JetBrains Mono',monospace;color:#B0F612">5,000</span> Beat 후원</span><span class="m">오늘도 재밌어요 대회 꼭 우승하세요!!</span></div></div></div>
+        </div>
+      </div>
+      <div class="col">
+        <span class="lab">{{s.label}} · 영상 폭 <b>{{s.w}}px</b> → 알림 <b>{{s.b}}</b></span>
+        <div class="pl texture" style="width:{{s.w}}px">
+          <div class="pip">웹캠</div>
+          <div class="alb"><div class="ch12"><div class="ch12"><img src="/_blob/bc352f43bbb2d1944886ee0adcae6a09" alt=""><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="n">익명의 후원자님</span><span class="a">10,000 <span>Beat</span></span><span class="m">대회 화이팅!!</span></div></div></div></div>
+        </div>
+      </div>
+    </div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":3160,"height":2660}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      sizes: [
+        { label: '모바일 390', w: 390, n: '200px (최소)', b: '240px (최소)' },
+        { label: '768 (채팅이 아래)', w: 736, n: '309px', b: '368px' },
+        { label: '1440 (채팅 옆)', w: 1032, n: '433px', b: '516px' },
+        { label: '2560 (최대 1920 레이아웃)', w: 1512, n: '520px (최대)', b: '600px (최대)' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
