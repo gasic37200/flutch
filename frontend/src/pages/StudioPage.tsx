@@ -72,7 +72,8 @@ export default function StudioPage() {
   if (!s.isOwner) return frame(<EmptyState emote='hiding' title='내 방송이 아니에요' description='내가 등록한 방송만 송출할 수 있어요.' action={manage} />)
   if (phase === 'ended')
     return frame(
-      <div className='max-w-xl'>
+      // 상단바(4rem+1px)와 바깥 여백을 뺀 높이의 가운데
+      <div className='mx-auto flex min-h-[calc(100dvh-6.5rem)] max-w-xl items-center justify-center md:min-h-[calc(100dvh-6.75rem)]'>
         <EmptyState
           emote='bye'
           title='방송이 종료되었어요'
@@ -193,7 +194,8 @@ export default function StudioPage() {
       </StudioTopBar>
 
       <div className='mx-auto grid max-w-[1920px] items-start gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-5 xl:px-6 xl:py-5'>
-        <div className='flex min-w-0 flex-col gap-3.5'>
+        {/* 방송 중 1023 이하(시안 StudioW768): 한 열로 풀어 안내·미리보기 → 오른쪽 열(채팅·대기열·정보) → 영상·소리 카드 순서 */}
+        <div className={`flex min-w-0 flex-col gap-3.5 ${live ? 'max-lg:contents' : ''}`}>
           {editing && <LayoutToolbar editor={s.layout} />}
           {live && !editing && (
             <div role='alert' className='chamfer flex flex-wrap items-center gap-x-2.5 gap-y-2 bg-surface-2 px-3.5 py-2.5 text-sm [--c:6px]'>
@@ -251,7 +253,7 @@ export default function StudioPage() {
           {mobile ? (
             <MobileControls s={s} />
           ) : live ? (
-            <div className='grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3.5'>
+            <div className='grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3.5 max-lg:order-4'>
               <Card title='영상'>
                 {modeChips}
                 {!s.env.canScreen && <p className='text-xs text-text-dim'>이 환경에서는 화면 공유를 쓸 수 없어 카메라 모드만 쓸 수 있어요.</p>}
@@ -336,7 +338,9 @@ export default function StudioPage() {
           )}
         </div>
 
-        <aside className='grid w-full min-w-0 grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-3.5 lg:flex lg:flex-col'>
+        <aside
+          className={`grid w-full min-w-0 grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-3.5 lg:flex lg:flex-col ${live ? 'max-lg:order-3 max-lg:flex max-lg:flex-col lg:sticky lg:top-5 lg:h-[calc(100vh-104px)] lg:min-h-[560px] lg:gap-3' : ''}`}
+        >
           <StudioAside s={s} live={live} />
         </aside>
       </div>

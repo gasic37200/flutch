@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import ChatCard from '../../chat/components/ChatCard.tsx'
+import Button from '../../../components/ui/Button.tsx'
 import Icon from '../../../components/ui/Icon.tsx'
+import { CATEGORY_LABEL } from '../../broadcast/categories.ts'
 import Panel from '../../../components/ui/Panel.tsx'
 import DonationQueueCard from './DonationQueueCard.tsx'
 import StudioInfoForm from './StudioInfoForm.tsx'
@@ -27,7 +29,31 @@ function Check({ done, off, children }: { done: boolean; off?: boolean; children
   )
 }
 
-// 송출 전: 시작 전 확인 · 권한 안내 · 지원 환경. 방송 중: 방송 정보 수정 · 후원 알림 대기열 · 채팅.
+// 시안 Studio: 방송 정보 요약 한 줄 + "수정"으로 기존 폼을 펼친다
+function InfoCard({ broadcast }: { broadcast: NonNullable<S['data']> }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <Panel className='shrink-0' innerClassName='flex flex-col gap-3 px-3.5 py-2.5'>
+      <div className='flex items-center gap-2.5'>
+        <div className='flex min-w-0 grow flex-col gap-0.5'>
+          <span className='text-xs text-text-dim'>방송 정보</span>
+          <b className='truncate text-[13px]'>{broadcast.title}</b>
+          <span className='truncate text-xs text-text-muted'>{[CATEGORY_LABEL[broadcast.category], ...broadcast.tags].join(' · ')}</span>
+        </div>
+        <Button size='sm' variant='neutral' aria-expanded={open} aria-controls='studio-info-form' onClick={() => setOpen(!open)}>
+          수정 {open ? '▴' : '▾'}
+        </Button>
+      </div>
+      {open && (
+        <div id='studio-info-form'>
+          <StudioInfoForm broadcast={broadcast} onSaved={() => setOpen(false)} />
+        </div>
+      )}
+    </Panel>
+  )
+}
+
+// 송출 전: 시작 전 확인 · 권한 안내 · 지원 환경. 방송 중(시안 Studio): 채팅(남은 높이) · 후원 알림 대기열 · 방송 정보 요약.
 export default function StudioAside({ s, live }: { s: S; live: boolean }) {
   const { data, media } = s
   if (!data) return null
@@ -63,15 +89,9 @@ export default function StudioAside({ s, live }: { s: S; live: boolean }) {
     )
   return (
     <>
-      <Panel innerClassName='flex flex-col gap-3 p-4'>
-        <div className='flex items-center'>
-          <h2 className='text-[15px] font-bold'>방송 정보</h2>
-          <span className='ml-auto text-xs text-text-dim'>방송 중에도 바로 반영</span>
-        </div>
-        <StudioInfoForm broadcast={data} />
-      </Panel>
+      <ChatCard chat={s.chat} broadcast={data} className='h-[340px] lg:h-auto lg:min-h-0 lg:flex-1' />
       <DonationQueueCard alerts={s.alerts} />
-      <ChatCard chat={s.chat} broadcast={data} className='h-96' />
+      <InfoCard broadcast={data} />
     </>
   )
 }

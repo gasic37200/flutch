@@ -30,7 +30,7 @@ export function usePlayer(tracks: ViewerTracks, muted: boolean) {
   const boxRef = useRef<HTMLDivElement>(null)
   const [volume, setVolume] = useState(1)
   const [fullscreen, setFullscreen] = useState(false)
-  // 전체화면 채팅 오버레이: 시청자 로컬 설정(기본 켬)
+  // 영상 위 채팅 오버레이(일반·전체화면 공통): 시청자 로컬 설정(기본 켬)
   const [chatOverlay, setChatOverlay] = useState(() => {
     try {
       return localStorage.getItem(CHAT_OVERLAY_KEY) !== 'off'

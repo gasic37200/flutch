@@ -12,7 +12,7 @@ import ErrorScreen from '../components/ui/ErrorScreen.tsx'
 import Icon from '../components/ui/Icon.tsx'
 import ChatCard from '../features/chat/components/ChatCard.tsx'
 import ChatOverlay from '../features/chat/components/ChatOverlay.tsx'
-import { chatStyle, FS_RESERVE, layoutOf } from '../features/live/overlayLayout.ts'
+import { chatStyle, FS_RESERVE, layoutOf, RESERVE } from '../features/live/overlayLayout.ts'
 import { useChat } from '../features/chat/hooks/useChat.ts'
 import Player from '../features/watch/components/Player.tsx'
 import WatchTabs from '../features/watch/components/WatchTabs.tsx'
@@ -63,10 +63,20 @@ function WatchPageBody() {
           <div className='relative mx-auto w-full max-w-[calc((100dvh-5rem)*16/9)]'>
             <Player view={view} source={source} broadcast={broadcast} player={player} tts={alerts.tts} layout={layout} onUnmute={() => void viewer.unmute()}>
               <DonationAlert alerts={alerts} owner={broadcast?.viewer?.isOwner} layout={layout} />
-              {/* 채팅 오버레이는 전체화면에서만(평소엔 옆·아래 채팅 패널) */}
-              {player.fullscreen && player.chatOverlay && (
-                <ChatOverlay items={chat.items} systems={chat.systems} shown={6} style={chatStyle(layout, FS_RESERVE)} className='absolute text-[length:clamp(11px,1.2cqw,15px)] leading-[1.45]' />
-              )}
+              {/* 채팅 오버레이(스트리머 배치 위치, 시청자가 끌 수 있음). 일반 화면은 시안 Watch: 4줄·영상 폭 600 이하 3줄·한 줄 말줄임, 전체화면은 WatchFullscreen: 6줄 */}
+              {player.chatOverlay &&
+                view === 'playing' &&
+                (player.fullscreen ? (
+                  <ChatOverlay items={chat.items} systems={chat.systems} shown={6} style={chatStyle(layout, FS_RESERVE)} className='absolute text-[length:clamp(11px,1.2cqw,15px)] leading-[1.45]' />
+                ) : (
+                  <ChatOverlay
+                    items={chat.items}
+                    systems={chat.systems}
+                    shown={4}
+                    style={{ ...chatStyle(layout, RESERVE), width: `clamp(170px, ${layout.chat.w}cqw, 420px)` }}
+                    className='absolute text-[length:clamp(11px,1.2cqw,14px)] leading-[1.45] @max-[600px]:[&>p:first-child]:hidden [&>p]:truncate'
+                  />
+                ))}
             </Player>
             {/* 600 이하는 헤더를 숨기므로 영상 위에 뒤로가기를 둔다 */}
             <button type='button' aria-label='뒤로 가기' onClick={() => void navigate(-1)} className='absolute top-2 left-2 z-10 flex size-11 items-center justify-center rounded-full bg-bg/70 text-text min-[601px]:hidden'>

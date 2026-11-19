@@ -13,37 +13,36 @@ const name = (d: Donation) => (d.anonymous ? `익명의 후원자${d.donor ? ` (
 export default function DonationQueueCard({ alerts }: { alerts: DonationAlerts }) {
   const { current: d, next } = alerts
   return (
-    <Panel innerClassName='flex flex-col gap-2.5 p-4'>
-      <div className='flex items-center'>
-        <h2 className='text-[15px] font-bold'>후원 알림 대기열</h2>
-        <span className='ml-auto text-xs text-text-dim'>10초씩 표시</span>
-      </div>
-      <div className='flex items-center gap-2.5'>
-        <span className='grow text-sm leading-snug'>
+    <Panel className='shrink-0' innerClassName='flex flex-col gap-2 px-3.5 py-3'>
+      <div className='flex items-center gap-2'>
+        <h2 className='text-sm font-bold'>후원 알림 대기열</h2>
+        <span className='grow text-xs text-text-dim'>10초씩</span>
+        <span className='text-xs text-text-muted' aria-hidden>
           TTS 읽기
-          <br />
-          <span className='text-xs text-text-dim'>후원 메시지를 소리로 읽어줘요</span>
         </span>
         <Switch label='후원 TTS 읽기' checked={alerts.tts.on} onChange={alerts.tts.toggle} />
       </div>
       {d ? (
-        <div className='chamfer flex items-center gap-2.5 bg-surface-2 px-3 py-2.5 [--c:6px]'>
-          <div className='flex min-w-0 grow flex-col gap-0.5'>
-            <b className='flex flex-wrap items-center gap-1.5 text-sm break-all'>
-              {name(d)} ·<span className='font-mono text-brand'>{beats(d.amount)}</span>
-            </b>
-            <span className='text-xs text-text-muted'>표시 중{alerts.waiting > 0 ? ` · 대기 ${alerts.waiting}건` : ''}</span>
-          </div>
+        <div className='chamfer flex items-center gap-2.5 bg-surface-2 px-2.5 py-2 [--c:6px]'>
+          <p className='min-w-0 grow text-[13px] break-all'>
+            <b>
+              {name(d)} · <span className='font-mono text-brand'>{beats(d.amount)}</span>
+            </b>{' '}
+            <span className='text-text-muted'>표시 중</span>
+          </p>
           <Button size='sm' variant='neutral' onClick={() => void alerts.skip()} loading={alerts.skipping}>
             스킵
           </Button>
         </div>
       ) : (
-        <p className='bg-surface-2 px-3 py-2.5 text-[13px] text-text-muted'>대기 중인 후원 알림이 없어요.</p>
+        <p className='bg-surface-2 px-2.5 py-2 text-[13px] text-text-muted'>대기 중인 후원 알림이 없어요.</p>
       )}
       {next && (
-        <div className='flex justify-between gap-2 px-1 text-[13px] text-text-muted'>
-          <span className='min-w-0 truncate'>다음 · {name(next)}</span>
+        <div className='flex justify-between gap-2 px-0.5 text-xs text-text-muted'>
+          <span className='min-w-0 truncate'>
+            다음 · {name(next)}
+            {alerts.waiting > 1 && ` 외 ${alerts.waiting - 1}건`}
+          </span>
           <b className='font-mono text-burst'>{beats(next.amount)}</b>
         </div>
       )}
