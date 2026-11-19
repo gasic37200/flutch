@@ -6,7 +6,7 @@ type Props = { label: string; tabs: Tab[]; value: string; onChange: (id: string)
 export default function Tabs({ label, tabs, value, onChange, className = '' }: Props) {
   const move = (i: number, step: number) => onChange(tabs[(i + step + tabs.length) % tabs.length].id)
   return (
-    <div role='tablist' aria-label={label} className={`flex overflow-x-auto border-b border-surface-2 ${className}`}>
+    <div role='tablist' aria-label={label} className={`flex overflow-x-auto [scrollbar-width:none] border-b border-surface-2 ${className}`}>
       {tabs.map((t, i) => {
         const selected = t.id === value
         return (
