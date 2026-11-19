@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT b.id, b.owner_id,\n                  CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS \"owner_nickname!\",\n                  b.status, b.title, b.category, b.tags, b.record, b.pip_corner,\n                  b.started_at, b.ended_at, b.disconnected_at, b.peak_viewers,\n                  b.thumbnail_path, b.created_at,\n                  r.id AS \"recording_id?\", r.status AS \"recording_status?\",\n                  (SELECT MAX(s.expires_at) FROM super_clutches s\n                   WHERE s.broadcast_id = b.id AND s.expires_at > now()) AS \"super_clutch_until?\"\n           FROM broadcasts b JOIN users u ON u.id = b.owner_id\n           LEFT JOIN recordings r ON r.broadcast_id = b.id\n           WHERE b.hidden_at IS NULL\n             AND ($1::bigint IS NULL OR b.id = $1)\n             AND ($2::bigint IS NULL OR b.owner_id = $2)\n             AND ($3::text IS NULL OR b.status = $3)\n             AND ($4::text IS NULL OR b.category = $4)\n             AND ($5::text IS NULL OR b.title ILIKE $5 OR u.nickname ILIKE $5\n                  OR EXISTS (SELECT 1 FROM unnest(b.tags) t WHERE t ILIKE $5))\n             AND ($6::bigint IS NULL OR b.id < $6)\n           ORDER BY b.id DESC\n           LIMIT $7",
+  "query": "SELECT b.id, b.owner_id,\n                  CASE WHEN u.withdrawn_at IS NULL THEN u.nickname ELSE '탈퇴한 사용자' END AS \"owner_nickname!\",\n                  b.status, b.title, b.category, b.tags, b.record, b.pip_corner,\n                  b.overlay_layout::text AS overlay_layout,\n                  b.started_at, b.ended_at, b.disconnected_at, b.peak_viewers,\n                  b.thumbnail_path, b.created_at,\n                  r.id AS \"recording_id?\", r.status AS \"recording_status?\",\n                  (SELECT MAX(s.expires_at) FROM super_clutches s\n                   WHERE s.broadcast_id = b.id AND s.expires_at > now()) AS \"super_clutch_until?\"\n           FROM broadcasts b JOIN users u ON u.id = b.owner_id\n           LEFT JOIN recordings r ON r.broadcast_id = b.id\n           WHERE b.hidden_at IS NULL\n             AND ($1::bigint IS NULL OR b.id = $1)\n             AND ($2::bigint IS NULL OR b.owner_id = $2)\n             AND ($3::text IS NULL OR b.status = $3)\n             AND ($4::text IS NULL OR b.category = $4)\n             AND ($5::text IS NULL OR b.title ILIKE $5 OR u.nickname ILIKE $5\n                  OR EXISTS (SELECT 1 FROM unnest(b.tags) t WHERE t ILIKE $5))\n             AND ($6::bigint IS NULL OR b.id < $6)\n           ORDER BY b.id DESC\n           LIMIT $7",
   "describe": {
     "columns": [
       {
@@ -99,6 +99,12 @@
       },
       {
         "ordinal": 9,
+        "name": "overlay_layout",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 10,
         "name": "started_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -109,7 +115,7 @@
         }
       },
       {
-        "ordinal": 10,
+        "ordinal": 11,
         "name": "ended_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -120,7 +126,7 @@
         }
       },
       {
-        "ordinal": 11,
+        "ordinal": 12,
         "name": "disconnected_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -131,7 +137,7 @@
         }
       },
       {
-        "ordinal": 12,
+        "ordinal": 13,
         "name": "peak_viewers",
         "type_info": "Int4",
         "origin": {
@@ -142,7 +148,7 @@
         }
       },
       {
-        "ordinal": 13,
+        "ordinal": 14,
         "name": "thumbnail_path",
         "type_info": "Text",
         "origin": {
@@ -153,7 +159,7 @@
         }
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -164,7 +170,7 @@
         }
       },
       {
-        "ordinal": 15,
+        "ordinal": 16,
         "name": "recording_id?",
         "type_info": "Int8",
         "origin": {
@@ -175,7 +181,7 @@
         }
       },
       {
-        "ordinal": 16,
+        "ordinal": 17,
         "name": "recording_status?",
         "type_info": "Text",
         "origin": {
@@ -186,7 +192,7 @@
         }
       },
       {
-        "ordinal": 17,
+        "ordinal": 18,
         "name": "super_clutch_until?",
         "type_info": "Timestamptz",
         "origin": "Expression"
@@ -213,6 +219,7 @@
       false,
       false,
       false,
+      null,
       true,
       true,
       true,
@@ -224,5 +231,5 @@
       null
     ]
   },
-  "hash": "dd9e51a4b63962fc0c15ab2ca8f20454c7911a502b5322d13417ce58c03414ed"
+  "hash": "ee78a0f00f640533baa2cc3e33a7e229911d190a02ee9eb7b327bdc0d924b53d"
 }

@@ -505,3 +505,65 @@ async fn broadcast_thumbnail_owner_live_only(db: PgPool) {
     );
     assert!(!file.exists());
 }
+
+#[sqlx::test]
+async fn broadcast_overlay_layout_owner_only(db: PgPool) {
+    let (app, state, _) = setup(db);
+    let (owner, _) = login_as(&app, "streamer1").await;
+    let (other, _) = login_as(&app, "streamer2").await;
+    let id = create(&app, &owner, "배치 방송").await;
+    assert!(get(&app, &format!("{B}/{id}"), None).await.json["overlayLayout"].is_null());
+
+    let layout = json!({
+        "alert": { "x": 50.0, "y": 10.0 },
+        "cam": { "x": 0.0, "y": 0.0, "w": 22.0 },
+        "chat": { "x": 2.0, "y": 94.0, "w": 30.0 }
+    });
+    // 다른 사용자는 403, 소유자는 READY에서 저장
+    let res = patch(&app, &other, id, json!({ "overlayLayout": layout })).await;
+    assert_eq!(
+        (res.status, code(&res)),
+        (StatusCode::FORBIDDEN, "BROADCAST_NOT_OWNER")
+    );
+    let res = patch(&app, &owner, id, json!({ "overlayLayout": layout })).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    assert_eq!(res.json["overlayLayout"], layout);
+
+    // 범위 밖·폭 0은 422 fields, 필드가 빠지면 형식 오류 422
+    for bad in [
+        json!({ "alert": { "x": 101.0, "y": 0.0 }, "cam": layout["cam"], "chat": layout["chat"] }),
+        json!({ "alert": layout["alert"], "cam": { "x": 0.0, "y": -1.0, "w": 22.0 }, "chat": layout["chat"] }),
+        json!({ "alert": layout["alert"], "cam": layout["cam"], "chat": { "x": 0.0, "y": 0.0, "w": 0.0 } }),
+    ] {
+        let res = patch(&app, &owner, id, json!({ "overlayLayout": bad })).await;
+        assert_eq!(res.status, StatusCode::UNPROCESSABLE_ENTITY);
+        assert!(res.json["error"]["fields"]["overlayLayout"].is_string(), "{}", res.json);
+    }
+    let bad = json!({ "alert": layout["alert"], "cam": layout["cam"] });
+    let res = patch(&app, &owner, id, json!({ "overlayLayout": bad })).await;
+    assert_eq!(res.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(get(&app, &format!("{B}/{id}"), None).await.json["overlayLayout"], layout);
+
+    // 새 방송은 소유자의 마지막 배치를 이어받는다(다른 사용자 방송은 기본값)
+    let next = create(&app, &owner, "다음 방송").await;
+    assert_eq!(get(&app, &format!("{B}/{next}"), None).await.json["overlayLayout"], layout);
+    let theirs = create(&app, &other, "남의 방송").await;
+    assert!(get(&app, &format!("{B}/{theirs}"), None).await.json["overlayLayout"].is_null());
+
+    // LIVE에서도 수정 가능, ENDED는 잠김
+    start_live(&state.db, id).await.unwrap();
+    let moved = json!({
+        "alert": { "x": 50.0, "y": 4.0 },
+        "cam": { "x": 76.0, "y": 75.0, "w": 22.0 },
+        "chat": { "x": 2.0, "y": 94.0, "w": 30.0 }
+    });
+    let res = patch(&app, &owner, id, json!({ "overlayLayout": moved })).await;
+    assert_eq!(res.status, StatusCode::OK, "{}", res.json);
+    assert_eq!(res.json["overlayLayout"], moved);
+    end_live(&state, id, EndReason::Owner).await.unwrap();
+    let res = patch(&app, &owner, id, json!({ "overlayLayout": moved })).await;
+    assert_eq!(
+        (res.status, code(&res)),
+        (StatusCode::CONFLICT, "BROADCAST_FIELD_LOCKED")
+    );
+}

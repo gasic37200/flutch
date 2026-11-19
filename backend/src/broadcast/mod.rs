@@ -69,6 +69,43 @@ pub enum PipCorner {
     BottomRight,
 }
 
+/// 오버레이 배치(영상 기준 %, 0~100). 알림은 x=가로 가운데·y=위 끝, 웹캠은 x·y=왼쪽 위, 채팅은 x=왼쪽·y=아래 끝(위로 쌓임).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(deny_unknown_fields)]
+#[ts(export)]
+pub struct OverlayLayout {
+    pub alert: OverlayPoint,
+    pub cam: OverlayBox,
+    pub chat: OverlayBox,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(deny_unknown_fields)]
+#[ts(export)]
+pub struct OverlayPoint {
+    pub x: f64,
+    pub y: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(deny_unknown_fields)]
+#[ts(export)]
+pub struct OverlayBox {
+    pub x: f64,
+    pub y: f64,
+    /// 폭(영상 폭 대비 %), 0 초과
+    pub w: f64,
+}
+
+impl OverlayLayout {
+    /// 모든 값이 0~100이고 폭은 0보다 큰지.
+    pub fn is_valid(&self) -> bool {
+        let pct = |v: f64| (0.0..=100.0).contains(&v);
+        let b = |o: &OverlayBox| pct(o.x) && pct(o.y) && pct(o.w) && o.w > 0.0;
+        pct(self.alert.x) && pct(self.alert.y) && b(&self.cam) && b(&self.chat)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "UPPERCASE")]
 #[ts(export)]
@@ -140,7 +177,10 @@ pub struct Broadcast {
     pub category: Category,
     pub tags: Vec<String>,
     pub record: bool,
+    /// shortcut: pip_corner는 overlay_layout 이전 값(프론트는 안 씀), 제출 후 정리
     pub pip_corner: PipCorner,
+    /// 스튜디오 배치 편집 결과. null이면 프론트 기본 배치
+    pub overlay_layout: Option<OverlayLayout>,
     /// `/media/thumbs/{id}.jpg?v=<버전>`, 없으면 null(기본 이미지)
     pub thumbnail_url: Option<String>,
     /// LIVE만 의미(사용자 단위, 소유자 제외), 그 외 0
@@ -215,6 +255,8 @@ pub struct UpdateBroadcastRequest {
     pub tags: Option<Vec<String>>,
     pub record: Option<bool>,
     pub pip_corner: Option<PipCorner>,
+    /// READY·LIVE에서만. 범위 밖이면 422
+    pub overlay_layout: Option<OverlayLayout>,
 }
 
 #[derive(Debug, thiserror::Error)]

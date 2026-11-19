@@ -2,6 +2,7 @@
 import type { BroadcastStatus } from "./BroadcastStatus";
 import type { Category } from "./Category";
 import type { ClutchGauge } from "./ClutchGauge";
+import type { OverlayLayout } from "./OverlayLayout";
 import type { PipCorner } from "./PipCorner";
 import type { RecordingRef } from "./RecordingRef";
 import type { UserSummary } from "./UserSummary";
@@ -19,7 +20,15 @@ burstMin: number,
 /**
  * 비로그인은 null
  */
-viewer: ViewerState | null, id: number, owner: UserSummary, status: BroadcastStatus, title: string, category: Category, tags: Array<string>, record: boolean, pipCorner: PipCorner, 
+viewer: ViewerState | null, id: number, owner: UserSummary, status: BroadcastStatus, title: string, category: Category, tags: Array<string>, record: boolean, 
+/**
+ * shortcut: pip_corner는 overlay_layout 이전 값(프론트는 안 씀), 제출 후 정리
+ */
+pipCorner: PipCorner, 
+/**
+ * 스튜디오 배치 편집 결과. null이면 프론트 기본 배치
+ */
+overlayLayout: OverlayLayout | null, 
 /**
  * `/media/thumbs/{id}.jpg?v=<버전>`, 없으면 null(기본 이미지)
  */
