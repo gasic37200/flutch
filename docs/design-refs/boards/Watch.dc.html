@@ -21,6 +21,16 @@ a{color:#F3F5F7;text-decoration:none}a:hover{color:#D4FF6A}
 .pop{animation:pop .4s ease-out}
 @media (prefers-reduced-motion:reduce){.pop{animation:none}}
 /* layout follows the page's own width (container queries) so width previews import this one file */
+.pl{container-type:inline-size}
+.al{position:absolute;left:50%;top:4%;transform:translateX(-50%);width:clamp(200px,42cqw,520px);background:#B0F612;padding:1px;box-sizing:border-box;z-index:1}
+.al>div{background:rgba(18,21,27,.96);padding:clamp(8px,1.4cqw,16px) clamp(10px,1.8cqw,20px);display:flex;gap:clamp(8px,1.2cqw,14px);align-items:center}
+.al .wave{width:clamp(18px,3cqw,32px);height:clamp(18px,3cqw,32px);color:#B0F612}
+.al .t{font-size:clamp(12px,1.5cqw,16px);font-weight:700;white-space:nowrap}
+.al .m{font-size:clamp(11px,1.3cqw,14px);color:#A3AAB6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* streamer-placed chat overlay (default left-bottom), shown on the normal player too; viewer can hide it */
+.cov{position:absolute;left:2%;bottom:calc(48px + 2%);width:clamp(170px,30cqw,420px);display:flex;flex-direction:column;gap:4px;font-size:clamp(11px,1.2cqw,14px);line-height:1.45;text-align:left}
+.cov div{background:rgba(10,12,15,.6);padding:2px 8px;align-self:flex-start;max-width:100%;box-sizing:border-box;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@container (max-width:600px){.cov div:first-child{display:none}}
 .wa-app{container-type:inline-size;container-name:wa}
 .wa-body{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding:20px 24px;box-sizing:border-box;max-width:1920px;margin:0 auto;align-items:start}
 .wa-only-m{display:none!important}
@@ -75,17 +85,18 @@ a{color:#F3F5F7;text-decoration:none}a:hover{color:#D4FF6A}
   <div class="wa-body">
 
     <main class="wa-main" style="min-width:0;display:flex;flex-direction:column;gap:14px">
-      <div class="texture" style="aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center">
+      <div class="texture pl" style="aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center">
         <div style="position:absolute;inset:0;background:rgba(10,12,15,.3)"></div>
         <a href="#" class="wa-only-m" aria-label="뒤로" style="position:absolute;top:4px;left:4px;width:44px;height:44px;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F3F5F7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg></a>
         <span style="position:absolute;top:14px;right:14px;display:inline-flex;align-items:center;gap:6px;background:#FF2E4D;color:#fff;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;padding:3px 9px;letter-spacing:.06em"><span style="width:6px;height:6px;border-radius:50%;background:#fff"></span>LIVE</span>
         <span style="position:relative;font-family:'Chakra Petch',sans-serif;font-size:15px;color:#A3AAB6;letter-spacing:.08em">화면 공유 영상</span>
         <div class="ch6" style="position:absolute;right:12px;bottom:58px;width:22%;aspect-ratio:16/9;background:#191D25;box-shadow:0 0 0 1px rgba(176,246,18,.5);display:flex;align-items:center;justify-content:center;font-size:12px;color:#A3AAB6">웹캠</div>
-        <div class="pop ch12" style="position:absolute;top:14px;left:50%;transform:translateX(-50%);background:#B0F612;padding:1px;width:360px;max-width:70%">
-          <div class="ch12" style="background:rgba(18,21,27,.96);padding:10px 14px;display:flex;gap:12px;align-items:center">
-            <span class="wave" aria-hidden="true" style="width:24px;height:24px;color:#B0F612;flex:none"></span>
-            <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><b style="font-size:13px">밤샘냥님 <span style="font-family:'JetBrains Mono',monospace;color:#B0F612">5,000</span> Beat 후원</b><span style="font-size:12px;color:#A3AAB6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">방금 그 3대1 미쳤다 진짜</span></div>
-          </div>
+        <div class="al ch12"><div class="ch12"><span class="wave" aria-hidden="true"></span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="t">밤샘냥님 <span style="font-family:'JetBrains Mono',monospace;color:#B0F612">5,000</span> Beat 후원</span><span class="m">방금 그 3대1 미쳤다 진짜</span></div></div></div>
+        <div class="cov" aria-label="채팅 오버레이">
+          <div><b style="color:#2EE6D6">에임장인</b> ㄷㄷ 방금 그거 실화냐</div>
+          <div><b style="color:#5CF2A0">수다곰</b> 클러치각이다!</div>
+          <div style="background:rgba(176,246,18,.18);box-shadow:inset 0 0 0 1px rgba(176,246,18,.5)"><b style="color:#B0F612">밤샘냥 · 5,000 Beat</b> 방금 그 3대1 미쳤다 진짜</div>
+          <div><b style="color:#4DA3FF">골골</b> 김플러 화이팅!!</div>
         </div>
         <div style="position:absolute;left:0;right:0;bottom:0;height:48px;display:flex;align-items:center;gap:4px;padding:0 8px;background:linear-gradient(0deg,rgba(10,12,15,.9),rgba(10,12,15,0))">
           <button type="button" aria-label="일시정지" style="width:40px;height:40px;border:0;background:transparent;color:#F3F5F7"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"></path></svg></button>
@@ -93,6 +104,7 @@ a{color:#F3F5F7;text-decoration:none}a:hover{color:#D4FF6A}
           <button type="button" aria-pressed="true" aria-label="후원 TTS 끄기" title="후원 TTS 끄기" style="height:40px;padding:0 8px;border:0;background:transparent;color:#B0F612;display:inline-flex;align-items:center;gap:4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h12v9H9l-4 4v-4H4z"></path><path d="M19 8a4 4 0 0 1 0 6M21.5 6a7 7 0 0 1 0 10"></path></svg><span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;letter-spacing:.04em">TTS</span></button>
           <div class="wa-vol" style="width:90px;height:4px;background:#262B35"><div style="width:0;height:100%;background:#F3F5F7"></div></div>
           <span style="flex:1"></span>
+          <button type="button" aria-pressed="true" aria-label="채팅 오버레이 끄기" title="채팅 오버레이 끄기" class="ch6" style="height:32px;padding:0 10px;border:0;background:rgba(176,246,18,.15);color:#B0F612;font-size:12px;font-weight:700;font-family:'Noto Sans KR',sans-serif;display:inline-flex;align-items:center;gap:5px;box-shadow:inset 0 0 0 1px rgba(176,246,18,.5)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path><path d="M8 9h8M8 12h5"></path></svg>채팅</button>
           <button type="button" class="ch6 wa-camhide" style="height:32px;padding:0 10px;border:0;background:rgba(25,29,37,.8);color:#F3F5F7;font-size:12px;font-family:'Noto Sans KR',sans-serif">웹캠 숨기기</button>
           <button type="button" aria-label="전체화면" style="width:40px;height:40px;border:0;background:transparent;color:#F3F5F7"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path></svg></button>
         </div>
