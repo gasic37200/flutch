@@ -17,6 +17,18 @@ a{color:#F3F5F7;text-decoration:none}
 .ch6{clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
 .texture{background:#0A0C0F url(/_blob/3d8747c0d27ead1c50b2d826552c3c41) center/cover}
 input[type=range]{accent-color:#B0F612}
+.wave{display:inline-block;vertical-align:middle;flex:none;background:currentColor;-webkit-mask:url(/_blob/f6543586bb296ec76dbbcbbf0df43ee9) center/contain no-repeat;mask:url(/_blob/f6543586bb296ec76dbbcbbf0df43ee9) center/contain no-repeat}
+.pl{container-type:inline-size;position:relative;aspect-ratio:16/9}
+.pip{position:absolute;right:2%;bottom:3%;width:22%;aspect-ratio:16/9;background:#191D25;box-shadow:0 0 0 1px #B0F612;display:flex;align-items:center;justify-content:center;font-size:clamp(10px,1.2cqw,13px);color:#A3AAB6}
+.al{position:absolute;left:50%;top:4%;transform:translateX(-50%);width:clamp(200px,42cqw,520px);background:#B0F612;padding:1px;box-sizing:border-box}
+.al>div{background:rgba(18,21,27,.96);padding:clamp(8px,1.4cqw,16px) clamp(10px,1.8cqw,20px);display:flex;gap:clamp(8px,1.2cqw,14px);align-items:center}
+.al .wave{width:clamp(18px,3cqw,32px);height:clamp(18px,3cqw,32px);color:#B0F612}
+.al .t{font-size:clamp(12px,1.5cqw,16px);font-weight:700;white-space:nowrap}
+.al .m{font-size:clamp(11px,1.3cqw,14px);color:#A3AAB6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cov{position:absolute;left:2%;bottom:6%;width:30%;display:flex;flex-direction:column;gap:4px;font-size:clamp(11px,1.2cqw,14px);line-height:1.45}
+.cov div{background:rgba(10,12,15,.6);padding:3px 8px;align-self:flex-start}
+.ed{outline:1px dashed #B0F612;outline-offset:3px;cursor:grab}
+.tag{position:absolute;left:-4px;background:#B0F612;color:#0A0C0F;font-size:11px;font-weight:700;padding:2px 6px;white-space:nowrap;font-family:'Noto Sans KR',sans-serif}
 .st-app{container-type:inline-size;container-name:st}
 .st-body{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding:20px 24px;max-width:1920px;margin:0 auto;box-sizing:border-box;align-items:start}
 @container st (max-width:1279px){.st-body{grid-template-columns:minmax(0,1fr) 320px;gap:16px;padding:16px}}
@@ -42,10 +54,11 @@ input[type=range]{accent-color:#B0F612}
     <main style="min-width:0;display:flex;flex-direction:column;gap:14px">
       <div role="alert" class="ch6" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#191D25;color:#F3F5F7;font-size:14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B0F612" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg>방송 시작 3시간이 되면 자동으로 종료돼요. 남은 시간 1:35:43</div>
 
-      <div class="texture" style="aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center">
+      <div class="texture pl" style="display:flex;align-items:center;justify-content:center">
         <div style="position:absolute;inset:0;background:rgba(10,12,15,.3)"></div>
         <span style="position:relative;font-family:'Chakra Petch',sans-serif;font-size:15px;color:#A3AAB6;letter-spacing:.08em">송출 미리보기 · 화면 공유</span>
-        <div class="ch6" style="position:absolute;right:14px;bottom:14px;width:22%;aspect-ratio:16/9;background:#191D25;box-shadow:0 0 0 1px #B0F612;display:flex;align-items:center;justify-content:center;font-size:12px;color:#A3AAB6">웹캠</div>
+        <div class="al ch12"><div class="ch12"><span class="wave" aria-hidden="true"></span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="t">밤샘냥님 <span style="font-family:'JetBrains Mono',monospace;color:#B0F612">5,000</span> Beat 후원</span><span class="m">방금 그 3대1 미쳤다 진짜</span></div></div></div>
+        <div class="pip ch6">웹캠</div>
       </div>
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px">
@@ -61,13 +74,8 @@ input[type=range]{accent-color:#B0F612}
             <button type="button" role="switch" aria-checked="true" aria-label="웹캠 PIP" style="width:48px;height:28px;border-radius:999px;border:0;background:#B0F612;position:relative"><span style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#0A0C0F"></span></button>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
-            <span style="flex:1;font-size:13px;color:#A3AAB6">웹캠 위치</span>
-            <div role="radiogroup" aria-label="웹캠 위치" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;width:64px">
-              <button type="button" role="radio" aria-checked="false" aria-label="왼쪽 위" style="height:22px;border:0;background:#191D25"></button>
-              <button type="button" role="radio" aria-checked="false" aria-label="오른쪽 위" style="height:22px;border:0;background:#191D25"></button>
-              <button type="button" role="radio" aria-checked="false" aria-label="왼쪽 아래" style="height:22px;border:0;background:#191D25"></button>
-              <button type="button" role="radio" aria-checked="true" aria-label="오른쪽 아래" style="height:22px;border:0;background:#B0F612"></button>
-            </div>
+            <span style="flex:1;font-size:13px;color:#A3AAB6;line-height:1.4">웹캠 · 후원 알림 · 채팅 위치<br><span style="font-size:12px;color:#7C8494">미리보기에서 끌어서 옮겨요</span></span>
+            <button type="button" class="ch6" style="height:36px;padding:0 14px;border:0;background:#191D25;color:#F3F5F7;font-size:13px;font-family:'Noto Sans KR',sans-serif;display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"></path></svg>배치 편집</button>
           </div>
         </div></div>
 

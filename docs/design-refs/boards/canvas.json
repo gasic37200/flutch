@@ -405,6 +405,31 @@
       "w": 2560,
       "h": 1300,
       "title": "스트리머 페이지 · 2560 (최대 1200, 가운데)"
+    },
+    "AlertScale.dc.html": {
+      "page": "watch",
+      "x": 0,
+      "y": 5900,
+      "w": 3160,
+      "h": 2660,
+      "title": "후원 알림 크기 · 영상 폭 비례 (390·768·1440·2560)"
+    },
+    "WatchFullscreen.dc.html": {
+      "page": "watch",
+      "x": 2720,
+      "y": 3900,
+      "w": 1440,
+      "h": 810,
+      "title": "시청 전체화면 · 채팅 오버레이 · 스트리머가 정한 배치"
+    },
+    "StudioLayout.dc.html": {
+      "page": "studio",
+      "x": 3520,
+      "y": 0,
+      "w": 1440,
+      "h": 1100,
+      "title": "방송 중 · 배치 편집 (웹캠·후원 알림·채팅 끌어서 이동)",
+      "expand": "fill"
     }
   },
   "createdOnFiles": {
@@ -569,6 +594,15 @@
       "w": 240,
       "x": 0,
       "y": 4100
+    },
+    "t3d": {
+      "page": "watch",
+      "kind": "title1",
+      "maxW": 3160,
+      "text": "후원 알림 크기",
+      "w": 240,
+      "x": 0,
+      "y": 5600
     }
   },
   "order": [
@@ -598,6 +632,8 @@
     "WatchStates.dc.html",
     "Guest.dc.html",
     "WatchW2560.dc.html",
+    "WatchFullscreen.dc.html",
+    "AlertScale.dc.html",
     "Auth.dc.html",
     "Signup.dc.html",
     "AuthW1920.dc.html",
@@ -615,6 +651,7 @@
     "StreamerW2560.dc.html",
     "StudioPrelive.dc.html",
     "Studio.dc.html",
+    "StudioLayout.dc.html",
     "StudioMobile.dc.html",
     "StudioW1024.dc.html",
     "StudioW768.dc.html",
